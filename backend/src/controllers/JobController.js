@@ -4,8 +4,19 @@ const JobApplication = require('../models/JobApplication');
 // Post a new job
 exports.postJob = async (req, res) => {
   try {
+    // Normalize Enums
+    const allowedDepartments = ['Engineering', 'Design', 'Product', 'Sales', 'Marketing', 'Human Resources', 'Finance', 'Operations'];
+    const normalizeDepartment = (dept) => {
+      if (!dept) return dept;
+      const match = allowedDepartments.find(d => d.toLowerCase() === dept.toLowerCase());
+      return match || dept; // Return matched title-case or original if not found
+    };
+
     const jobData = {
       ...req.body,
+      department: normalizeDepartment(req.body.department),
+      jobType: req.body.jobType?.toLowerCase(),
+      experienceLevel: req.body.experienceLevel?.toLowerCase(),
       postedBy: req.user.id,
       status: 'active'
     };
@@ -22,7 +33,7 @@ exports.postJob = async (req, res) => {
     console.error('Post job error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to post job'
+      message: 'Failed to post job: ' + error.message // Return error message for easier debugging
     });
   }
 };
@@ -77,9 +88,22 @@ exports.getJobById = async (req, res) => {
 // Update job
 exports.updateJob = async (req, res) => {
   try {
+    // Normalize Enums if present in update
+    const allowedDepartments = ['Engineering', 'Design', 'Product', 'Sales', 'Marketing', 'Human Resources', 'Finance', 'Operations'];
+    const normalizeDepartment = (dept) => {
+      if (!dept) return dept;
+      const match = allowedDepartments.find(d => d.toLowerCase() === dept.toLowerCase());
+      return match || dept;
+    };
+
+    const updateData = { ...req.body };
+    if (updateData.department) updateData.department = normalizeDepartment(updateData.department);
+    if (updateData.jobType) updateData.jobType = updateData.jobType.toLowerCase();
+    if (updateData.experienceLevel) updateData.experienceLevel = updateData.experienceLevel.toLowerCase();
+
     const job = await Job.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -99,7 +123,7 @@ exports.updateJob = async (req, res) => {
     console.error('Update job error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update job'
+      message: 'Failed to update job: ' + error.message
     });
   }
 };

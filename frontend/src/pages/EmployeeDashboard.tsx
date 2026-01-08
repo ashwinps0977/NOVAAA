@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  CheckCircle, 
-  Clock, 
-  TrendingUp, 
-  Award, 
-  Calendar, 
+import {
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Award,
+  Calendar,
   Zap,
   User,
   Home,
@@ -81,12 +81,6 @@ const EmployeeDashboard = () => {
     { id: 3, title: 'Skill Development', progress: 60, dueDate: 'Dec 2024', kpi: 'Personal Growth' },
   ];
 
-  const leaveRequests = [
-    { id: 1, type: 'Sick Leave', startDate: '2024-01-10', endDate: '2024-01-12', status: 'approved', days: 3 },
-    { id: 2, type: 'Casual Leave', startDate: '2024-01-15', endDate: '2024-01-16', status: 'pending', days: 2 },
-    { id: 3, type: 'Earned Leave', startDate: '2024-02-01', endDate: '2024-02-05', status: 'approved', days: 5 },
-  ];
-
   const trainingCourses = [
     { id: 1, title: 'React Advanced Patterns', provider: 'Internal', duration: '8h', progress: 30, status: 'in-progress' },
     { id: 2, title: 'Leadership Skills', provider: 'Coursera', duration: '20h', progress: 0, status: 'not-started' },
@@ -112,20 +106,174 @@ const EmployeeDashboard = () => {
     "How to apply for leave?"
   ];
 
-  // Attendance calendar mock data
-  const attendanceCalendar = Array.from({ length: 30 }, (_, i) => ({
-    date: new Date(2024, 0, i + 1),
-    status: i % 7 === 0 ? 'holiday' : i % 10 === 0 ? 'absent' : i % 15 === 0 ? 'leave' : 'present',
-    checkIn: i % 20 !== 0 ? '09:15' : null,
-    checkOut: i % 20 !== 0 ? '18:30' : null,
-  }));
+  // Attendance state
+  const [attendanceData, setAttendanceData] = useState<any>(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  const fetchAttendance = async () => {
+    try {
+      setAttendanceLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/attendance/my-history', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAttendanceData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'attendance') {
+      fetchAttendance();
+    }
+  }, [activeSection]);
+
+  const handleCheckOut = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/attendance/checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        alert('Checked out successfully');
+        fetchAttendance();
+      } else {
+        alert('Failed to check out');
+      }
+    } catch (error) {
+      console.error('Check out error:', error);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/attendance/download-report', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `attendance_report.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to download report');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Error downloading report');
+    }
+  };
+
+  // Leave State
+  const [leaveData, setLeaveData] = useState<any>({ leaves: [], balances: { Sick: 0, Casual: 0, Earned: 0 } });
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [leaveForm, setLeaveForm] = useState({
+    type: 'Sick',
+    startDate: '',
+    endDate: '',
+    reason: ''
+  });
+
+  const fetchLeaves = async () => {
+    try {
+      setLeaveLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/leave/my-leaves', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLeaveData(data);
+      }
+    } catch (error) {
+      console.error('Fetch leaves error:', error);
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'leave') {
+      fetchLeaves();
+    }
+  }, [activeSection]);
+
+  const handleApplyLeave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/leave/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(leaveForm)
+      });
+
+      if (response.ok) {
+        alert('Leave application submitted successfully');
+        setLeaveForm({ type: 'Sick', startDate: '', endDate: '', reason: '' });
+        fetchLeaves();
+      } else {
+        alert('Failed to submit leave application');
+      }
+    } catch (error) {
+      console.error('Apply leave error:', error);
+    }
+  };
+
+  const handleCancelLeave = async (id: string) => {
+    if (!window.confirm('Are you sure you want to cancel this leave request?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/leave/${id}/cancel`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Leave request cancelled');
+        fetchLeaves();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Failed to cancel leave');
+      }
+    } catch (error) {
+      console.error('Cancel leave error:', error);
+    }
+  };
 
   const sendAiChatMessage = () => {
     if (!aiChatMessage.trim()) return;
-    
+
     const newMessage = { id: chatHistory.length + 1, sender: 'user', message: aiChatMessage };
     setChatHistory([...chatHistory, newMessage]);
-    
+
     // Simulate AI response
     setTimeout(() => {
       const aiResponse = {
@@ -135,7 +283,7 @@ const EmployeeDashboard = () => {
       };
       setChatHistory(prev => [...prev, aiResponse]);
     }, 1000);
-    
+
     setAiChatMessage('');
   };
 
@@ -145,7 +293,7 @@ const EmployeeDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile & Personal Information</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
@@ -221,92 +369,130 @@ const EmployeeDashboard = () => {
         );
 
       case 'attendance':
+        const todayRecord = attendanceData?.today;
+        const isPresent = !!todayRecord;
+        const isCheckedOut = !!todayRecord?.checkOut;
+
+        // Generate calendar days for current month
+        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
+          const d = new Date();
+          d.setDate(i + 1);
+          const dateStr = d.toISOString().split('T')[0];
+          const record = attendanceData?.history?.find((r: any) => r.date === dateStr);
+
+          let status = 'absent';
+          if (record) status = record.status;
+          if (d.getDay() === 0 || d.getDay() === 6) status = 'holiday'; // Simple weekend logic
+          if (d > new Date()) status = 'future';
+
+          return { date: d, status, record };
+        });
+
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Attendance Management</h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg p-6 text-white mb-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold mb-2">Today's Attendance</h3>
-                      <div className="flex items-center space-x-4">
-                        <div className={`px-4 py-2 rounded-lg ${attendanceStatus === 'present' ? 'bg-green-500' : attendanceStatus === 'absent' ? 'bg-red-500' : 'bg-yellow-500'}`}>
-                          <span className="font-semibold">{attendanceStatus.toUpperCase()}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm opacity-90">Check-in: 09:15 AM</p>
-                          <p className="text-sm opacity-90">Check-out: 06:30 PM</p>
+
+            {attendanceLoading ? (
+              <div className="text-center py-10">Loading attendance data...</div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg p-6 text-white mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">Today's Attendance</h3>
+                        <div className="flex items-center space-x-4">
+                          <div className={`px-4 py-2 rounded-lg ${isPresent ? 'bg-green-500' : 'bg-red-500'}`}>
+                            <span className="font-semibold">{isPresent ? 'PRESENT' : 'NOT CHECKED IN'}</span>
+                          </div>
+                          <div>
+                            {todayRecord?.checkIn && <p className="text-sm opacity-90">Check-in: {new Date(todayRecord.checkIn).toLocaleTimeString()}</p>}
+                            {todayRecord?.checkOut && <p className="text-sm opacity-90">Check-out: {new Date(todayRecord.checkOut).toLocaleTimeString()}</p>}
+                          </div>
                         </div>
                       </div>
+                      {isPresent && !isCheckedOut && (
+                        <button
+                          onClick={handleCheckOut}
+                          className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+                        >
+                          Check Out
+                        </button>
+                      )}
+                      {isCheckedOut && (
+                        <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg">Checked Out</div>
+                      )}
                     </div>
-                    <button className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors">
-                      {attendanceStatus === 'present' ? 'Check Out' : 'Check In'}
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Calendar ({new Date().toLocaleString('default', { month: 'long' })})</h3>
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="text-center font-medium text-gray-600 py-2">
+                        {day}
+                      </div>
+                    ))}
+                    {calendarDays.map((day, index) => (
+                      <div key={index} className={`p-2 border rounded-lg text-center 
+                      ${day.status === 'present' ? 'bg-green-50 border-green-200' :
+                          day.status === 'holiday' ? 'bg-purple-50 border-purple-200' :
+                            day.status === 'leave' ? 'bg-yellow-50 border-yellow-200' :
+                              day.status === 'future' ? 'bg-gray-50 border-gray-100 opacity-50' :
+                                'bg-red-50 border-red-200'}`}>
+                        <div className="font-medium">{day.date.getDate()}</div>
+                        <div className={`text-xs mt-1 
+                        ${day.status === 'present' ? 'text-green-600' :
+                            day.status === 'holiday' ? 'text-purple-600' :
+                              day.status === 'leave' ? 'text-yellow-600' :
+                                day.status === 'future' ? 'text-gray-400' :
+                                  'text-red-600'}`}>
+                          {day.status === 'future' ? '-' : day.status}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Attendance Summary</h3>
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-600">Total Recorded</span>
+                        <span className="font-bold text-gray-900">{attendanceData?.summary?.totalDays || 0}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-600">Present Days</span>
+                        <span className="font-bold text-green-600">{attendanceData?.summary?.presentDays || 0}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-600">Absent Days</span>
+                        <span className="font-bold text-red-600">{attendanceData?.summary?.absentDays || 0}</span>
+                      </div>
+                    </div>
+
+                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors" onClick={() => alert('Report download started...')}>
+                      <Download className="w-4 h-4" />
+                      <span>Download Attendance Report</span>
                     </button>
-                  </div>
-                </div>
 
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Calendar</h3>
-                <div className="grid grid-cols-7 gap-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center font-medium text-gray-600 py-2">
-                      {day}
-                    </div>
-                  ))}
-                  {attendanceCalendar.map((day, index) => (
-                    <div key={index} className={`p-2 border rounded-lg text-center ${day.status === 'present' ? 'bg-green-50 border-green-200' : day.status === 'holiday' ? 'bg-purple-50 border-purple-200' : day.status === 'leave' ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
-                      <div className="font-medium">{day.date.getDate()}</div>
-                      <div className={`text-xs mt-1 ${day.status === 'present' ? 'text-green-600' : day.status === 'holiday' ? 'text-purple-600' : day.status === 'leave' ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {day.status}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Attendance Summary</h3>
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Working Days</span>
-                      <span className="font-bold text-gray-900">22</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Present Days</span>
-                      <span className="font-bold text-green-600">20</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Absent Days</span>
-                      <span className="font-bold text-red-600">1</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Late Arrivals</span>
-                      <span className="font-bold text-amber-600">3</span>
-                    </div>
-                  </div>
-
-                  <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-                    <Download className="w-4 h-4" />
-                    <span>Download Attendance Report</span>
-                  </button>
-
-                  <div className="mt-6">
-                    <h4 className="font-medium text-gray-700 mb-3">AI Insights</h4>
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
-                      <div className="flex items-start space-x-3">
-                        <Brain className="w-5 h-5 text-blue-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-blue-800">Attendance Trend Analysis</p>
-                          <p className="text-sm text-blue-600 mt-1">Your attendance consistency has improved by 15% this month. Keep it up!</p>
+                    <div className="mt-6">
+                      <h4 className="font-medium text-gray-700 mb-3">AI Insights</h4>
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+                        <div className="flex items-start space-x-3">
+                          <Brain className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-blue-800">Attendance Trend Analysis</p>
+                            <p className="text-sm text-blue-600 mt-1">Your attendance is consistent. Great job maintaining punctuality!</p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         );
 
@@ -314,118 +500,199 @@ const EmployeeDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Leave Management</h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-green-600">Sick Leave</p>
-                        <p className="text-2xl font-bold text-green-700">7 days</p>
-                      </div>
-                      <Heart className="w-8 h-8 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-blue-600">Casual Leave</p>
-                        <p className="text-2xl font-bold text-blue-700">5 days</p>
-                      </div>
-                      <Coffee className="w-8 h-8 text-blue-500" />
-                    </div>
-                  </div>
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-purple-600">Earned Leave</p>
-                        <p className="text-2xl font-bold text-purple-700">12 days</p>
-                      </div>
-                      <Award className="w-8 h-8 text-purple-500" />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Leave Requests</h3>
-                    <button className="flex items-center space-x-2 bg-emerald-500 text-white py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors">
-                      <Plus className="w-4 h-4" />
-                      <span>Apply for Leave</span>
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {leaveRequests.map(leave => (
-                      <div key={leave.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+            {leaveLoading ? (
+              <div className="text-center py-10">Loading leave data...</div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <div className="flex items-center space-x-3">
-                            <span className="font-medium">{leave.type}</span>
-                            <span className={`px-2 py-1 rounded-full text-xs ${leave.status === 'approved' ? 'bg-green-100 text-green-700' : leave.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                              {leave.status}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {leave.startDate} to {leave.endDate} ({leave.days} days)
-                          </p>
+                          <p className="text-sm text-green-600">Sick Leave</p>
+                          <p className="text-2xl font-bold text-green-700">{leaveData.balances?.Sick || 0} days</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {leave.status === 'pending' && (
-                            <>
-                              <button className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors">
-                                Cancel
-                              </button>
-                              <button className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200 transition-colors">
-                                Modify
-                              </button>
-                            </>
-                          )}
+                        <Heart className="w-8 h-8 text-green-500" />
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-blue-600">Casual Leave</p>
+                          <p className="text-2xl font-bold text-blue-700">{leaveData.balances?.Casual || 0} days</p>
+                        </div>
+                        <Coffee className="w-8 h-8 text-blue-500" />
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-purple-600">Earned Leave</p>
+                          <p className="text-2xl font-bold text-purple-700">{leaveData.balances?.Earned || 0} days</p>
+                        </div>
+                        <Award className="w-8 h-8 text-purple-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Leave Requests</h3>
+                      <button
+                        onClick={() => setShowApplyModal(true)}
+                        className="flex items-center space-x-2 bg-emerald-500 text-white py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Apply for Leave</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {leaveData.leaves?.length > 0 ? (
+                        leaveData.leaves.map((leave: any) => (
+                          <div key={leave._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                            <div>
+                              <div className="flex items-center space-x-3">
+                                <span className="font-medium">{leave.type}</span>
+                                <span className={`px-2 py-1 rounded-full text-xs ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                                    leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                      'bg-red-100 text-red-700'
+                                  }`}>
+                                  {leave.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {leave.startDate} to {leave.endDate} ({leave.days} days) - {leave.reason}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {leave.status === 'Pending' && (
+                                <>
+                                  <button
+                                    onClick={() => handleCancelLeave(leave._id)}
+                                    className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">No leave history found.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">AI Leave Suggestions</h3>
+                  <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-100 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <Brain className="w-5 h-5 text-emerald-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-emerald-800">Smart Leave Planning</p>
+                        <p className="text-sm text-emerald-600 mt-1">
+                          Based on your balance and team calendar, consider taking leave on Feb 12-14 for optimal coverage.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-700 mb-3">Upcoming Holidays</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <span className="text-gray-600">New Year's Day</span>
+                        <span className="font-medium">Jan 1</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <span className="text-gray-600">Spring Festival</span>
+                        <span className="font-medium">Feb 10-12</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-gray-600">Labor Day</span>
+                        <span className="font-medium">May 1</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button className="w-full mt-4 flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                    <Calendar className="w-4 h-4" />
+                    <span>View Holiday Calendar</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Apply Leave Modal */}
+            {showApplyModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-gray-900">Apply for Leave</h3>
+                    <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                  </div>
+                  <form onSubmit={(e) => {
+                    handleApplyLeave(e);
+                    setShowApplyModal(false);
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                        <select
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={leaveForm.type}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
+                        >
+                          <option value="Sick">Sick Leave</option>
+                          <option value="Casual">Casual Leave</option>
+                          <option value="Earned">Earned Leave</option>
+                          <option value="Unpaid">Unpaid Leave</option>
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                          <input
+                            type="date"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            value={leaveForm.startDate}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                          <input
+                            type="date"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            value={leaveForm.endDate}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+                            required
+                          />
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                        <textarea
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          rows={3}
+                          value={leaveForm.reason}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                          required
+                        ></textarea>
+                      </div>
+                      <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                        Submit Application
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">AI Leave Suggestions</h3>
-                <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-100 mb-6">
-                  <div className="flex items-start space-x-3">
-                    <Brain className="w-5 h-5 text-emerald-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-emerald-800">Smart Leave Planning</p>
-                      <p className="text-sm text-emerald-600 mt-1">
-                        Based on your balance and team calendar, consider taking leave on Feb 12-14 for optimal coverage.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-700 mb-3">Upcoming Holidays</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-gray-600">New Year's Day</span>
-                      <span className="font-medium">Jan 1</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-gray-600">Spring Festival</span>
-                      <span className="font-medium">Feb 10-12</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-gray-600">Labor Day</span>
-                      <span className="font-medium">May 1</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button className="w-full mt-4 flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-                  <Calendar className="w-4 h-4" />
-                  <span>View Holiday Calendar</span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         );
 
@@ -436,7 +703,7 @@ const EmployeeDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">HR AI Assistant</h2>
               <p className="text-gray-600 mt-1">Ask HR-related questions in natural language</p>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 h-[600px]">
               <div className="lg:col-span-2 border-r">
                 <div className="h-[500px] overflow-y-auto p-6 space-y-4">
@@ -448,7 +715,7 @@ const EmployeeDashboard = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="border-t p-4">
                   <div className="flex space-x-2">
                     <input
@@ -468,7 +735,7 @@ const EmployeeDashboard = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <h3 className="font-semibold text-gray-800 mb-4">Quick Questions</h3>
                 <div className="space-y-3">
@@ -482,7 +749,7 @@ const EmployeeDashboard = () => {
                     </button>
                   ))}
                 </div>
-                
+
                 <div className="mt-8">
                   <h3 className="font-semibold text-gray-800 mb-4">Capabilities</h3>
                   <div className="space-y-2">
@@ -513,7 +780,7 @@ const EmployeeDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Performance & Appraisal</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -529,7 +796,7 @@ const EmployeeDashboard = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg p-6 text-white">
                     <h3 className="text-lg font-bold mb-2">Goal Completion</h3>
                     <div className="flex items-end space-x-2">
@@ -571,7 +838,7 @@ const EmployeeDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-100">
                     <div className="flex items-start space-x-3">
                       <Target className="w-5 h-5 text-blue-600 mt-0.5" />
@@ -612,7 +879,7 @@ const EmployeeDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Training & Skill Development</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -623,7 +890,7 @@ const EmployeeDashboard = () => {
                       <span className="text-lg opacity-90">skills identified</span>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg p-6 text-white">
                     <h3 className="text-lg font-bold mb-2">Learning Progress</h3>
                     <div className="flex items-end space-x-2">
@@ -645,7 +912,7 @@ const EmployeeDashboard = () => {
                         <div className="flex items-center space-x-4">
                           <div className="w-24">
                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className={`h-full ${course.progress === 100 ? 'bg-green-500' : course.progress > 50 ? 'bg-blue-500' : 'bg-yellow-500'}`}
                                 style={{ width: `${course.progress}%` }}
                               ></div>
@@ -732,7 +999,7 @@ const EmployeeDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg p-6 text-white mb-6">
@@ -806,7 +1073,7 @@ const EmployeeDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Policy & Compliance Center</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="flex items-center space-x-4 mb-6">
@@ -1016,7 +1283,7 @@ const EmployeeDashboard = () => {
                       View All →
                     </button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {tasks.map((task) => (
                       <div key={task.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
@@ -1053,7 +1320,7 @@ const EmployeeDashboard = () => {
                     <h2 className="text-xl font-bold text-gray-900">AI Insights & Recommendations</h2>
                     <Brain className="w-6 h-6 text-indigo-600" />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
@@ -1062,7 +1329,7 @@ const EmployeeDashboard = () => {
                       </div>
                       <p className="text-sm text-gray-600">Low risk detected. Your work patterns show good balance.</p>
                     </div>
-                    
+
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -1070,7 +1337,7 @@ const EmployeeDashboard = () => {
                       </div>
                       <p className="text-sm text-gray-600">Schedule deep work sessions in the morning for optimal focus.</p>
                     </div>
-                    
+
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
                         <Sun className="w-5 h-5 text-blue-500" />
@@ -1078,7 +1345,7 @@ const EmployeeDashboard = () => {
                       </div>
                       <p className="text-sm text-gray-600">Your current score is 78/100. Consider taking breaks every 90 minutes.</p>
                     </div>
-                    
+
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
                         <Target className="w-5 h-5 text-purple-500" />
@@ -1098,7 +1365,7 @@ const EmployeeDashboard = () => {
                     <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
                     <Bell className="w-5 h-5 text-gray-500" />
                   </div>
-                  
+
                   <div className="space-y-4">
                     {notifications.map((notification) => (
                       <div key={notification.id} className={`p-3 rounded-lg ${notification.read ? 'bg-gray-50' : 'bg-blue-50'} border ${notification.read ? 'border-gray-200' : 'border-blue-200'}`}>
@@ -1123,23 +1390,23 @@ const EmployeeDashboard = () => {
                 {/* Quick Actions */}
                 <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-6 border border-emerald-100">
                   <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setActiveSection('ai-chat')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
                       <MessageCircle className="w-6 h-6 text-gray-600 mb-2" />
                       <span className="text-sm font-medium text-gray-700">AI Assistant</span>
                     </button>
-                    
+
                     <button onClick={() => setActiveSection('leave')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
                       <Calendar className="w-6 h-6 text-gray-600 mb-2" />
                       <span className="text-sm font-medium text-gray-700">Apply Leave</span>
                     </button>
-                    
+
                     <button onClick={() => setActiveSection('training')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
                       <GraduationCap className="w-6 h-6 text-gray-600 mb-2" />
                       <span className="text-sm font-medium text-gray-700">Training</span>
                     </button>
-                    
+
                     <button onClick={() => setActiveSection('policies')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
                       <ShieldCheck className="w-6 h-6 text-gray-600 mb-2" />
                       <span className="text-sm font-medium text-gray-700">Policies</span>
@@ -1168,9 +1435,9 @@ const EmployeeDashboard = () => {
   ];
 
   return (
-    <DashboardLayout 
-      role="employee" 
-      userName={userData?.name || 'Employee'} 
+    <DashboardLayout
+      role="employee"
+      userName={userData?.name || 'Employee'}
       userEmail={userData?.email || ''}
     >
       <div className="flex">
@@ -1180,7 +1447,7 @@ const EmployeeDashboard = () => {
             <h2 className="text-lg font-bold text-gray-900 mb-2">Employee Portal</h2>
             <p className="text-sm text-gray-500">Self-service HR management</p>
           </div>
-          
+
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -1188,11 +1455,10 @@ const EmployeeDashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-                    activeSection === item.id 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  } ${item.highlight ? 'bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200' : ''}`}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${activeSection === item.id
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    } ${item.highlight ? 'bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200' : ''}`}
                 >
                   <div className="flex items-center space-x-3">
                     <Icon className={`w-5 h-5 ${activeSection === item.id ? 'text-emerald-600' : 'text-gray-500'}`} />
@@ -1204,7 +1470,7 @@ const EmployeeDashboard = () => {
                 </button>
               );
             })}
-            
+
             <div className="pt-4 mt-4 border-t">
               <button className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                 <LogOut className="w-5 h-5" />
@@ -1212,7 +1478,7 @@ const EmployeeDashboard = () => {
               </button>
             </div>
           </nav>
-          
+
           <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
             <div className="flex items-center space-x-3 mb-2">
               <Zap className="w-5 h-5 text-blue-600" />
@@ -1241,7 +1507,7 @@ const EmployeeDashboard = () => {
                 <ChevronRight className="w-4 h-4" />
                 <span className="capitalize">{activeSection.replace('-', ' ')}</span>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <button className="p-2 hover:bg-gray-100 rounded-lg">
                   <Bell className="w-5 h-5 text-gray-600" />
@@ -1254,7 +1520,7 @@ const EmployeeDashboard = () => {
 
             {/* Render Active Section */}
             {renderSection()}
-            
+
             {/* Footer Note */}
             <div className="text-center text-sm text-gray-500 pt-4">
               <p>Employee Self-Service Portal • AI-Powered HR Management • Academic Project</p>

@@ -28,32 +28,33 @@ app.use(morgan('dev'));
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
 
 // Improved Database connection
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/NOVAHR1';
-    
+
     console.log(`📡 Connecting to MongoDB at: ${mongoURI}`);
-    
+
     await mongoose.connect(mongoURI, {
       serverSelectionTimeoutMS: 5000, // Timeout after 5s
     });
-    
+
     console.log('✅ MongoDB connected successfully to NOVAHR1');
-    
+
     // Verify users collection
     const collections = await mongoose.connection.db.listCollections().toArray();
     const collectionNames = collections.map(c => c.name);
-    
+
     if (!collectionNames.includes('users')) {
       console.log('📁 Creating users collection...');
       await mongoose.connection.db.createCollection('users');
       console.log('✅ Users collection created');
     }
-    
+
     console.log(`📊 Collections in NOVAHR1: ${collectionNames.join(', ')}`);
-    
+
   } catch (err) {
     console.error('❌ MongoDB connection error:', err.message);
     console.log('\n🔧 Troubleshooting:');
@@ -88,7 +89,16 @@ app.use('/api/hr', checkDB, hrRoutes);
 app.use('/api/jobs', checkDB, jobRoutes);
 
 // Application routes
+// Application routes
 app.use('/api/applications', checkDB, applicationRoutes);
+
+// Attendance routes
+const attendanceRoutes = require('./routes/attendanceRoutes');
+app.use('/api/attendance', checkDB, attendanceRoutes);
+
+// Leave routes
+const leaveRoutes = require('./routes/leaveRoutes');
+app.use('/api/leave', checkDB, leaveRoutes);
 
 // Temporary test endpoints (only used when DB is not connected)
 const tempUsers = [];
@@ -100,7 +110,7 @@ const tempJobs = [];
 app.post('/api/auth/test-register', async (req, res) => {
   try {
     const { name, email, password, role = 'employee' } = req.body;
-    
+
     const existingUser = tempUsers.find(u => u.email === email);
     if (existingUser) {
       return res.status(400).json({
@@ -108,7 +118,7 @@ app.post('/api/auth/test-register', async (req, res) => {
         message: 'User with this email already exists'
       });
     }
-    
+
     const newUser = {
       id: Date.now().toString(),
       name,
@@ -118,9 +128,9 @@ app.post('/api/auth/test-register', async (req, res) => {
       createdAt: new Date(),
       lastLogin: new Date()
     };
-    
+
     tempUsers.push(newUser);
-    
+
     res.status(201).json({
       success: true,
       message: 'Registration successful (TEST MODE - Not saved to MongoDB)',
@@ -139,16 +149,16 @@ app.post('/api/auth/test-register', async (req, res) => {
 app.post('/api/auth/test-login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     const user = tempUsers.find(u => u.email === email);
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Login successful (TEST MODE)',
@@ -168,16 +178,16 @@ app.post('/api/hr/test/applications/:id/schedule-interview', async (req, res) =>
   try {
     const { id } = req.params;
     const { interviewDate, interviewTime, interviewType, interviewers, meetingLink, notes } = req.body;
-    
+
     const applicationIndex = tempApplications.findIndex(app => app.id === id);
-    
+
     if (applicationIndex === -1) {
       return res.status(404).json({
         success: false,
         message: 'Application not found'
       });
     }
-    
+
     const interview = {
       id: Date.now().toString(),
       applicationId: id,
@@ -194,16 +204,16 @@ app.post('/api/hr/test/applications/:id/schedule-interview', async (req, res) =>
       scheduledAt: new Date(),
       createdAt: new Date()
     };
-    
+
     tempInterviews.push(interview);
-    
+
     // Update application status
     tempApplications[applicationIndex].status = 'interview_scheduled';
     tempApplications[applicationIndex].interviewId = interview.id;
-    
+
     console.log(`📅 Test interview scheduled for ${tempApplications[applicationIndex].candidateName}`);
     console.log(`📧 Email would be sent to: ${tempApplications[applicationIndex].email}`);
-    
+
     res.json({
       success: true,
       message: 'Interview scheduled successfully (TEST MODE)',
@@ -223,25 +233,25 @@ app.post('/api/hr/test/applications/:id/reject', async (req, res) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
-    
+
     const applicationIndex = tempApplications.findIndex(app => app.id === id);
-    
+
     if (applicationIndex === -1) {
       return res.status(404).json({
         success: false,
         message: 'Application not found'
       });
     }
-    
+
     // Update application status
     tempApplications[applicationIndex].status = 'rejected';
     tempApplications[applicationIndex].rejectionReason = rejectionReason;
     tempApplications[applicationIndex].rejectedAt = new Date();
-    
+
     console.log(`❌ Test rejection for ${tempApplications[applicationIndex].candidateName}`);
     console.log(`📧 Rejection email would be sent to: ${tempApplications[applicationIndex].email}`);
     console.log(`📝 Reason: ${rejectionReason}`);
-    
+
     res.json({
       success: true,
       message: 'Application rejected successfully (TEST MODE)',
@@ -300,9 +310,9 @@ app.post('/api/jobs/test', async (req, res) => {
       updatedAt: new Date(),
       status: 'active'
     };
-    
+
     tempJobs.push(job);
-    
+
     res.status(201).json({
       success: true,
       message: 'Job created successfully (TEST MODE)',
@@ -342,9 +352,9 @@ app.post('/api/applications/test', async (req, res) => {
       appliedDate: new Date(),
       status: 'pending'
     };
-    
+
     tempApplications.push(application);
-    
+
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully (TEST MODE)',
@@ -360,8 +370,8 @@ app.post('/api/applications/test', async (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'NOVA API is running',
     timestamp: new Date().toISOString(),
     dbConnected: mongoose.connection.readyState === 1,
@@ -383,7 +393,7 @@ app.get('/api/db-status', async (req, res) => {
     if (mongoose.connection.readyState === 1) {
       const collections = await mongoose.connection.db.listCollections().toArray();
       const usersCount = await mongoose.connection.db.collection('users').countDocuments();
-      
+
       res.json({
         success: true,
         dbConnected: true,
@@ -480,7 +490,7 @@ const initializeTestData = () => {
         resumeUrl: 'https://example.com/resumes/mike_johnson.pdf'
       }
     ];
-    
+
     tempApplications.push(...testApplications);
     console.log(`📄 Initialized ${tempApplications.length} test applications`);
   }
@@ -551,7 +561,7 @@ const initializeTestData = () => {
         applicants: 2
       }
     ];
-    
+
     tempJobs.push(...testJobs);
     console.log(`💼 Initialized ${tempJobs.length} test jobs`);
   }
@@ -571,6 +581,7 @@ app.use((req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
+  require('fs').writeFileSync('server_error_log.txt', `Error: ${err.message}\nStack: ${err.stack}\n`);
   res.status(500).json({
     success: false,
     message: 'Internal server error'

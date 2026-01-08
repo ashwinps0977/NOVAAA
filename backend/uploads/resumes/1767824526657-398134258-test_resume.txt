@@ -1,0 +1,5 @@
+John Doe
+Senior Developer
+Experience: 5 years experience
+Skills: Python, React, Node.js, MongoDB, Express
+Education: Bachelor of Computer Science

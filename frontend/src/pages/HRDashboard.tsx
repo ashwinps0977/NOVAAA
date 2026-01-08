@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
-import { 
-  LogOut, Bell, ChevronRight, Home, Users, UserPlus, 
-  Calendar, Target, AlertCircle, Brain, BarChart3, 
+import {
+  LogOut, Bell, ChevronRight, Home, Users, UserPlus,
+  Calendar, Target, AlertCircle, Brain, BarChart3,
   GraduationCap, ShieldCheck, Settings, Zap, Plus,
-  Briefcase, FileText,  CheckCircle
+  Briefcase, FileText, CheckCircle
 } from 'lucide-react';
 
 const HRDashboard = () => {
@@ -16,23 +16,24 @@ const HRDashboard = () => {
   const [employees, setEmployees] = useState<any[]>([]);
   const [postedJobs, setPostedJobs] = useState<any[]>([]);
   const [jobApplications, setJobApplications] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<any[]>([]);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [showScheduleInterviewModal, setShowScheduleInterviewModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
-  
+
   const [newJob, setNewJob] = useState({
     title: '',
     department: '',
     location: '',
-    type: 'Full-time',
-    experience: 'Mid-level',
+    type: 'full-time',
+    experience: 'mid',
     description: '',
     requirements: '',
     salary: '',
     deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   });
-  
+
   const [interviewData, setInterviewData] = useState({
     date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     time: '10:00',
@@ -42,9 +43,9 @@ const HRDashboard = () => {
     meetingLink: '',
     notes: ''
   });
-  
+
   const [rejectionReason, setRejectionReason] = useState('');
-  
+
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -68,14 +69,53 @@ const HRDashboard = () => {
       loadPostedJobs();
       loadApplications();
     }
+    if (activeSection === 'attendance') {
+      fetchLeaves();
+    }
   }, [activeSection]);
+
+  const fetchLeaves = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/leave/all', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLeaves(data.leaves);
+      }
+    } catch (error) {
+      console.error('Fetch leaves error:', error);
+    }
+  };
+
+  const handleUpdateLeaveStatus = async (id: string, status: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/leave/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        fetchLeaves(); // Refresh
+      } else {
+        alert('Failed to update leave status');
+      }
+    } catch (error) {
+      console.error('Update leave status error:', error);
+    }
+  };
 
   const checkAuth = () => {
     setIsLoading(true);
-    
+
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-    
+
     if (!token || !userStr) {
       navigate('/login');
       return;
@@ -83,7 +123,7 @@ const HRDashboard = () => {
 
     try {
       const user = JSON.parse(userStr);
-      
+
       const tokenExpiration = localStorage.getItem('tokenExpiration');
       if (tokenExpiration) {
         const expirationTime = parseInt(tokenExpiration);
@@ -114,77 +154,22 @@ const HRDashboard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        setEmployees(data.employees || []);
+        const formattedEmployees = (data.employees || []).map((emp: any) => ({
+          ...emp,
+          joiningDate: new Date(emp.joiningDate).toLocaleDateString(),
+          lastLogin: emp.lastLogin ? new Date(emp.lastLogin).toLocaleString() : 'Never'
+        }));
+        setEmployees(formattedEmployees);
       } else {
         console.error('Failed to fetch employees');
-        // For demo, add mock data
-        setEmployees([
-          {
-            id: '1',
-            name: 'John Smith',
-            email: 'john.smith@company.com',
-            role: 'employee',
-            department: 'Engineering',
-            position: 'Senior Developer',
-            phone: '+1 234 567 8901',
-            salary: '$85,000',
-            joiningDate: '2023-01-15',
-            project: 'E-commerce Platform',
-            lastLogin: '2024-01-06',
-            status: 'active'
-          },
-          {
-            id: '2',
-            name: 'Sarah Johnson',
-            email: 'sarah.j@company.com',
-            role: 'employee',
-            department: 'Design',
-            position: 'UX Designer',
-            phone: '+1 234 567 8902',
-            salary: '$75,000',
-            joiningDate: '2023-03-20',
-            project: 'Mobile App Redesign',
-            lastLogin: '2024-01-05',
-            status: 'active'
-          }
-        ]);
+        setEmployees([]);
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
-      // Mock data for demo
-      setEmployees([
-        {
-          id: '1',
-          name: 'John Smith',
-          email: 'john.smith@company.com',
-          role: 'employee',
-          department: 'Engineering',
-          position: 'Senior Developer',
-          phone: '+1 234 567 8901',
-          salary: '$85,000',
-          joiningDate: '2023-01-15',
-          project: 'E-commerce Platform',
-          lastLogin: '2024-01-06',
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'Sarah Johnson',
-          email: 'sarah.j@company.com',
-          role: 'employee',
-          department: 'Design',
-          position: 'UX Designer',
-          phone: '+1 234 567 8902',
-          salary: '$75,000',
-          joiningDate: '2023-03-20',
-          project: 'Mobile App Redesign',
-          lastLogin: '2024-01-05',
-          status: 'active'
-        }
-      ]);
+      setEmployees([]);
     }
   };
 
@@ -196,82 +181,20 @@ const HRDashboard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setPostedJobs(data.jobs || []);
       } else {
-        // Mock data for demo
-        setPostedJobs([
-          {
-            id: '1',
-            title: 'Senior Frontend Developer',
-            department: 'Engineering',
-            location: 'San Francisco, CA',
-            type: 'Full-time',
-            experience: 'Senior',
-            description: 'We are looking for an experienced Frontend Developer...',
-            requirements: '5+ years of experience with React, TypeScript...',
-            salary: '$120,000 - $150,000',
-            deadline: '2024-02-15',
-            postedDate: '2024-01-01',
-            status: 'active',
-            applications: 24
-          },
-          {
-            id: '2',
-            title: 'UX/UI Designer',
-            department: 'Design',
-            location: 'Remote',
-            type: 'Full-time',
-            experience: 'Mid-level',
-            description: 'Join our design team to create beautiful user experiences...',
-            requirements: '3+ years of UI/UX design experience...',
-            salary: '$85,000 - $110,000',
-            deadline: '2024-02-10',
-            postedDate: '2024-01-05',
-            status: 'active',
-            applications: 18
-          }
-        ]);
+        console.error('Failed to fetch jobs');
+        setPostedJobs([]);
       }
     } catch (error) {
       console.error('Error loading jobs:', error);
-      // Mock data for demo
-      setPostedJobs([
-        {
-          id: '1',
-          title: 'Senior Frontend Developer',
-          department: 'Engineering',
-          location: 'San Francisco, CA',
-          type: 'Full-time',
-          experience: 'Senior',
-          description: 'We are looking for an experienced Frontend Developer...',
-          requirements: '5+ years of experience with React, TypeScript...',
-          salary: '$120,000 - $150,000',
-          deadline: '2024-02-15',
-          postedDate: '2024-01-01',
-          status: 'active',
-          applications: 24
-        },
-        {
-          id: '2',
-          title: 'UX/UI Designer',
-          department: 'Design',
-          location: 'Remote',
-          type: 'Full-time',
-          experience: 'Mid-level',
-          description: 'Join our design team to create beautiful user experiences...',
-          requirements: '3+ years of UI/UX design experience...',
-          salary: '$85,000 - $110,000',
-          deadline: '2024-02-10',
-          postedDate: '2024-01-05',
-          status: 'active',
-          applications: 18
-        }
-      ]);
+      setPostedJobs([]);
     }
   };
+
 
   const loadApplications = async () => {
     try {
@@ -281,100 +204,24 @@ const HRDashboard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        setJobApplications(data.applications || []);
+        // Map backend response to frontend expected structure
+        const mappedApps = (data.applications || []).map((app: any) => ({
+          ...app,
+          candidateName: app.candidate?.name || app.fullName || 'Unknown',
+          jobTitle: app.job?.title || 'Unknown Position',
+          appliedDate: new Date(app.createdAt).toLocaleDateString()
+        }));
+        setJobApplications(mappedApps);
       } else {
-        // Mock data for demo
-        setJobApplications([
-          {
-            id: '1',
-            jobId: '1',
-            jobTitle: 'Senior Frontend Developer',
-            candidateName: 'Alex Johnson',
-            candidateEmail: 'alex.j@example.com',
-            candidatePhone: '+1 234 567 8903',
-            experience: '6 years',
-            skills: 'React, TypeScript, Node.js, AWS',
-            resumeUrl: '/resumes/alex-johnson.pdf',
-            coverLetter: 'I am excited to apply for the Senior Frontend Developer position...',
-            appliedDate: '2024-01-03',
-            status: 'review',
-            interviewDate: null,
-            interviewer: null
-          },
-          {
-            id: '2',
-            jobId: '2',
-            jobTitle: 'UX/UI Designer',
-            candidateName: 'Maria Garcia',
-            candidateEmail: 'maria.g@example.com',
-            candidatePhone: '+1 234 567 8904',
-            experience: '4 years',
-            skills: 'Figma, Adobe Creative Suite, User Research',
-            resumeUrl: '/resumes/maria-garcia.pdf',
-            coverLetter: 'I am passionate about creating intuitive user experiences...',
-            appliedDate: '2024-01-04',
-            status: 'interview',
-            interviewDate: '2024-01-15',
-            interviewer: 'Sarah Johnson'
-          },
-          {
-            id: '3',
-            jobId: '1',
-            jobTitle: 'Senior Frontend Developer',
-            candidateName: 'David Chen',
-            candidateEmail: 'david.c@example.com',
-            candidatePhone: '+1 234 567 8905',
-            experience: '8 years',
-            skills: 'React, Vue.js, GraphQL, Docker',
-            resumeUrl: '/resumes/david-chen.pdf',
-            coverLetter: 'With 8 years of experience in frontend development...',
-            appliedDate: '2024-01-05',
-            status: 'hired',
-            interviewDate: '2024-01-08',
-            interviewer: 'John Smith'
-          }
-        ]);
+        console.error('Failed to fetch applications');
+        setJobApplications([]);
       }
     } catch (error) {
       console.error('Error loading applications:', error);
-      // Mock data for demo
-      setJobApplications([
-        {
-          id: '1',
-          jobId: '1',
-          jobTitle: 'Senior Frontend Developer',
-          candidateName: 'Alex Johnson',
-          candidateEmail: 'alex.j@example.com',
-          candidatePhone: '+1 234 567 8903',
-          experience: '6 years',
-          skills: 'React, TypeScript, Node.js, AWS',
-          resumeUrl: '/resumes/alex-johnson.pdf',
-          coverLetter: 'I am excited to apply for the Senior Frontend Developer position...',
-          appliedDate: '2024-01-03',
-          status: 'review',
-          interviewDate: null,
-          interviewer: null
-        },
-        {
-          id: '2',
-          jobId: '2',
-          jobTitle: 'UX/UI Designer',
-          candidateName: 'Maria Garcia',
-          candidateEmail: 'maria.g@example.com',
-          candidatePhone: '+1 234 567 8904',
-          experience: '4 years',
-          skills: 'Figma, Adobe Creative Suite, User Research',
-          resumeUrl: '/resumes/maria-garcia.pdf',
-          coverLetter: 'I am passionate about creating intuitive user experiences...',
-          appliedDate: '2024-01-04',
-          status: 'interview',
-          interviewDate: '2024-01-15',
-          interviewer: 'Sarah Johnson'
-        }
-      ]);
+      setJobApplications([]);
     }
   };
 
@@ -392,7 +239,7 @@ const HRDashboard = () => {
       });
 
       if (response.ok) {
-        
+
         alert('Employee added successfully!');
         setShowAddEmployee(false);
         setNewEmployee({
@@ -428,7 +275,13 @@ const HRDashboard = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newJob)
+        body: JSON.stringify({
+          ...newJob,
+          jobType: newJob.type,
+          experienceLevel: newJob.experience,
+          applicationDeadline: newJob.deadline,
+          // Remove old keys to avoid confusion, though backend ignores extra fields usually
+        })
       });
 
       if (response.ok) {
@@ -439,8 +292,8 @@ const HRDashboard = () => {
           title: '',
           department: '',
           location: '',
-          type: 'Full-time',
-          experience: 'Mid-level',
+          type: 'full-time',
+          experience: 'mid',
           description: '',
           requirements: '',
           salary: '',
@@ -463,10 +316,11 @@ const HRDashboard = () => {
   const handleScheduleInterview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedApplication) return;
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/applications/${selectedApplication.id}/schedule-interview`, {
+      const appId = selectedApplication.id || selectedApplication._id;
+      const response = await fetch(`http://localhost:5000/api/applications/${appId}/schedule-interview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -506,10 +360,11 @@ const HRDashboard = () => {
   const handleRejectApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedApplication) return;
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/applications/${selectedApplication.id}/reject`, {
+      const appId = selectedApplication.id || selectedApplication._id;
+      const response = await fetch(`http://localhost:5000/api/applications/${appId}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -626,31 +481,39 @@ const HRDashboard = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button 
+                <button
                   onClick={() => setActiveSection('employees')}
                   className="flex flex-col items-center justify-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:bg-blue-100 transition-colors"
                 >
                   <Users className="w-8 h-8 text-blue-600 mb-2" />
                   <span className="text-sm font-medium text-gray-700">Manage Employees</span>
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => setShowAddEmployee(true)}
-                  className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200 hover:border-green-300 hover:bg-green-100 transition-colors"
+                  className="flex-1 flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200 hover:border-green-300 hover:bg-green-100 transition-colors"
                 >
                   <UserPlus className="w-8 h-8 text-green-600 mb-2" />
                   <span className="text-sm font-medium text-gray-700">Add Employee</span>
                 </button>
-                
-                <button 
+
+                <button
+                  onClick={() => setActiveSection('attendance')}
+                  className="flex-1 flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg border border-purple-200 hover:border-purple-300 hover:bg-purple-100 transition-colors"
+                >
+                  <Calendar className="w-8 h-8 text-purple-600 mb-2" />
+                  <span className="text-sm font-medium text-gray-700">Leave Management</span>
+                </button>
+
+                <button
                   onClick={() => setActiveSection('analytics')}
                   className="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg border border-purple-200 hover:border-purple-300 hover:bg-purple-100 transition-colors"
                 >
                   <BarChart3 className="w-8 h-8 text-purple-600 mb-2" />
                   <span className="text-sm font-medium text-gray-700">Analytics</span>
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => setActiveSection('attendance')}
                   className="flex flex-col items-center justify-center p-4 bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-300 hover:bg-amber-100 transition-colors"
                 >
@@ -679,7 +542,7 @@ const HRDashboard = () => {
                     onChange={(e) => console.log('Search:', e.target.value)}
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => setShowAddEmployee(true)}
                   className="flex items-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
                 >
@@ -698,13 +561,14 @@ const HRDashboard = () => {
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Project</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Contact</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Salary</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Attendance</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Status</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {employees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-gray-50">
+                    <tr key={employee.id || employee._id} className="hover:bg-gray-50">
                       <td className="py-4 px-4">
                         <div>
                           <p className="font-medium text-gray-900">{employee.name}</p>
@@ -729,6 +593,15 @@ const HRDashboard = () => {
                       </td>
                       <td className="py-4 px-4">
                         <p className="font-medium text-gray-900">{employee.salary}</p>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${employee.attendanceStatus === 'Present' ? 'bg-green-100 text-green-700' :
+                          employee.attendanceStatus === 'Checked Out' ? 'bg-gray-100 text-gray-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                          {employee.attendanceStatus || 'Absent'}
+                          {employee.attendanceStatus === 'Checked Out' && employee.lastActive && ` (${employee.lastActive})`}
+                        </span>
                       </td>
                       <td className="py-4 px-4">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${employee.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -763,7 +636,7 @@ const HRDashboard = () => {
                 <p className="text-gray-600 mt-1">Manage job postings and applications</p>
               </div>
               <div className="flex items-center space-x-3">
-                <button 
+                <button
                   onClick={() => setShowPostJobModal(true)}
                   className="flex items-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
                 >
@@ -803,7 +676,7 @@ const HRDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Interviews</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{jobApplications.filter(app => app.status === 'interview').length}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{jobApplications.filter(app => app.status === 'interview-scheduled').length}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-purple-600" />
@@ -853,9 +726,8 @@ const HRDashboard = () => {
                           <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium inline-block">
                             {job.applications || 0} applications
                           </div>
-                          <div className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${
-                            job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
+                          <div className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                            }`}>
                             {job.status}
                           </div>
                         </div>
@@ -879,19 +751,29 @@ const HRDashboard = () => {
                           <h4 className="font-medium text-gray-900">{application.candidateName}</h4>
                           <p className="text-sm text-gray-600 mt-1">Applied for: {application.jobTitle}</p>
                           <div className="flex items-center space-x-3 mt-2 text-sm text-gray-500">
-                            <span>{application.experience} experience</span>
+                            <span>{application.experience} years experience</span>
                             <span>•</span>
                             <span>Applied: {application.appliedDate}</span>
+                            {application.matchPercentage !== undefined && (
+                              <>
+                                <span>•</span>
+                                <span className={`flex items-center font-semibold ${application.matchPercentage >= 70 ? 'text-green-600' :
+                                  application.matchPercentage >= 40 ? 'text-yellow-600' : 'text-red-600'
+                                  }`}>
+                                  <Brain className="w-3 h-3 mr-1" />
+                                  AI Score: {application.matchPercentage}%
+                                </span>
+                              </>
+                            )}
                           </div>
                           <div className="mt-3">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              application.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
-                              application.status === 'interview' ? 'bg-blue-100 text-blue-700' :
-                              application.status === 'hired' ? 'bg-green-100 text-green-700' :
-                              application.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              {application.status}
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${application.status === 'shortlisted' ? 'bg-yellow-100 text-yellow-700' :
+                              application.status === 'interview-scheduled' ? 'bg-blue-100 text-blue-700' :
+                                application.status === 'hired' ? 'bg-green-100 text-green-700' :
+                                  application.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-700'
+                              }`}>
+                              {application.status === 'interview-scheduled' ? 'Interview' : application.status}
                             </span>
                           </div>
                         </div>
@@ -917,7 +799,7 @@ const HRDashboard = () => {
                             Reject
                           </button>
                           <a
-                            href={application.resumeUrl}
+                            href={`http://localhost:5000${application.resumeUrl}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 text-center"
@@ -929,6 +811,86 @@ const HRDashboard = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'attendance':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Leave Management</h2>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800">Pending Leave Requests</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50 text-gray-600 text-sm">
+                    <tr>
+                      <th className="py-3 px-4 font-semibold">Employee</th>
+                      <th className="py-3 px-4 font-semibold">Type</th>
+                      <th className="py-3 px-4 font-semibold">Dates</th>
+                      <th className="py-3 px-4 font-semibold">Reason</th>
+                      <th className="py-3 px-4 font-semibold">Status</th>
+                      <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {leaves.length > 0 ? (
+                      leaves.map((leave: any) => (
+                        <tr key={leave._id} className="hover:bg-gray-50">
+                          <td className="py-4 px-4">
+                            <div className="font-medium text-gray-900">{leave.user?.name || 'Unknown'}</div>
+                            <div className="text-xs text-gray-500">{leave.user?.email}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="font-medium text-gray-700">{leave.type}</span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="text-sm text-gray-900">{leave.startDate} to {leave.endDate}</div>
+                            <div className="text-xs text-gray-500">({leave.days} days)</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <p className="text-sm text-gray-600 max-w-xs">{leave.reason}</p>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                                leave.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                              }`}>
+                              {leave.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            {leave.status === 'Pending' && (
+                              <div className="flex items-center justify-end space-x-2">
+                                <button
+                                  onClick={() => handleUpdateLeaveStatus(leave._id, 'Approved')}
+                                  className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateLeaveStatus(leave._id, 'Rejected')}
+                                  className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-500">
+                          No leave requests found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -968,9 +930,9 @@ const HRDashboard = () => {
   ];
 
   return (
-    <DashboardLayout 
-      role="hr" 
-      userName={userData?.name || 'HR Manager'} 
+    <DashboardLayout
+      role="hr"
+      userName={userData?.name || 'HR Manager'}
       userEmail={userData?.email || ''}
     >
       <div className="flex">
@@ -980,7 +942,7 @@ const HRDashboard = () => {
             <h2 className="text-lg font-bold text-gray-900 mb-2">HR Management Portal</h2>
             <p className="text-sm text-gray-500">Employee Management System</p>
           </div>
-          
+
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -988,11 +950,10 @@ const HRDashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-                    activeSection === item.id 
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  } ${item.highlight ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : ''}`}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${activeSection === item.id
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    } ${item.highlight ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : ''}`}
                 >
                   <div className="flex items-center space-x-3">
                     <Icon className={`w-5 h-5 ${activeSection === item.id ? 'text-blue-600' : 'text-gray-500'}`} />
@@ -1004,9 +965,9 @@ const HRDashboard = () => {
                 </button>
               );
             })}
-            
+
             <div className="pt-4 mt-4 border-t">
-              <button 
+              <button
                 onClick={handleLogout}
                 className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
@@ -1015,7 +976,7 @@ const HRDashboard = () => {
               </button>
             </div>
           </nav>
-          
+
           <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
             <div className="flex items-center space-x-3 mb-2">
               <Zap className="w-5 h-5 text-blue-600" />
@@ -1050,7 +1011,7 @@ const HRDashboard = () => {
                 <ChevronRight className="w-4 h-4" />
                 <span className="capitalize">{activeSection.replace('-', ' ')}</span>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Bell className="w-5 h-5 text-gray-600" />
@@ -1075,14 +1036,14 @@ const HRDashboard = () => {
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Add New Employee</h3>
-              <button 
+              <button
                 onClick={() => setShowAddEmployee(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
-            
+
             <form onSubmit={handleAddEmployee}>
               <div className="space-y-4">
                 <div>
@@ -1092,10 +1053,10 @@ const HRDashboard = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.name}
-                    onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                   <input
@@ -1103,10 +1064,10 @@ const HRDashboard = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.email}
-                    onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <input
@@ -1114,10 +1075,10 @@ const HRDashboard = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.password}
-                    onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
@@ -1126,10 +1087,10 @@ const HRDashboard = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={newEmployee.department}
-                      onChange={(e) => setNewEmployee({...newEmployee, department: e.target.value})}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
                     <input
@@ -1137,52 +1098,52 @@ const HRDashboard = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={newEmployee.position}
-                      onChange={(e) => setNewEmployee({...newEmployee, position: e.target.value})}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                   <input
                     type="tel"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.phone}
-                    onChange={(e) => setNewEmployee({...newEmployee, phone: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.salary}
-                    onChange={(e) => setNewEmployee({...newEmployee, salary: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.project}
-                    onChange={(e) => setNewEmployee({...newEmployee, project: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, project: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
                   <input
                     type="date"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.joiningDate}
-                    onChange={(e) => setNewEmployee({...newEmployee, joiningDate: e.target.value})}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, joiningDate: e.target.value })}
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 mt-6">
                 <button
                   type="submit"
@@ -1209,14 +1170,14 @@ const HRDashboard = () => {
           <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Post New Job</h3>
-              <button 
+              <button
                 onClick={() => setShowPostJobModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
-            
+
             <form onSubmit={handlePostJob}>
               <div className="space-y-4">
                 <div>
@@ -1226,24 +1187,32 @@ const HRDashboard = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newJob.title}
-                    onChange={(e) => setNewJob({...newJob, title: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
                     placeholder="e.g., Senior Frontend Developer"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
-                    <input
-                      type="text"
+                    <select
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={newJob.department}
-                      onChange={(e) => setNewJob({...newJob, department: e.target.value})}
-                      placeholder="e.g., Engineering"
-                    />
+                      onChange={(e) => setNewJob({ ...newJob, department: e.target.value })}
+                    >
+                      <option value="">Select Department</option>
+                      <option value="Engineering">Engineering</option>
+                      <option value="Design">Design</option>
+                      <option value="Product">Product</option>
+                      <option value="Sales">Sales</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Human Resources">Human Resources</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Operations">Operations</option>
+                    </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
                     <input
@@ -1251,65 +1220,63 @@ const HRDashboard = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={newJob.location}
-                      onChange={(e) => setNewJob({...newJob, location: e.target.value})}
+                      onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
                       placeholder="e.g., San Francisco, CA"
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={newJob.type}
-                      onChange={(e) => setNewJob({...newJob, type: e.target.value})}
+                      onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}
                     >
-                      <option value="Full-time">Full-time</option>
-                      <option value="Part-time">Part-time</option>
-                      <option value="Contract">Contract</option>
-                      <option value="Internship">Internship</option>
-                      <option value="Remote">Remote</option>
+                      <option value="full-time">Full-time</option>
+                      <option value="part-time">Part-time</option>
+                      <option value="contract">Contract</option>
+                      <option value="internship">Internship</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={newJob.experience}
-                      onChange={(e) => setNewJob({...newJob, experience: e.target.value})}
+                      onChange={(e) => setNewJob({ ...newJob, experience: e.target.value })}
                     >
-                      <option value="Entry-level">Entry-level</option>
-                      <option value="Mid-level">Mid-level</option>
-                      <option value="Senior">Senior</option>
-                      <option value="Lead">Lead</option>
-                      <option value="Executive">Executive</option>
+                      <option value="entry">Entry-level</option>
+                      <option value="mid">Mid-level</option>
+                      <option value="senior">Senior</option>
+                      <option value="lead">Lead</option>
                     </select>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newJob.salary}
-                    onChange={(e) => setNewJob({...newJob, salary: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
                     placeholder="e.g., $120,000 - $150,000"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
                   <input
                     type="date"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newJob.deadline}
-                    onChange={(e) => setNewJob({...newJob, deadline: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, deadline: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Job Description *</label>
                   <textarea
@@ -1317,11 +1284,11 @@ const HRDashboard = () => {
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newJob.description}
-                    onChange={(e) => setNewJob({...newJob, description: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
                     placeholder="Describe the role, responsibilities, and what you're looking for..."
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Requirements *</label>
                   <textarea
@@ -1329,12 +1296,12 @@ const HRDashboard = () => {
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newJob.requirements}
-                    onChange={(e) => setNewJob({...newJob, requirements: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, requirements: e.target.value })}
                     placeholder="List the required skills, qualifications, and experience..."
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 mt-6">
                 <button
                   type="submit"
@@ -1361,7 +1328,7 @@ const HRDashboard = () => {
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Schedule Interview</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowScheduleInterviewModal(false);
                   setSelectedApplication(null);
@@ -1371,12 +1338,12 @@ const HRDashboard = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="mb-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
               <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
             </div>
-            
+
             <form onSubmit={handleScheduleInterview}>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -1387,10 +1354,10 @@ const HRDashboard = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={interviewData.date}
-                      onChange={(e) => setInterviewData({...interviewData, date: e.target.value})}
+                      onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
                     <input
@@ -1398,22 +1365,22 @@ const HRDashboard = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={interviewData.time}
-                      onChange={(e) => setInterviewData({...interviewData, time: e.target.value})}
+                      onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
                   <input
                     type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={interviewData.duration}
-                    onChange={(e) => setInterviewData({...interviewData, duration: e.target.value})}
+                    onChange={(e) => setInterviewData({ ...interviewData, duration: e.target.value })}
                     placeholder="60"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Interviewer Name *</label>
                   <input
@@ -1421,24 +1388,24 @@ const HRDashboard = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={interviewData.interviewer}
-                    onChange={(e) => setInterviewData({...interviewData, interviewer: e.target.value})}
+                    onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
                     placeholder="e.g., Sarah Johnson"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Interview Mode</label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={interviewData.mode}
-                    onChange={(e) => setInterviewData({...interviewData, mode: e.target.value})}
+                    onChange={(e) => setInterviewData({ ...interviewData, mode: e.target.value })}
                   >
                     <option value="virtual">Virtual/Online</option>
                     <option value="in-person">In-person</option>
                     <option value="phone">Phone</option>
                   </select>
                 </div>
-                
+
                 {interviewData.mode === 'virtual' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
@@ -1446,24 +1413,24 @@ const HRDashboard = () => {
                       type="url"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={interviewData.meetingLink}
-                      onChange={(e) => setInterviewData({...interviewData, meetingLink: e.target.value})}
+                      onChange={(e) => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
                       placeholder="https://meet.google.com/abc-defg-hij"
                     />
                   </div>
                 )}
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                   <textarea
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={interviewData.notes}
-                    onChange={(e) => setInterviewData({...interviewData, notes: e.target.value})}
+                    onChange={(e) => setInterviewData({ ...interviewData, notes: e.target.value })}
                     placeholder="Any special instructions or topics to cover..."
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 mt-6">
                 <button
                   type="submit"
@@ -1493,7 +1460,7 @@ const HRDashboard = () => {
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Reject Application</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowRejectModal(false);
                   setSelectedApplication(null);
@@ -1503,12 +1470,12 @@ const HRDashboard = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="mb-4 p-3 bg-red-50 rounded-lg">
               <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
               <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
             </div>
-            
+
             <form onSubmit={handleRejectApplication}>
               <div className="space-y-4">
                 <div>
@@ -1523,7 +1490,7 @@ const HRDashboard = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 mt-6">
                 <button
                   type="submit"

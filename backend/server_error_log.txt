@@ -1,0 +1,12 @@
+Error: Invalid file type. Only PDF and DOC/DOCX are allowed.
+Stack: Error: Invalid file type. Only PDF and DOC/DOCX are allowed.
+    at fileFilter (E:\NOVA_FINAL\backend\src\routes\applicationRoutes.js:33:8)
+    at wrappedFileFilter (E:\NOVA_FINAL\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (E:\NOVA_FINAL\backend\node_modules\multer\lib\make-middleware.js:132:7)
+    at Multipart.emit (node:events:518:28)
+    at HeaderParser.cb (E:\NOVA_FINAL\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (E:\NOVA_FINAL\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (E:\NOVA_FINAL\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (E:\NOVA_FINAL\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (E:\NOVA_FINAL\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (E:\NOVA_FINAL\backend\node_modules\busboy\lib\types\multipart.js:567:19)

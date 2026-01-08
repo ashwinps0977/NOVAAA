@@ -1,14 +1,15 @@
 const User = require('../models/User');
+const Employee = require('../models/Employee');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 // Generate JWT Token
 const generateToken = (user) => {
   return jwt.sign(
-    { 
-      id: user._id, 
-      email: user.email, 
-      role: user.role 
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role
     },
     process.env.JWT_SECRET,
     { expiresIn: '24h' } // Fixed time
@@ -19,7 +20,7 @@ const generateToken = (user) => {
 exports.register = async (req, res) => {
   console.log('🎯 REGISTER REQUEST RECEIVED');
   console.log('📦 Data:', req.body);
-  
+
   try {
     const { name, email, password, role = 'employee' } = req.body;
 
@@ -72,6 +73,27 @@ exports.register = async (req, res) => {
       role: user.role
     });
 
+    // If role is employee, also create an Employee record
+    if (role === 'employee') {
+      try {
+        const employee = new Employee({
+          name,
+          email,
+          password: hashedPassword, // Reuse hash
+          role,
+          department: req.body.department || 'Unassigned',
+          position: req.body.position || 'New Hire',
+          status: 'active',
+          joiningDate: new Date()
+        });
+        await employee.save();
+        console.log('✅ EMPLOYEE RECORD CREATED');
+      } catch (empError) {
+        console.error('⚠️ Failed to create employee record:', empError.message);
+        // We don't fail the whole registration, but log it
+      }
+    }
+
     // Generate token
     const token = generateToken(user);
 
@@ -92,7 +114,7 @@ exports.register = async (req, res) => {
 
   } catch (error) {
     console.error('❌ REGISTRATION ERROR DETAILS:', error);
-    
+
     // Specific error messages
     let errorMessage = 'Registration failed';
     if (error.code === 11000) {
@@ -100,7 +122,7 @@ exports.register = async (req, res) => {
     } else if (error.name === 'ValidationError') {
       errorMessage = Object.values(error.errors).map(err => err.message).join(', ');
     }
-    
+
     res.status(500).json({
       success: false,
       message: errorMessage,
@@ -116,7 +138,7 @@ exports.login = async (req, res) => {
 
     // Find user
     const user = await User.findOne({ email });
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -136,6 +158,14 @@ exports.login = async (req, res) => {
     // Update last login
     user.lastLogin = new Date();
     await user.save();
+
+    // Auto-mark attendance
+    try {
+      const attendanceController = require('./attendanceController');
+      await attendanceController.markCheckIn(user._id);
+    } catch (attError) {
+      console.error('Auto-attendance failed:', attError);
+    }
 
     // Generate token
     const token = generateToken(user);
@@ -167,14 +197,14 @@ exports.login = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     res.json({
       success: true,
       user
@@ -193,14 +223,14 @@ exports.getCurrentUser = async (req, res) => {
   try {
     // req.user is set by auth middleware
     const user = await User.findById(req.user.id).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     res.json({
       success: true,
       user
@@ -218,24 +248,24 @@ exports.getCurrentUser = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const { name, phone, department, position } = req.body;
-    
+
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     // Update fields if provided
     if (name) user.name = name;
     if (phone) user.phone = phone;
     if (department) user.department = department;
     if (position) user.position = position;
-    
+
     await user.save();
-    
+
     res.json({
       success: true,
       message: 'Profile updated successfully',
@@ -249,7 +279,7 @@ exports.updateUserProfile = async (req, res) => {
         position: user.position
       }
     });
-    
+
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({
@@ -263,16 +293,16 @@ exports.updateUserProfile = async (req, res) => {
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     // Verify current password
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
@@ -281,18 +311,18 @@ exports.changePassword = async (req, res) => {
         message: 'Current password is incorrect'
       });
     }
-    
+
     // Hash new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
-    
+
     await user.save();
-    
+
     res.json({
       success: true,
       message: 'Password changed successfully'
     });
-    
+
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({

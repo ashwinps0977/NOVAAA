@@ -4,16 +4,16 @@ const bcrypt = require('bcryptjs');
 
 exports.addEmployee = async (req, res) => {
   try {
-    const { 
-      name, email, password, role = 'employee', 
-      department, position, phone, salary, 
-      joiningDate, project 
+    const {
+      name, email, password, role = 'employee',
+      department, position, phone, salary,
+      joiningDate, project
     } = req.body;
 
     // Check if employee already exists
     const existingEmployee = await Employee.findOne({ email });
     const existingUser = await User.findOne({ email });
-    
+
     if (existingEmployee || existingUser) {
       return res.status(400).json({
         success: false,
@@ -71,13 +71,58 @@ exports.addEmployee = async (req, res) => {
   }
 };
 
+const Attendance = require('../models/Attendance'); // Import Attendance
+
 exports.getAllEmployees = async (req, res) => {
   try {
     const employees = await Employee.find().select('-password');
-    
+
+    // Get today's attendance for everyone
+    const today = new Date().toISOString().split('T')[0];
+    // Find attendance where user ID matches employee's email (Need to link Employee to User/Attendance)
+    // Wait, Attendance links to User._id. Employee also links to User via email (implicit).
+    // Better: Fetch all users first to map Email -> User._id? 
+    // Actually, User and Employee share the same Email.
+    // Let's get all Users to map email -> _id
+    const users = await User.find({ email: { $in: employees.map(e => e.email) } });
+    const userMap = {}; // email -> user_id
+    users.forEach(u => userMap[u.email] = u._id);
+
+    const attendanceRecords = await Attendance.find({
+      date: today,
+      user: { $in: users.map(u => u._id) }
+    });
+
+    const attendanceMap = {}; // user_id -> record
+    attendanceRecords.forEach(a => attendanceMap[a.user.toString()] = a);
+
+    const employeesWithAttendance = employees.map(emp => {
+      const userId = userMap[emp.email];
+      const record = userId ? attendanceMap[userId.toString()] : null;
+
+      let status = 'Absent';
+      let lastActive = 'N/A';
+
+      if (record) {
+        status = record.checkOut ? 'Checked Out' : 'Present';
+        // Format time 
+        if (record.checkOut) {
+          lastActive = new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (record.checkIn) {
+          lastActive = new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+
+      return {
+        ...emp.toObject(),
+        attendanceStatus: status,
+        lastActive
+      };
+    });
+
     res.json({
       success: true,
-      employees,
+      employees: employeesWithAttendance,
       count: employees.length
     });
   } catch (error) {
@@ -92,14 +137,14 @@ exports.getAllEmployees = async (req, res) => {
 exports.getEmployeeById = async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id).select('-password');
-    
+
     if (!employee) {
       return res.status(404).json({
         success: false,
         message: 'Employee not found'
       });
     }
-    
+
     res.json({
       success: true,
       employee
@@ -115,13 +160,13 @@ exports.getEmployeeById = async (req, res) => {
 
 exports.updateEmployee = async (req, res) => {
   try {
-    const { 
-      name, department, position, phone, 
-      salary, project, status 
+    const {
+      name, department, position, phone,
+      salary, project, status
     } = req.body;
 
     const employee = await Employee.findById(req.params.id);
-    
+
     if (!employee) {
       return res.status(404).json({
         success: false,
@@ -168,7 +213,7 @@ exports.updateEmployee = async (req, res) => {
 exports.deleteEmployee = async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id);
-    
+
     if (!employee) {
       return res.status(404).json({
         success: false,

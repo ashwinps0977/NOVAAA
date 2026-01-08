@@ -1,11 +1,15 @@
 const JobApplication = require('../models/JobApplication');
 const Job = require('../models/job');
 
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
+
 // Submit job application
 exports.submitApplication = async (req, res) => {
   try {
     const { jobId, ...applicationData } = req.body;
-    
+
     // Check if job exists
     const job = await Job.findById(jobId);
     if (!job || job.status !== 'active') {
@@ -22,110 +26,148 @@ exports.submitApplication = async (req, res) => {
     });
 
     if (existingApplication) {
+      // If file was uploaded, delete it since we're rejecting the application
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({
         success: false,
         message: 'You have already applied for this job'
       });
     }
 
-    // Parse resume and extract skills (mock implementation)
-    const parsedSkills = parseResumeForSkills(applicationData.resumeUrl, job.skills);
-    
-    // Calculate match percentage
-    const matchPercentage = calculateMatchPercentage(
-      parsedSkills,
-      applicationData.skills || [],
-      job.skills
-    );
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Resume file is required'
+      });
+    }
 
-    // Get matched skills
-    const matchedSkills = getMatchedSkills(
-      [...parsedSkills, ...(applicationData.skills || [])],
-      job.skills
-    );
+    // Prepare data for Python script
+    const jobData = {
+      required_skills: job.skills || [],
+      job_requirements: (job.requirements || []).join(' '),
+      experience_needed: job.minExperience || 0
+    };
 
+    // Call Python script for parsing
+    const pythonScriptPath = path.join(__dirname, '../../ai_resume_parser.py');
+    const resumePath = req.file.path;
+
+    // Promise wrapper for python script execution
+    const parseResume = () => {
+      return new Promise((resolve, reject) => {
+        const pythonProcess = spawn('python', [
+          pythonScriptPath,
+          resumePath,
+          JSON.stringify(jobData)
+        ]);
+
+        let dataString = '';
+        let errorString = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+          dataString += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+          errorString += data.toString();
+        });
+
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            console.error(`Python script exited with code ${code}`);
+            console.error(`Error output: ${errorString}`);
+            // Fallback to basic parsing if Python script fails
+            resolve({
+              success: false,
+              skills: [],
+              overall_score: 0,
+              skill_match_ratio: 0,
+              matched_skills_count: 0
+            });
+          } else {
+            try {
+              const result = JSON.parse(dataString);
+              resolve(result);
+            } catch (err) {
+              console.error('Error parsing Python output:', err);
+              resolve({
+                success: false,
+                skills: [],
+                overall_score: 0
+              });
+            }
+          }
+        });
+      });
+    };
+
+    console.log('Starting AI resume parsing...');
+    const aiResult = await parseResume();
+    console.log('AI Parsing result:', aiResult);
+
+    // Prepare application object
     const application = new JobApplication({
       job: jobId,
       candidate: req.user?.id,
       ...applicationData,
-      parsedSkills,
-      matchPercentage,
-      matchedSkills,
+      skills: applicationData.skills ? JSON.parse(applicationData.skills) : [],
+      resumeUrl: `/uploads/resumes/${req.file.filename}`,
+      resumeFileName: req.file.originalname,
+      // AI Results
+      parsedSkills: aiResult.skills || [],
+      matchPercentage: aiResult.overall_score || 0,
+      matchedSkills: aiResult.skills ? aiResult.skills.filter(skill =>
+        job.skills.some(jobSkill =>
+          jobSkill.toLowerCase().includes(skill.toLowerCase()) ||
+          skill.toLowerCase().includes(jobSkill.toLowerCase())
+        )
+      ) : [],
       status: 'pending'
     });
 
     await application.save();
 
     // Update job applicants count
-    job.applicants += 1;
-    await job.save();
+    await Job.findByIdAndUpdate(jobId, { $inc: { applicants: 1 } });
 
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully',
-      application
+      application,
+      aiAnalysis: {
+        score: aiResult.overall_score,
+        matchedSkills: aiResult.matched_skills_count
+      }
     });
   } catch (error) {
     console.error('Submit application error:', error);
+    fs.writeFileSync('error_log.txt', `Error: ${error.message}\nStack: ${error.stack}\n`);
+
+    // If file was uploaded but error occurred, try to delete it
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (e) { }
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Failed to submit application'
+      message: 'Failed to submit application: ' + error.message
     });
   }
-};
-
-// Mock resume parsing function
-const parseResumeForSkills = (resumeUrl, jobSkills) => {
-  // In production, use a resume parsing service like:
-  // - Affinda API
-  // - Sovren
-  // - ParseHub
-  // - Custom NLP solution
-  
-  // For demo, return some mock skills
-  const commonSkills = ['Communication', 'Problem Solving', 'Teamwork'];
-  
-  // Match with job skills (mock implementation)
-  const matchedSkills = jobSkills.slice(0, Math.min(3, jobSkills.length));
-  
-  return [...matchedSkills, ...commonSkills];
-};
-
-// Calculate match percentage
-const calculateMatchPercentage = (parsedSkills, manualSkills, jobSkills) => {
-  if (!jobSkills || jobSkills.length === 0) return 100;
-  
-  const allCandidateSkills = [...new Set([...parsedSkills, ...manualSkills])];
-  
-  const matchedSkills = allCandidateSkills.filter(skill => 
-    jobSkills.some(jobSkill => 
-      jobSkill.toLowerCase().includes(skill.toLowerCase()) ||
-      skill.toLowerCase().includes(jobSkill.toLowerCase())
-    )
-  );
-  
-  return Math.round((matchedSkills.length / jobSkills.length) * 100);
-};
-
-// Get matched skills
-const getMatchedSkills = (candidateSkills, jobSkills) => {
-  return candidateSkills.filter(skill => 
-    jobSkills.some(jobSkill => 
-      jobSkill.toLowerCase().includes(skill.toLowerCase()) ||
-      skill.toLowerCase().includes(jobSkill.toLowerCase())
-    )
-  );
 };
 
 // Get applications for HR
 exports.getApplications = async (req, res) => {
   try {
     const { status, jobId } = req.query;
-    
+
     const filter = {};
     if (status) filter.status = status;
     if (jobId) filter.job = jobId;
-    
+
     const applications = await JobApplication.find(filter)
       .populate('job', 'title department')
       .populate('candidate', 'name email')
@@ -176,7 +218,7 @@ exports.getApplicationById = async (req, res) => {
 exports.updateApplicationStatus = async (req, res) => {
   try {
     const { status, notes } = req.body;
-    
+
     const application = await JobApplication.findByIdAndUpdate(
       req.params.id,
       {
@@ -212,25 +254,36 @@ exports.updateApplicationStatus = async (req, res) => {
   }
 };
 
+const sendEmail = require('../utils/mailer');
+
+// ... (imports remain at top of file, so this is just for context)
+
 // Schedule interview
 exports.scheduleInterview = async (req, res) => {
   try {
-    const { interviewDate, notes } = req.body;
-    
+    const { interviewDate, time, mode, meetingLink, notes } = req.body;
+
+    const updateData = {
+      status: 'interview-scheduled',
+      interviewScheduled: interviewDate
+    };
+
+    if (notes) {
+      updateData.$push = {
+        notes: {
+          text: notes,
+          addedBy: req.user.id
+        }
+      };
+    }
+
     const application = await JobApplication.findByIdAndUpdate(
       req.params.id,
-      {
-        status: 'interview-scheduled',
-        interviewScheduled: interviewDate,
-        $push: notes ? {
-          notes: {
-            text: notes,
-            addedBy: req.user.id
-          }
-        } : undefined
-      },
+      updateData,
       { new: true }
-    ).populate('candidate', 'name email');
+    )
+      .populate('candidate', 'name email')
+      .populate('job', 'title');
 
     if (!application) {
       return res.status(404).json({
@@ -239,7 +292,25 @@ exports.scheduleInterview = async (req, res) => {
       });
     }
 
-    // TODO: Send interview email to candidate
+    // Send interview email to candidate
+    if (application.candidate && application.candidate.email) {
+      const interviewDateTime = new Date(interviewDate).toLocaleDateString();
+      const emailSubject = `Interview Scheduled for ${application.job ? application.job.title : 'Position'}`;
+      const emailContent = `
+            <h3>Dear ${application.candidate.name},</h3>
+            <p>We are pleased to inform you that your application for <strong>${application.job ? application.job.title : 'the position'}</strong> has been shortlisted.</p>
+            <p>We would like to invite you for an interview.</p>
+            <p><strong>Date:</strong> ${interviewDateTime}</p>
+            <p><strong>Time:</strong> ${time || 'To be confirmed'}</p>
+            <p><strong>Mode:</strong> ${mode || 'Virtual'}</p>
+            ${meetingLink ? `<p><strong>Meeting Link:</strong> <a href="${meetingLink}">${meetingLink}</a></p>` : ''}
+            ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+            <br>
+            <p>Please reply to this email to confirm your availability.</p>
+            <p>Best regards,<br>The HR Team</p>
+        `;
+      await sendEmail(application.candidate.email, emailSubject, emailContent);
+    }
 
     res.json({
       success: true,
@@ -260,20 +331,27 @@ exports.scheduleInterview = async (req, res) => {
 exports.rejectApplication = async (req, res) => {
   try {
     const { reason } = req.body;
-    
+
+    const updateData = {
+      status: 'rejected'
+    };
+
+    if (reason) {
+      updateData.$push = {
+        notes: {
+          text: reason,
+          addedBy: req.user.id
+        }
+      };
+    }
+
     const application = await JobApplication.findByIdAndUpdate(
       req.params.id,
-      {
-        status: 'rejected',
-        $push: {
-          notes: {
-            text: reason,
-            addedBy: req.user.id
-          }
-        }
-      },
+      updateData,
       { new: true }
-    ).populate('candidate', 'name email');
+    )
+      .populate('candidate', 'name email')
+      .populate('job', 'title');
 
     if (!application) {
       return res.status(404).json({
@@ -282,7 +360,21 @@ exports.rejectApplication = async (req, res) => {
       });
     }
 
-    // TODO: Send rejection email to candidate
+    // Send rejection email to candidate
+    if (application.candidate && application.candidate.email) {
+      const emailSubject = `Update on your application for ${application.job ? application.job.title : 'Position'}`;
+      const emailContent = `
+            <h3>Dear ${application.candidate.name},</h3>
+            <p>Thank you for giving us the opportunity to consider your application for the <strong>${application.job ? application.job.title : 'position'}</strong>.</p>
+            <p>After careful consideration, we regret to inform you that we have decided not to pursue your application at this time.</p>
+            ${reason ? `<p><strong>Feedback:</strong> ${reason}</p>` : ''}
+            <p>We will keep your resume on file for future openings that may be a better fit.</p>
+            <p>We wish you all the best in your job search.</p>
+            <br>
+            <p>Best regards,<br>The HR Team</p>
+        `;
+      await sendEmail(application.candidate.email, emailSubject, emailContent);
+    }
 
     res.json({
       success: true,

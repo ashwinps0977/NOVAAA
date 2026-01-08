@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import Navbar from "../components/Navbar";
-import { 
-  Search, 
-  Filter, 
-  MapPin, 
-  Clock, 
-  Briefcase, 
-  DollarSign, 
+import {
+  Search,
+  Filter,
+  MapPin,
+  Clock,
+  Briefcase,
+  DollarSign,
   ChevronRight,
   Upload,
   CheckCircle,
@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 
 interface Job {
-  id: number;
+  id: number | string;
+  _id?: string;
   title: string;
   department: string;
   location: string;
@@ -64,7 +65,7 @@ const Jobs = () => {
     skills: [] as string[],
     skillInput: '',
     resume: null as File | null,
-    jobId: 0
+    jobId: 0 as number | string
   });
 
   const [loading, setLoading] = useState(true);
@@ -93,7 +94,7 @@ const Jobs = () => {
         setLoading(false);
       }
     };
-    
+
     const fallbackToLocalStorage = () => {
       const savedJobs = localStorage.getItem('postedJobs');
       if (savedJobs) {
@@ -102,26 +103,26 @@ const Jobs = () => {
         setFilteredJobs(parsedJobs);
       }
     };
-    
+
     fetchJobs();
   }, []);
 
   useEffect(() => {
     // Filter jobs based on search term and filters
     let filtered = jobs.filter(job => {
-      const matchesSearch = 
+      const matchesSearch =
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+
       const matchesDepartment = !filters.department || job.department === filters.department;
       const matchesJobType = !filters.jobType || job.jobType === filters.jobType;
       const matchesExperience = !filters.experienceLevel || job.experienceLevel === filters.experienceLevel;
       const matchesLocation = !filters.location || job.location.toLowerCase().includes(filters.location.toLowerCase());
-      
+
       return matchesSearch && matchesDepartment && matchesJobType && matchesExperience && matchesLocation;
     });
-    
+
     setFilteredJobs(filtered);
   }, [jobs, searchTerm, filters]);
 
@@ -129,7 +130,7 @@ const Jobs = () => {
     setSelectedJob(job);
     setApplicationData({
       ...applicationData,
-      jobId: job.id
+      jobId: (job.id || job._id || '') as any
     });
     setShowApplicationForm(true);
   };
@@ -162,20 +163,22 @@ const Jobs = () => {
 
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSubmitting(true);
       const token = localStorage.getItem('token');
-      
+
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('jobId', applicationData.jobId.toString());
+      // Safe string conversion
+      const jobId = applicationData.jobId || '';
+      formData.append('jobId', String(jobId));
       formData.append('fullName', applicationData.fullName);
       formData.append('email', applicationData.email);
       formData.append('phone', applicationData.phone);
       formData.append('currentCompany', applicationData.currentCompany);
       formData.append('currentRole', applicationData.currentRole);
-      formData.append('experience', applicationData.experience.toString());
+      formData.append('experience', String(applicationData.experience || 0));
       formData.append('coverLetter', applicationData.coverLetter);
       formData.append('skills', JSON.stringify(applicationData.skills));
       if (applicationData.resume) {
@@ -192,22 +195,22 @@ const Jobs = () => {
 
       if (response.ok) {
         await response.json();
-        
+
         // Update job applicants count in local state
-        const updatedJobs = jobs.map(job => 
-          job.id === applicationData.jobId 
+        const updatedJobs = jobs.map(job =>
+          job.id === applicationData.jobId
             ? { ...job, applicants: job.applicants + 1 }
             : job
         );
-        
+
         setJobs(updatedJobs);
         setFilteredJobs(updatedJobs);
-        
+
         // Also update localStorage as fallback
         localStorage.setItem('postedJobs', JSON.stringify(updatedJobs));
-        
+
         alert('Application submitted successfully!');
-        
+
         // Reset form
         setShowApplicationForm(false);
         setSelectedJob(null);
@@ -225,12 +228,19 @@ const Jobs = () => {
           jobId: 0
         });
       } else {
-        const errorData = await response.json();
-        alert(`Failed to submit application: ${errorData.message || 'Unknown error'}`);
+        const errorText = await response.text();
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch (e) {
+          errorMessage = errorText || `HTTP Error ${response.status}`;
+        }
+        alert(`Failed to submit application: ${errorMessage} (Status: ${response.status})`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting application:', error);
-      alert('Failed to submit application. Please try again.');
+      alert(`Failed to submit application. Network or Client Error: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -239,7 +249,7 @@ const Jobs = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       {/* Job Application Form Modal */}
       {showApplicationForm && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -249,7 +259,7 @@ const Jobs = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Apply for {selectedJob.title}</h2>
                 <p className="text-gray-600">{selectedJob.department} • {selectedJob.location}</p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowApplicationForm(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg"
                 disabled={submitting}
@@ -257,7 +267,7 @@ const Jobs = () => {
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmitApplication} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -269,11 +279,11 @@ const Jobs = () => {
                     required
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.fullName}
-                    onChange={(e) => setApplicationData({...applicationData, fullName: e.target.value})}
+                    onChange={(e) => setApplicationData({ ...applicationData, fullName: e.target.value })}
                     disabled={submitting}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email *
@@ -283,11 +293,11 @@ const Jobs = () => {
                     required
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.email}
-                    onChange={(e) => setApplicationData({...applicationData, email: e.target.value})}
+                    onChange={(e) => setApplicationData({ ...applicationData, email: e.target.value })}
                     disabled={submitting}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number *
@@ -297,11 +307,11 @@ const Jobs = () => {
                     required
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.phone}
-                    onChange={(e) => setApplicationData({...applicationData, phone: e.target.value})}
+                    onChange={(e) => setApplicationData({ ...applicationData, phone: e.target.value })}
                     disabled={submitting}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Years of Experience *
@@ -312,12 +322,12 @@ const Jobs = () => {
                     min="0"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.experience}
-                    onChange={(e) => setApplicationData({...applicationData, experience: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setApplicationData({ ...applicationData, experience: parseInt(e.target.value) || 0 })}
                     disabled={submitting}
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -327,11 +337,11 @@ const Jobs = () => {
                     type="text"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.currentCompany}
-                    onChange={(e) => setApplicationData({...applicationData, currentCompany: e.target.value})}
+                    onChange={(e) => setApplicationData({ ...applicationData, currentCompany: e.target.value })}
                     disabled={submitting}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Current Role
@@ -340,12 +350,12 @@ const Jobs = () => {
                     type="text"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.currentRole}
-                    onChange={(e) => setApplicationData({...applicationData, currentRole: e.target.value})}
+                    onChange={(e) => setApplicationData({ ...applicationData, currentRole: e.target.value })}
                     disabled={submitting}
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Skills *
@@ -355,7 +365,7 @@ const Jobs = () => {
                     type="text"
                     className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     value={applicationData.skillInput}
-                    onChange={(e) => setApplicationData({...applicationData, skillInput: e.target.value})}
+                    onChange={(e) => setApplicationData({ ...applicationData, skillInput: e.target.value })}
                     placeholder="Add your skills"
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
                     disabled={submitting}
@@ -385,7 +395,7 @@ const Jobs = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cover Letter
@@ -394,12 +404,12 @@ const Jobs = () => {
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                   value={applicationData.coverLetter}
-                  onChange={(e) => setApplicationData({...applicationData, coverLetter: e.target.value})}
+                  onChange={(e) => setApplicationData({ ...applicationData, coverLetter: e.target.value })}
                   placeholder="Tell us why you're a good fit for this role..."
                   disabled={submitting}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Upload Resume (PDF/DOC) *
@@ -407,7 +417,7 @@ const Jobs = () => {
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 mb-2">
-                    {applicationData.resume 
+                    {applicationData.resume
                       ? `Selected: ${applicationData.resume.name}`
                       : 'Drag & drop your resume or click to browse'
                     }
@@ -423,18 +433,17 @@ const Jobs = () => {
                   />
                   <label
                     htmlFor="resume-upload"
-                    className={`inline-block px-4 py-2 rounded-lg cursor-pointer ${
-                      submitting 
-                        ? 'bg-gray-300 text-gray-500' 
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    }`}
+                    className={`inline-block px-4 py-2 rounded-lg cursor-pointer ${submitting
+                      ? 'bg-gray-300 text-gray-500'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}
                   >
                     Choose File
                   </label>
                   <p className="text-xs text-gray-500 mt-2">Max file size: 5MB</p>
                 </div>
               </div>
-              
+
               <div className="sticky bottom-0 bg-white border-t pt-6 flex justify-end space-x-4">
                 <button
                   type="button"
@@ -466,7 +475,7 @@ const Jobs = () => {
           </div>
         </div>
       )}
-      
+
       {/* Main Jobs Page */}
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
@@ -476,7 +485,7 @@ const Jobs = () => {
             Join our team and help shape the future. Browse open positions and apply today.
           </p>
         </div>
-        
+
         {/* Search and Filters */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -490,13 +499,13 @@ const Jobs = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Filter className="w-5 h-5 text-gray-500" />
               <select
                 className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
                 value={filters.department}
-                onChange={(e) => setFilters({...filters, department: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, department: e.target.value })}
               >
                 <option value="">All Departments</option>
                 <option value="Engineering">Engineering</option>
@@ -506,11 +515,11 @@ const Jobs = () => {
                 <option value="Marketing">Marketing</option>
                 <option value="Human Resources">Human Resources</option>
               </select>
-              
+
               <select
                 className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
                 value={filters.jobType}
-                onChange={(e) => setFilters({...filters, jobType: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, jobType: e.target.value })}
               >
                 <option value="">All Types</option>
                 <option value="full-time">Full Time</option>
@@ -520,12 +529,12 @@ const Jobs = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="text-sm text-gray-600">
             {loading ? 'Loading jobs...' : `Showing ${filteredJobs.length} of ${jobs.length} open positions`}
           </div>
         </div>
-        
+
         {/* Loading State */}
         {loading ? (
           <div className="flex justify-center items-center py-20">
@@ -545,15 +554,14 @@ const Jobs = () => {
                           <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                             {job.department}
                           </span>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                            }`}>
                             {job.status === 'active' ? 'Active' : 'Closed'}
                           </span>
                         </div>
-                        
+
                         <h3 className="text-xl font-bold text-gray-900 mb-2">{job.title}</h3>
-                        
+
                         <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
                           <div className="flex items-center space-x-1">
                             <MapPin className="w-4 h-4" />
@@ -572,9 +580,9 @@ const Jobs = () => {
                             <span>{job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()} {job.salaryRange.currency}</span>
                           </div>
                         </div>
-                        
+
                         <p className="text-gray-600 mb-4 line-clamp-2">{job.description}</p>
-                        
+
                         <div className="mb-4">
                           <p className="text-sm font-medium text-gray-700 mb-2">Required Skills:</p>
                           <div className="flex flex-wrap gap-2">
@@ -591,32 +599,31 @@ const Jobs = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col items-end space-y-3">
                         <div className="text-right">
                           <div className="text-sm text-gray-500">Posted</div>
                           <div className="font-medium">{new Date(job.postedDate).toLocaleDateString()}</div>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="text-sm text-gray-500">Applicants</div>
                           <div className="font-medium">{job.applicants}</div>
                         </div>
-                        
+
                         <button
                           onClick={() => handleApply(job)}
                           disabled={job.status !== 'active'}
-                          className={`px-6 py-2 rounded-lg font-medium ${
-                            job.status === 'active'
-                              ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          }`}
+                          className={`px-6 py-2 rounded-lg font-medium ${job.status === 'active'
+                            ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
                         >
                           {job.status === 'active' ? 'Apply Now' : 'Closed'}
                         </button>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-4 pt-4 border-t">
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
                         <Clock className="w-4 h-4" />
@@ -640,7 +647,7 @@ const Jobs = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Job Details Sidebar */}
             {selectedJob && (
               <div className="lg:col-span-1">
@@ -656,13 +663,13 @@ const Jobs = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-6">
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Job Description</h4>
                       <p className="text-gray-600">{selectedJob.description}</p>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Requirements</h4>
                       <ul className="space-y-2">
@@ -674,7 +681,7 @@ const Jobs = () => {
                         ))}
                       </ul>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Responsibilities</h4>
                       <ul className="space-y-2">
@@ -686,7 +693,7 @@ const Jobs = () => {
                         ))}
                       </ul>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Skills Required</h4>
                       <div className="flex flex-wrap gap-2">
@@ -697,7 +704,7 @@ const Jobs = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Benefits</h4>
                       <ul className="space-y-2">
@@ -709,7 +716,7 @@ const Jobs = () => {
                         ))}
                       </ul>
                     </div>
-                    
+
                     <div className="pt-6 border-t">
                       <button
                         onClick={() => handleApply(selectedJob)}
