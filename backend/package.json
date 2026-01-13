@@ -9,6 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -20,6 +21,7 @@
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
+    "node-nlp": "^5.0.0-alpha.5",
     "nodemailer": "^7.0.12"
   },
   "devDependencies": {

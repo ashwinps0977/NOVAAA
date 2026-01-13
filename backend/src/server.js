@@ -100,6 +100,14 @@ app.use('/api/attendance', checkDB, attendanceRoutes);
 const leaveRoutes = require('./routes/leaveRoutes');
 app.use('/api/leave', checkDB, leaveRoutes);
 
+// Project routes
+const projectRoutes = require('./routes/projectRoutes');
+app.use('/api/projects', checkDB, projectRoutes);
+
+// AI routes
+const aiRoutes = require('./routes/aiRoutes');
+app.use('/api/ai', checkDB, aiRoutes);
+
 // Temporary test endpoints (only used when DB is not connected)
 const tempUsers = [];
 const tempApplications = [];

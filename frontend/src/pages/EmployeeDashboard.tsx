@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   CheckCircle,
   Clock,
@@ -43,10 +43,73 @@ const EmployeeDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
   const [activeSection, setActiveSection] = useState('overview');
   const [attendanceStatus] = useState<'present' | 'absent' | 'leave'>('present');
-  const [aiChatMessage, setAiChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<any[]>([
-    { id: 1, sender: 'ai', message: 'Hello! I\'m your HR Assistant. How can I help you today?' }
+  // AI Chat State
+  // Replacing old chat history with new structure for compatibility with new UI
+  const [messages, setMessages] = useState<{ sender: 'user' | 'bot', text: string }[]>([
+    { sender: 'bot', text: 'Hello! I am your Agentic HR Assistant. I can check your leave balance or even apply for leave for you. Try saying "Apply for sick leave tomorrow".' }
   ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const handleSendMessage = async (e: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    if (!inputMessage.trim()) return;
+
+    const userMsg = inputMessage;
+    setMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
+    setInputMessage('');
+    setIsTyping(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      // Use standard fetch to backend
+      const response = await fetch('http://localhost:5000/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: userMsg })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessages(prev => [...prev, { sender: 'bot', text: data.reply }]);
+
+        // Handle Actions
+        if (data.action === 'OPEN_LEAVE_MODAL') {
+          if (data.data) {
+            setLeaveForm(prev => ({
+              ...prev,
+              ...data.data
+            }));
+          }
+          setShowApplyModal(true);
+        }
+        if (data.action === 'LEAVE_SUBMITTED') {
+          // Maybe auto-refresh leaves
+          fetchLeaves();
+        }
+      } else {
+        setMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, I encountered an error processing your request.' }]);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, { sender: 'bot', text: 'Network error. Please try again.' }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   const [stats] = useState({
     completedTasks: 42,
@@ -213,9 +276,66 @@ const EmployeeDashboard = () => {
     }
   };
 
+  // Projects State
+  const [myProjects, setMyProjects] = useState<any[]>([]);
+  const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string }>({
+    show: false,
+    project: null,
+    status: '',
+    feedback: ''
+  });
+
+  const fetchMyProjects = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/projects/my-projects', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMyProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Fetch my projects error:', error);
+    }
+  };
+
+  const handleUpdateProjectStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectUpdateModal.project) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/projects/${projectUpdateModal.project._id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: projectUpdateModal.status,
+          feedback: projectUpdateModal.feedback
+        })
+      });
+
+      if (response.ok) {
+        alert('Project status updated successfully');
+        setProjectUpdateModal({ show: false, project: null, status: '', feedback: '' });
+        fetchMyProjects();
+      } else {
+        alert('Failed to update project status');
+      }
+    } catch (error) {
+      console.error('Update project status error:', error);
+    }
+  };
+
   useEffect(() => {
     if (activeSection === 'leave') {
       fetchLeaves();
+    }
+    if (activeSection === 'projects') {
+      fetchMyProjects();
     }
   }, [activeSection]);
 
@@ -268,23 +388,25 @@ const EmployeeDashboard = () => {
     }
   };
 
-  const sendAiChatMessage = () => {
-    if (!aiChatMessage.trim()) return;
 
-    const newMessage = { id: chatHistory.length + 1, sender: 'user', message: aiChatMessage };
-    setChatHistory([...chatHistory, newMessage]);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
-        id: chatHistory.length + 2,
-        sender: 'ai',
-        message: `I understand you're asking about "${aiChatMessage}". For detailed policy information, please check the Policy Center or contact HR for specific queries.`
-      };
-      setChatHistory(prev => [...prev, aiResponse]);
-    }, 1000);
+  const handleLogout = async () => {
+    // Attempt to check out before logging out
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/attendance/checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.error('Logout checkout failed:', error);
+    }
 
-    setAiChatMessage('');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login'; // Force refresh/redirect
   };
 
   const renderSection = () => {
@@ -472,7 +594,7 @@ const EmployeeDashboard = () => {
                       </div>
                     </div>
 
-                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors" onClick={() => alert('Report download started...')}>
+                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors" onClick={handleDownloadReport}>
                       <Download className="w-4 h-4" />
                       <span>Download Attendance Report</span>
                     </button>
@@ -556,8 +678,8 @@ const EmployeeDashboard = () => {
                               <div className="flex items-center space-x-3">
                                 <span className="font-medium">{leave.type}</span>
                                 <span className={`px-2 py-1 rounded-full text-xs ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                    leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                                      'bg-red-100 text-red-700'
+                                  leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
                                   }`}>
                                   {leave.status}
                                 </span>
@@ -662,6 +784,7 @@ const EmployeeDashboard = () => {
                             value={leaveForm.startDate}
                             onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
                             required
+                            min={new Date().toISOString().split('T')[0]}
                           />
                         </div>
                         <div>
@@ -672,6 +795,7 @@ const EmployeeDashboard = () => {
                             value={leaveForm.endDate}
                             onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
                             required
+                            min={new Date().toISOString().split('T')[0]}
                           />
                         </div>
                       </div>
@@ -698,77 +822,114 @@ const EmployeeDashboard = () => {
 
       case 'ai-chat':
         return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b">
-              <h2 className="text-2xl font-bold text-gray-900">HR AI Assistant</h2>
-              <p className="text-gray-600 mt-1">Ask HR-related questions in natural language</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 h-[600px]">
-              <div className="lg:col-span-2 border-r">
-                <div className="h-[500px] overflow-y-auto p-6 space-y-4">
-                  {chatHistory.map((chat) => (
-                    <div key={chat.id} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-2xl p-4 ${chat.sender === 'user' ? 'bg-emerald-500 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
-                        <p>{chat.message}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t p-4">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={aiChatMessage}
-                      onChange={(e) => setAiChatMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendAiChatMessage()}
-                      placeholder="Type your HR question..."
-                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500"
-                    />
-                    <button
-                      onClick={sendAiChatMessage}
-                      className="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
-                    >
-                      <Send className="w-5 h-5" />
-                    </button>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-[600px] grid grid-cols-1 lg:grid-cols-3">
+            <div className="lg:col-span-2 flex flex-col border-r border-gray-100">
+              <div className="p-4 border-b flex items-center justify-between bg-blue-50 rounded-tl-xl">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Brain className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">NOVA AI Agent</h3>
+                    <p className="text-xs text-blue-600">Powered by Local NLP • Trained on HR Policies</p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Quick Questions</h3>
-                <div className="space-y-3">
-                  {aiChatSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setAiChatMessage(suggestion)}
-                      className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {msg.sender === 'bot' && (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                        <Brain className="w-4 h-4 text-blue-600" />
+                      </div>
+                    )}
+                    <div className={`max-w-[80%] p-3 rounded-xl shadow-sm ${msg.sender === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                      }`}>
+                      <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start items-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                      <Brain className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 rounded-bl-none">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
 
-                <div className="mt-8">
-                  <h3 className="font-semibold text-gray-800 mb-4">Capabilities</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <CheckSquare className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm text-gray-600">Leave & Attendance Queries</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CheckSquare className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm text-gray-600">Policy Explanation</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CheckSquare className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm text-gray-600">Onboarding Help</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CheckSquare className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm text-gray-600">Escalation to HR</span>
-                    </div>
+              <div className="p-4 bg-white border-t rounded-bl-xl">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                    placeholder="Ask me anything (e.g., 'Apply for sick leave tomorrow due to fever')..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSendMessage(e);
+                    }}
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    disabled={isTyping}
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-center text-gray-400 mt-2">
+                  The AI Agent can apply for leave on your behalf. Try: "Apply for sick leave tomorrow".
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
+              <h3 className="font-semibold text-gray-800 mb-4">Quick Questions</h3>
+              <div className="space-y-3">
+                {aiChatSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setInputMessage(suggestion);
+                      // Optional: You could auto-focus the input here if you had a ref to it
+                    }}
+                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-8">
+                <h3 className="font-semibold text-gray-800 mb-4">Capabilities</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-gray-600">Leave & Attendance Queries</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-gray-600">Policy Explanation</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-gray-600">Onboarding Help</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-gray-600">Escalation to HR</span>
                   </div>
                 </div>
               </div>
@@ -1417,12 +1578,179 @@ const EmployeeDashboard = () => {
             </div>
           </>
         );
+
+      case 'projects':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">My Projects</h2>
+
+            {/* Project Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg shadow-blue-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                    <Briefcase className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded">Total</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">{myProjects.length}</h3>
+                <p className="text-blue-100 text-sm">Assigned Projects</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-6 text-white shadow-lg shadow-emerald-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded">Completed</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">
+                  {myProjects.filter(p => p.status === 'Completed').length}
+                </h3>
+                <p className="text-emerald-100 text-sm">Successfully Finished</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg shadow-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded">Active</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">
+                  {myProjects.filter(p => p.status === 'In Progress' || p.status === 'Pending').length}
+                </h3>
+                <p className="text-purple-100 text-sm">Ongoing Tasks</p>
+              </div>
+            </div>
+
+            {/* Projects Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {myProjects.length > 0 ? (
+                myProjects.map((project) => (
+                  <div key={project._id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 overflow-hidden group">
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-3 rounded-xl ${project.status === 'Completed' ? 'bg-green-50 text-green-600' :
+                          project.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
+                            'bg-yellow-50 text-yellow-600'
+                          }`}>
+                          <Briefcase className="w-6 h-6" />
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${project.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                          project.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                          {project.status}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{project.title}</h3>
+                      <p className="text-sm text-blue-600 font-medium mb-3">{project.role}</p>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+
+                      <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-4">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>Due: {new Date(project.deadline).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <User className="w-4 h-4" />
+                          <span>By: {project.assignedBy?.name || 'HR'}</span>
+                        </div>
+                      </div>
+
+                      {project.feedback && (
+                        <div className="mt-4 bg-gray-50 p-3 rounded-lg text-xs text-gray-600 border border-gray-100">
+                          <span className="font-semibold block mb-1">Status Update:</span>
+                          {project.feedback}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
+                      <button
+                        onClick={() => setProjectUpdateModal({
+                          show: true,
+                          project: project,
+                          status: project.status,
+                          feedback: project.feedback || ''
+                        })}
+                        className="w-full flex items-center justify-center space-x-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                      >
+                        <span>Update Progress</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <Briefcase className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">No Projects Assigned</h3>
+                  <p className="text-gray-500 mt-1">You don't have any active projects at the moment.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Project Update Modal - Enhanced */}
+            {projectUpdateModal.show && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl transform transition-all">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">Update Status</h3>
+                      <p className="text-sm text-gray-500 mt-1">{projectUpdateModal.project?.title}</p>
+                    </div>
+                    <button onClick={() => setProjectUpdateModal({ ...projectUpdateModal, show: false })} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600">✕</button>
+                  </div>
+                  <form onSubmit={handleUpdateProjectStatus}>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Current Status</label>
+                        <div className="relative">
+                          <select
+                            className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none font-medium text-gray-700"
+                            value={projectUpdateModal.status}
+                            onChange={(e) => setProjectUpdateModal({ ...projectUpdateModal, status: e.target.value })}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="On Hold">On Hold</option>
+                          </select>
+                          <ChevronRight className="absolute right-4 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none w-4 h-4" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Progress Notes</label>
+                        <textarea
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          rows={4}
+                          value={projectUpdateModal.feedback}
+                          onChange={(e) => setProjectUpdateModal({ ...projectUpdateModal, feedback: e.target.value })}
+                          placeholder="Share your progress, blockers, or completion notes..."
+                        ></textarea>
+                      </div>
+                      <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:-translate-y-0.5">
+                        Save Updates
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        );
     }
   };
 
   // Sidebar navigation items
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
+    { id: 'projects', label: 'My Projects', icon: CheckSquare },
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'attendance', label: 'Attendance', icon: CalendarDays },
     { id: 'leave', label: 'Leave Management', icon: Briefcase },
@@ -1472,7 +1800,10 @@ const EmployeeDashboard = () => {
             })}
 
             <div className="pt-4 mt-4 border-t">
-              <button className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
                 <LogOut className="w-5 h-5" />
                 <span className="font-medium">Logout</span>
               </button>

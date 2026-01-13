@@ -261,7 +261,7 @@ const sendEmail = require('../utils/mailer');
 // Schedule interview
 exports.scheduleInterview = async (req, res) => {
   try {
-    const { interviewDate, time, mode, meetingLink, notes } = req.body;
+    const { interviewDate, time, mode, meetingLink, notes, interviewers } = req.body;
 
     const updateData = {
       status: 'interview-scheduled',
@@ -295,19 +295,35 @@ exports.scheduleInterview = async (req, res) => {
     // Send interview email to candidate
     if (application.candidate && application.candidate.email) {
       const interviewDateTime = new Date(interviewDate).toLocaleDateString();
-      const emailSubject = `Interview Scheduled for ${application.job ? application.job.title : 'Position'}`;
+      const jobTitle = application.job ? application.job.title : 'Position';
+      const companyName = 'NOVA Workforce';
+
+      const emailSubject = `Interview Scheduled – ${jobTitle} Position`;
+
       const emailContent = `
-            <h3>Dear ${application.candidate.name},</h3>
-            <p>We are pleased to inform you that your application for <strong>${application.job ? application.job.title : 'the position'}</strong> has been shortlisted.</p>
-            <p>We would like to invite you for an interview.</p>
-            <p><strong>Date:</strong> ${interviewDateTime}</p>
-            <p><strong>Time:</strong> ${time || 'To be confirmed'}</p>
-            <p><strong>Mode:</strong> ${mode || 'Virtual'}</p>
-            ${meetingLink ? `<p><strong>Meeting Link:</strong> <a href="${meetingLink}">${meetingLink}</a></p>` : ''}
-            ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
-            <br>
-            <p>Please reply to this email to confirm your availability.</p>
-            <p>Best regards,<br>The HR Team</p>
+            <p>Dear ${application.candidate.name},</p>
+
+            <p>We are pleased to inform you that you have been <strong>shortlisted</strong> for the next stage of the selection process for the position of <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.</p>
+
+            <p>Your interview has been scheduled as per the details below:</p>
+
+            <p><strong>📅 Date:</strong> ${interviewDateTime}<br>
+            <strong>⏰ Time:</strong> ${time || 'To be confirmed'}<br>
+            <strong>📍 Mode:</strong> ${mode || 'Virtual'}<br>
+            <strong>🏢 Venue / Meeting Link:</strong> ${meetingLink || 'To be shared'}<br>
+            <strong>👤 Interviewer(s):</strong> ${interviewers || 'HR Panel'}</p>
+
+            <p>Please ensure that you carry a copy of your resume and any relevant documents (if attending in person). For online interviews, kindly ensure a stable internet connection and join the meeting at least 5 minutes early.</p>
+
+            <p>Kindly confirm your availability by replying to this email. If you require any changes or have questions, feel free to reach out.</p>
+
+            <p>We look forward to meeting you and wish you the very best.</p>
+
+            <p>Warm regards,<br>
+            Ashwin P S<br>
+            HR Department<br>
+            ${companyName}<br>
+            9072032209</p>
         `;
       await sendEmail(application.candidate.email, emailSubject, emailContent);
     }

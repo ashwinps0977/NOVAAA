@@ -1,0 +1,1989 @@
+{
+  "settings": {
+    "languages": [
+      "en"
+    ],
+    "forceNER": true,
+    "tag": "nlp",
+    "threshold": 0.5,
+    "autoLoad": true,
+    "autoSave": true,
+    "modelFileName": "model.nlp",
+    "executeActionsBeforeAnswers": false,
+    "calculateSentiment": true
+  },
+  "nluManager": {
+    "settings": {
+      "tag": "nlu-manager"
+    },
+    "locales": [
+      "en"
+    ],
+    "languageNames": {},
+    "domainManagers": {
+      "en": {
+        "settings": {
+          "locale": "en",
+          "trainByDomain": false,
+          "tag": "domain-manager-en",
+          "nluByDomain": {
+            "default": {
+              "className": "NeuralNlu",
+              "settings": {}
+            }
+          },
+          "useStemDict": true
+        },
+        "stemDict": {
+          "do,have,how,i,leav,left,mani": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "balanc,check,leav,my": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "is,leav,my,remain,what": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "leav,me,my,quota,show": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "appli,for,i,leav,to,want": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "appli,for,leav,sick": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "a,day,i,need,off": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "for,leav,request,tomorrow": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "%date%,from,leav,take,to": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "%date%,from,to": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "a,appli,for,i,leav,want": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "13th,15th,from,januari,to": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "is,my,role,what": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "my,profil,show": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "am,i,who": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "detail,my": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "hello": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hi": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "good,morn": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "are,hour,the,what,work": {
+            "intent": "policy.hours",
+            "domain": "default"
+          },
+          "offic,time": {
+            "intent": "policy.hours",
+            "domain": "default"
+          },
+          "doe,start,when,work": {
+            "intent": "policy.hours",
+            "domain": "default"
+          },
+          "code,dress,is,the,what": {
+            "intent": "policy.dress",
+            "domain": "default"
+          },
+          "can,i,jean,wear": {
+            "intent": "policy.dress",
+            "domain": "default"
+          },
+          "dress,polici": {
+            "intent": "policy.dress",
+            "domain": "default"
+          },
+          "holiday,list,of": {
+            "intent": "policy.holidays",
+            "domain": "default"
+          },
+          "holiday,is,next,the,when": {
+            "intent": "policy.holidays",
+            "domain": "default"
+          },
+          "calendar,holiday": {
+            "intent": "policy.holidays",
+            "domain": "default"
+          },
+          "benefit,insur,medic": {
+            "intent": "policy.benefits",
+            "domain": "default"
+          },
+          "benefit,do,have,i,what": {
+            "intent": "policy.benefits",
+            "domain": "default"
+          },
+          "and,insur,pf": {
+            "intent": "policy.benefits",
+            "domain": "default"
+          },
+          "thank,you": {
+            "intent": "smalltalk.thanks",
+            "domain": "default"
+          },
+          "thank": {
+            "intent": "smalltalk.thanks",
+            "domain": "default"
+          },
+          "bye": {
+            "intent": "smalltalk.bye",
+            "domain": "default"
+          },
+          "goodby": {
+            "intent": "smalltalk.bye",
+            "domain": "default"
+          },
+          "made,who,you": {
+            "intent": "smalltalk.creator",
+            "domain": "default"
+          }
+        },
+        "intentDict": {
+          "leave.balance": "default",
+          "leave.apply": "default",
+          "employee.info": "default",
+          "greeting": "default",
+          "policy.hours": "default",
+          "policy.dress": "default",
+          "policy.holidays": "default",
+          "policy.benefits": "default",
+          "smalltalk.thanks": "default",
+          "smalltalk.bye": "default",
+          "smalltalk.creator": "default"
+        },
+        "sentences": [
+          {
+            "domain": "default",
+            "utterance": "how many leaves do i have left",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "check my leave balance",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is my remaining leave",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "show me my leave quota",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "i want to apply for leave",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "apply for sick leave",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "i need a day off",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "request leave for tomorrow",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "take leave from %date% to %date%",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "from %date% to %date%",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "i want apply for a leave",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "from 13th to 15th january",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is my role",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "show my profile",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "who am i",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "my details",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "hello",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hi",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "good morning",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "what are the working hours",
+            "intent": "policy.hours"
+          },
+          {
+            "domain": "default",
+            "utterance": "office timings",
+            "intent": "policy.hours"
+          },
+          {
+            "domain": "default",
+            "utterance": "when does work start",
+            "intent": "policy.hours"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is the dress code",
+            "intent": "policy.dress"
+          },
+          {
+            "domain": "default",
+            "utterance": "can i wear jeans",
+            "intent": "policy.dress"
+          },
+          {
+            "domain": "default",
+            "utterance": "dress policy",
+            "intent": "policy.dress"
+          },
+          {
+            "domain": "default",
+            "utterance": "list of holidays",
+            "intent": "policy.holidays"
+          },
+          {
+            "domain": "default",
+            "utterance": "when is the next holiday",
+            "intent": "policy.holidays"
+          },
+          {
+            "domain": "default",
+            "utterance": "holiday calendar",
+            "intent": "policy.holidays"
+          },
+          {
+            "domain": "default",
+            "utterance": "medical insurance benefits",
+            "intent": "policy.benefits"
+          },
+          {
+            "domain": "default",
+            "utterance": "what benefits do i have",
+            "intent": "policy.benefits"
+          },
+          {
+            "domain": "default",
+            "utterance": "pf and insurance",
+            "intent": "policy.benefits"
+          },
+          {
+            "domain": "default",
+            "utterance": "thank you",
+            "intent": "smalltalk.thanks"
+          },
+          {
+            "domain": "default",
+            "utterance": "thanks",
+            "intent": "smalltalk.thanks"
+          },
+          {
+            "domain": "default",
+            "utterance": "bye",
+            "intent": "smalltalk.bye"
+          },
+          {
+            "domain": "default",
+            "utterance": "goodbye",
+            "intent": "smalltalk.bye"
+          },
+          {
+            "domain": "default",
+            "utterance": "who made you",
+            "intent": "smalltalk.creator"
+          }
+        ],
+        "domains": {
+          "master_domain": {
+            "settings": {
+              "locale": "en",
+              "tag": "nlu-en",
+              "keepStopwords": true,
+              "nonefeatureValue": 1,
+              "nonedeltaMultiplier": 1.2,
+              "spellCheck": false,
+              "spellCheckDistance": 1,
+              "filterZeros": true,
+              "log": true
+            },
+            "features": {
+              "how": 1,
+              "mani": 1,
+              "leav": 1,
+              "do": 1,
+              "i": 1,
+              "have": 1,
+              "left": 1,
+              "check": 1,
+              "my": 1,
+              "balanc": 1,
+              "what": 1,
+              "is": 1,
+              "remain": 1,
+              "show": 1,
+              "me": 1,
+              "quota": 1,
+              "want": 1,
+              "to": 1,
+              "appli": 1,
+              "for": 1,
+              "sick": 1,
+              "need": 1,
+              "a": 1,
+              "day": 1,
+              "off": 1,
+              "request": 1,
+              "tomorrow": 1,
+              "take": 1,
+              "from": 1,
+              "%date%": 1,
+              "13th": 1,
+              "15th": 1,
+              "januari": 1,
+              "role": 1,
+              "profil": 1,
+              "who": 1,
+              "am": 1,
+              "detail": 1,
+              "hello": 1,
+              "hi": 1,
+              "good": 1,
+              "morn": 1,
+              "are": 1,
+              "the": 1,
+              "work": 1,
+              "hour": 1,
+              "offic": 1,
+              "time": 1,
+              "when": 1,
+              "doe": 1,
+              "start": 1,
+              "dress": 1,
+              "code": 1,
+              "can": 1,
+              "wear": 1,
+              "jean": 1,
+              "polici": 1,
+              "list": 1,
+              "of": 1,
+              "holiday": 1,
+              "next": 1,
+              "calendar": 1,
+              "medic": 1,
+              "insur": 1,
+              "benefit": 1,
+              "pf": 1,
+              "and": 1,
+              "thank": 1,
+              "you": 1,
+              "bye": 1,
+              "goodby": 1,
+              "made": 1
+            },
+            "intents": {
+              "leave.balance": 1,
+              "leave.apply": 1,
+              "employee.info": 1,
+              "greeting": 1,
+              "policy.hours": 1,
+              "policy.dress": 1,
+              "policy.holidays": 1,
+              "policy.benefits": 1,
+              "smalltalk.thanks": 1,
+              "smalltalk.bye": 1,
+              "smalltalk.creator": 1
+            },
+            "intentFeatures": {
+              "leave.balance": {
+                "how": 1,
+                "mani": 1,
+                "leav": 1,
+                "do": 1,
+                "i": 1,
+                "have": 1,
+                "left": 1,
+                "check": 1,
+                "my": 1,
+                "balanc": 1,
+                "what": 1,
+                "is": 1,
+                "remain": 1,
+                "show": 1,
+                "me": 1,
+                "quota": 1
+              },
+              "leave.apply": {
+                "i": 1,
+                "want": 1,
+                "to": 1,
+                "appli": 1,
+                "for": 1,
+                "leav": 1,
+                "sick": 1,
+                "need": 1,
+                "a": 1,
+                "day": 1,
+                "off": 1,
+                "request": 1,
+                "tomorrow": 1,
+                "take": 1,
+                "from": 1,
+                "%date%": 1,
+                "13th": 1,
+                "15th": 1,
+                "januari": 1
+              },
+              "employee.info": {
+                "what": 1,
+                "is": 1,
+                "my": 1,
+                "role": 1,
+                "show": 1,
+                "profil": 1,
+                "who": 1,
+                "am": 1,
+                "i": 1,
+                "detail": 1
+              },
+              "greeting": {
+                "hello": 1,
+                "hi": 1,
+                "good": 1,
+                "morn": 1
+              },
+              "policy.hours": {
+                "what": 1,
+                "are": 1,
+                "the": 1,
+                "work": 1,
+                "hour": 1,
+                "offic": 1,
+                "time": 1,
+                "when": 1,
+                "doe": 1,
+                "start": 1
+              },
+              "policy.dress": {
+                "what": 1,
+                "is": 1,
+                "the": 1,
+                "dress": 1,
+                "code": 1,
+                "can": 1,
+                "i": 1,
+                "wear": 1,
+                "jean": 1,
+                "polici": 1
+              },
+              "policy.holidays": {
+                "list": 1,
+                "of": 1,
+                "holiday": 1,
+                "when": 1,
+                "is": 1,
+                "the": 1,
+                "next": 1,
+                "calendar": 1
+              },
+              "policy.benefits": {
+                "medic": 1,
+                "insur": 1,
+                "benefit": 1,
+                "what": 1,
+                "do": 1,
+                "i": 1,
+                "have": 1,
+                "pf": 1,
+                "and": 1
+              },
+              "smalltalk.thanks": {
+                "thank": 1,
+                "you": 1
+              },
+              "smalltalk.bye": {
+                "bye": 1,
+                "goodby": 1
+              },
+              "smalltalk.creator": {
+                "who": 1,
+                "made": 1,
+                "you": 1
+              }
+            },
+            "featuresToIntent": {
+              "how": [
+                "leave.balance"
+              ],
+              "mani": [
+                "leave.balance"
+              ],
+              "leav": [
+                "leave.balance",
+                "leave.apply"
+              ],
+              "do": [
+                "leave.balance",
+                "policy.benefits"
+              ],
+              "i": [
+                "leave.balance",
+                "leave.apply",
+                "employee.info",
+                "policy.dress",
+                "policy.benefits"
+              ],
+              "have": [
+                "leave.balance",
+                "policy.benefits"
+              ],
+              "left": [
+                "leave.balance"
+              ],
+              "check": [
+                "leave.balance"
+              ],
+              "my": [
+                "leave.balance",
+                "employee.info"
+              ],
+              "balanc": [
+                "leave.balance"
+              ],
+              "what": [
+                "leave.balance",
+                "employee.info",
+                "policy.hours",
+                "policy.dress",
+                "policy.benefits"
+              ],
+              "is": [
+                "leave.balance",
+                "employee.info",
+                "policy.dress",
+                "policy.holidays"
+              ],
+              "remain": [
+                "leave.balance"
+              ],
+              "show": [
+                "leave.balance",
+                "employee.info"
+              ],
+              "me": [
+                "leave.balance"
+              ],
+              "quota": [
+                "leave.balance"
+              ],
+              "want": [
+                "leave.apply"
+              ],
+              "to": [
+                "leave.apply"
+              ],
+              "appli": [
+                "leave.apply"
+              ],
+              "for": [
+                "leave.apply"
+              ],
+              "sick": [
+                "leave.apply"
+              ],
+              "need": [
+                "leave.apply"
+              ],
+              "a": [
+                "leave.apply"
+              ],
+              "day": [
+                "leave.apply"
+              ],
+              "off": [
+                "leave.apply"
+              ],
+              "request": [
+                "leave.apply"
+              ],
+              "tomorrow": [
+                "leave.apply"
+              ],
+              "take": [
+                "leave.apply"
+              ],
+              "from": [
+                "leave.apply"
+              ],
+              "%date%": [
+                "leave.apply"
+              ],
+              "13th": [
+                "leave.apply"
+              ],
+              "15th": [
+                "leave.apply"
+              ],
+              "januari": [
+                "leave.apply"
+              ],
+              "role": [
+                "employee.info"
+              ],
+              "profil": [
+                "employee.info"
+              ],
+              "who": [
+                "employee.info",
+                "smalltalk.creator"
+              ],
+              "am": [
+                "employee.info"
+              ],
+              "detail": [
+                "employee.info"
+              ],
+              "hello": [
+                "greeting"
+              ],
+              "hi": [
+                "greeting"
+              ],
+              "good": [
+                "greeting"
+              ],
+              "morn": [
+                "greeting"
+              ],
+              "are": [
+                "policy.hours"
+              ],
+              "the": [
+                "policy.hours",
+                "policy.dress",
+                "policy.holidays"
+              ],
+              "work": [
+                "policy.hours"
+              ],
+              "hour": [
+                "policy.hours"
+              ],
+              "offic": [
+                "policy.hours"
+              ],
+              "time": [
+                "policy.hours"
+              ],
+              "when": [
+                "policy.hours",
+                "policy.holidays"
+              ],
+              "doe": [
+                "policy.hours"
+              ],
+              "start": [
+                "policy.hours"
+              ],
+              "dress": [
+                "policy.dress"
+              ],
+              "code": [
+                "policy.dress"
+              ],
+              "can": [
+                "policy.dress"
+              ],
+              "wear": [
+                "policy.dress"
+              ],
+              "jean": [
+                "policy.dress"
+              ],
+              "polici": [
+                "policy.dress"
+              ],
+              "list": [
+                "policy.holidays"
+              ],
+              "of": [
+                "policy.holidays"
+              ],
+              "holiday": [
+                "policy.holidays"
+              ],
+              "next": [
+                "policy.holidays"
+              ],
+              "calendar": [
+                "policy.holidays"
+              ],
+              "medic": [
+                "policy.benefits"
+              ],
+              "insur": [
+                "policy.benefits"
+              ],
+              "benefit": [
+                "policy.benefits"
+              ],
+              "pf": [
+                "policy.benefits"
+              ],
+              "and": [
+                "policy.benefits"
+              ],
+              "thank": [
+                "smalltalk.thanks"
+              ],
+              "you": [
+                "smalltalk.thanks",
+                "smalltalk.creator"
+              ],
+              "bye": [
+                "smalltalk.bye"
+              ],
+              "goodby": [
+                "smalltalk.bye"
+              ],
+              "made": [
+                "smalltalk.creator"
+              ]
+            },
+            "neuralNetwork": {
+              "settings": {
+                "locale": "en",
+                "tag": "nlu-en",
+                "keepStopwords": true,
+                "nonefeatureValue": 1,
+                "nonedeltaMultiplier": 1.2,
+                "spellCheck": false,
+                "spellCheckDistance": 1,
+                "filterZeros": true,
+                "log": true
+              },
+              "features": [
+                "how",
+                "mani",
+                "leav",
+                "do",
+                "i",
+                "have",
+                "left",
+                "check",
+                "my",
+                "balanc",
+                "what",
+                "is",
+                "remain",
+                "show",
+                "me",
+                "quota",
+                "want",
+                "to",
+                "appli",
+                "for",
+                "sick",
+                "need",
+                "a",
+                "day",
+                "off",
+                "request",
+                "tomorrow",
+                "take",
+                "from",
+                "%date%",
+                "13th",
+                "15th",
+                "januari",
+                "role",
+                "profil",
+                "who",
+                "am",
+                "detail",
+                "hello",
+                "hi",
+                "good",
+                "morn",
+                "are",
+                "the",
+                "work",
+                "hour",
+                "offic",
+                "time",
+                "when",
+                "doe",
+                "start",
+                "dress",
+                "code",
+                "can",
+                "wear",
+                "jean",
+                "polici",
+                "list",
+                "of",
+                "holiday",
+                "next",
+                "calendar",
+                "medic",
+                "insur",
+                "benefit",
+                "pf",
+                "and",
+                "thank",
+                "you",
+                "bye",
+                "goodby",
+                "made"
+              ],
+              "intents": [
+                "leave.balance",
+                "leave.apply",
+                "employee.info",
+                "greeting",
+                "policy.hours",
+                "policy.dress",
+                "policy.holidays",
+                "policy.benefits",
+                "smalltalk.thanks",
+                "smalltalk.bye",
+                "smalltalk.creator"
+              ],
+              "perceptrons": [
+                [
+                  2.1359822750091553,
+                  2.1359822750091553,
+                  7.086602210998535,
+                  1.0298638343811035,
+                  -0.27228352427482605,
+                  1.0298638343811035,
+                  2.1359822750091553,
+                  2.729475498199463,
+                  2.742753505706787,
+                  2.729475498199463,
+                  -0.012477083131670952,
+                  1.138572096824646,
+                  4.284374713897705,
+                  0.35741424560546875,
+                  2.5459508895874023,
+                  2.5459508895874023,
+                  -0.8708701133728027,
+                  -2.049734354019165,
+                  -1.8781366348266602,
+                  -3.2829959392547607,
+                  -0.9317625761032104,
+                  -0.16720625758171082,
+                  -0.43139538168907166,
+                  -0.16720625758171082,
+                  -0.16720625758171082,
+                  -1.4045305252075195,
+                  -1.4045305252075195,
+                  -1.3289421796798706,
+                  -1.3623658418655396,
+                  -1.351656436920166,
+                  -0.005354601424187422,
+                  -0.005354601424187422,
+                  -0.005354601424187422,
+                  -2.8419814109802246,
+                  -2.1847732067108154,
+                  -0.08480896800756454,
+                  -0.07579188793897629,
+                  -1.7859936952590942,
+                  -0.03275608643889427,
+                  -0.03141118958592415,
+                  -0.029483774676918983,
+                  -0.029483774676918983,
+                  -0.07972490042448044,
+                  -0.3900353014469147,
+                  -0.10574222356081009,
+                  -0.07972490042448044,
+                  -0.02509692870080471,
+                  -0.02509692870080471,
+                  -0.06965631246566772,
+                  -0.010677295736968517,
+                  -0.010677295736968517,
+                  -0.20156008005142212,
+                  -0.1820591241121292,
+                  -0.03404584527015686,
+                  -0.03404584527015686,
+                  -0.03404584527015686,
+                  -0.006770782638341188,
+                  -0.014716394245624542,
+                  -0.014716394245624542,
+                  -0.09860023111104965,
+                  -0.05097104609012604,
+                  -0.008727465756237507,
+                  -0.012865079566836357,
+                  -0.023718055337667465,
+                  -1.079553484916687,
+                  -0.006021829321980476,
+                  -0.006021829321980476,
+                  -0.01933131366968155,
+                  -0.013676249422132969,
+                  -0.009098976850509644,
+                  -0.00872705690562725,
+                  -0.004564261995255947,
+                  -0.9939143452369181
+                ],
+                [
+                  -0.8865048289299011,
+                  -0.8865048289299011,
+                  1.9123390913009644,
+                  -1.1423617601394653,
+                  -0.013028120622038841,
+                  -1.1423617601394653,
+                  -0.8865048289299011,
+                  -0.7400144338607788,
+                  -2.3444042205810547,
+                  -0.7400144338607788,
+                  -1.1042208671569824,
+                  -0.7193840742111206,
+                  -0.2371094524860382,
+                  -0.7007695436477661,
+                  -0.4031670391559601,
+                  -0.4031670391559601,
+                  -0.5970857739448547,
+                  4.0733323097229,
+                  2.646103620529175,
+                  5.5944390296936035,
+                  3.240377902984619,
+                  3.2545933723449707,
+                  3.7361602783203125,
+                  3.2545933723449707,
+                  3.2545933723449707,
+                  2.9444284439086914,
+                  2.9444284439086914,
+                  -1.1023550033569336,
+                  5.158400535583496,
+                  3.7353005409240723,
+                  1.4131790399551392,
+                  1.4131790399551392,
+                  1.4131790399551392,
+                  -0.13608726859092712,
+                  -0.21130581200122833,
+                  -0.8429988622665405,
+                  -0.7180406451225281,
+                  -0.18151605129241943,
+                  -0.8369662165641785,
+                  -0.8326383233070374,
+                  -0.45245105028152466,
+                  -0.45245105028152466,
+                  -0.15286648273468018,
+                  -0.3728063106536865,
+                  -0.4396333396434784,
+                  -0.15286648273468018,
+                  -0.44583290815353394,
+                  -0.44583290815353394,
+                  -0.31759536266326904,
+                  -0.22579626739025116,
+                  -0.22579626739025116,
+                  -0.5086763501167297,
+                  -0.0659416988492012,
+                  -0.5364822149276733,
+                  -0.5364822149276733,
+                  -0.5364822149276733,
+                  -0.37692177295684814,
+                  -0.2140168398618698,
+                  -0.2140168398618698,
+                  -0.6302236318588257,
+                  -0.04618171602487564,
+                  -0.2691750228404999,
+                  -0.1894751936197281,
+                  -0.46715638041496277,
+                  -0.4350334107875824,
+                  -0.22977915406227112,
+                  -0.22977915406227112,
+                  -0.8307754397392273,
+                  -0.3565159738063812,
+                  -0.8123888373374939,
+                  -0.8065325021743774,
+                  -0.07597365230321884,
+                  0.8531988906586029
+                ],
+                [
+                  -0.11001371592283249,
+                  -0.11001371592283249,
+                  -6.5501604080200195,
+                  -1.1890978813171387,
+                  3.016281843185425,
+                  -1.1890978813171387,
+                  -0.11001371592283249,
+                  -1.242321491241455,
+                  7.908857822418213,
+                  -1.242321491241455,
+                  -0.09423643350601196,
+                  1.0471112728118896,
+                  -2.981074094772339,
+                  1.8382679224014282,
+                  -2.036492109298706,
+                  -2.036492109298706,
+                  -0.04850802570581436,
+                  -0.2871682643890381,
+                  -0.04850802570581436,
+                  -0.04850802570581436,
+                  0,
+                  -0.921256422996521,
+                  -0.9380284547805786,
+                  -0.921256422996521,
+                  -0.921256422996521,
+                  0,
+                  0,
+                  0,
+                  -0.23367220163345337,
+                  -0.16803424060344696,
+                  -0.0643601343035698,
+                  -0.0643601343035698,
+                  -0.0643601343035698,
+                  4.722108840942383,
+                  3.882343292236328,
+                  4.129306316375732,
+                  6.430549144744873,
+                  5.6216511726379395,
+                  -0.746459424495697,
+                  -0.7346774935722351,
+                  -0.47464871406555176,
+                  -0.47464871406555176,
+                  -0.22773635387420654,
+                  -0.9795399904251099,
+                  -0.48996222019195557,
+                  -0.22773635387420654,
+                  -0.4563134014606476,
+                  -0.4563134014606476,
+                  -0.40590211749076843,
+                  -0.1909266710281372,
+                  -0.1909266710281372,
+                  -0.7851436138153076,
+                  -0.496812641620636,
+                  -1.2350491285324097,
+                  -1.2350491285324097,
+                  -1.2350491285324097,
+                  -0.25777050852775574,
+                  -0.21656307578086853,
+                  -0.21656307578086853,
+                  -0.6764538288116455,
+                  -0.1582227349281311,
+                  -0.23662889003753662,
+                  -0.15812157094478607,
+                  -0.4406951665878296,
+                  -1.235573649406433,
+                  -0.23159953951835632,
+                  -0.23159953951835632,
+                  -0.69868403673172,
+                  -2.505655527114868,
+                  -0.6829487085342407,
+                  -0.6790517568588257,
+                  -2.3024661540985107,
+                  0.6907629567458426
+                ],
+                [
+                  -0.04259922355413437,
+                  -0.04259922355413437,
+                  -1.3049267530441284,
+                  -0.1494729071855545,
+                  -1.5024367570877075,
+                  -0.1494729071855545,
+                  -0.04259922355413437,
+                  -0.18586717545986176,
+                  -1.8973287343978882,
+                  -0.18586717545986176,
+                  -0.7222111225128174,
+                  -0.4102996289730072,
+                  -0.009400418028235435,
+                  -0.6157684922218323,
+                  -0.10119543224573135,
+                  -0.10119543224573135,
+                  -0.025137191638350487,
+                  -1.0958346128463745,
+                  -0.4250805675983429,
+                  -0.8296825885772705,
+                  -0.3871212303638458,
+                  -0.3611539900302887,
+                  -0.3611539900302887,
+                  -0.3611539900302887,
+                  -0.3611539900302887,
+                  -0.40381333231925964,
+                  -0.40381333231925964,
+                  -0.0500139556825161,
+                  -1.057875394821167,
+                  -0.7799887657165527,
+                  -0.2755959928035736,
+                  -0.2755959928035736,
+                  -0.2755959928035736,
+                  -0.0490608848631382,
+                  -0.49447953701019287,
+                  -1.0353106260299683,
+                  -0.39971789717674255,
+                  -1.0064491033554077,
+                  10.867959976196289,
+                  10.85679817199707,
+                  5.650308609008789,
+                  5.650308609008789,
+                  -0.3191278278827667,
+                  -0.6671236157417297,
+                  -0.9614690542221069,
+                  -0.3191278278827667,
+                  -1.4907591342926025,
+                  -1.4907591342926025,
+                  -0.7566720247268677,
+                  -0.6341443061828613,
+                  -0.6341443061828613,
+                  -1.5996371507644653,
+                  -0.20218104124069214,
+                  -0.5229324102401733,
+                  -0.5229324102401733,
+                  -0.5229324102401733,
+                  -1.3796892166137695,
+                  -0.6408586502075195,
+                  -0.6408586502075195,
+                  -1.8735305070877075,
+                  -0.09481994807720184,
+                  -1.1037861108779907,
+                  -0.7069651484489441,
+                  -1.466104507446289,
+                  -0.812437117099762,
+                  -0.758958637714386,
+                  -0.758958637714386,
+                  -2.7877845764160156,
+                  -1.2756856679916382,
+                  -2.722268581390381,
+                  -2.6942849159240723,
+                  -0.6342290043830872,
+                  2.9526463515239483
+                ],
+                [
+                  -0.03218745067715645,
+                  -0.03218745067715645,
+                  -0.6322615146636963,
+                  -0.4539078176021576,
+                  -0.9088065028190613,
+                  -0.4539078176021576,
+                  -0.03218745067715645,
+                  -0.08643991500139236,
+                  -0.7824386358261108,
+                  -0.08643991500139236,
+                  1.3034827709197998,
+                  -1.8974928855895996,
+                  -0.0718640685081482,
+                  -0.21564652025699615,
+                  -0.04300300404429436,
+                  -0.04300300404429436,
+                  -0.012572130188345909,
+                  -0.42645272612571716,
+                  -0.14745815098285675,
+                  -0.2692034840583801,
+                  -0.12251032143831253,
+                  -0.08065994828939438,
+                  -0.08065994828939438,
+                  -0.08065994828939438,
+                  -0.08065994828939438,
+                  -0.10876202583312988,
+                  -0.10876202583312988,
+                  -0.030011916533112526,
+                  -0.4013088047504425,
+                  -0.26002752780914307,
+                  -0.12331332266330719,
+                  -0.12331332266330719,
+                  -0.12331332266330719,
+                  -0.10535244643688202,
+                  -0.14897991716861725,
+                  -0.29288265109062195,
+                  -0.03208358958363533,
+                  -0.2299865037202835,
+                  -0.8560283184051514,
+                  -0.8499200344085693,
+                  -0.4643368721008301,
+                  -0.4643368721008301,
+                  2.7272744178771973,
+                  1.0257782936096191,
+                  5.631663799285889,
+                  2.7272744178771973,
+                  6.700742244720459,
+                  6.700742244720459,
+                  1.973057746887207,
+                  2.904186487197876,
+                  2.904186487197876,
+                  -1.082100510597229,
+                  -0.7276502847671509,
+                  -0.24299506843090057,
+                  -0.24299506843090057,
+                  -0.24299506843090057,
+                  -0.30098652839660645,
+                  -0.23483453691005707,
+                  -0.23483453691005707,
+                  -1.3834148645401,
+                  -0.8947597742080688,
+                  -0.1740889549255371,
+                  -0.25187644362449646,
+                  -0.5858367085456848,
+                  -0.6923818588256836,
+                  -0.3040441572666168,
+                  -0.3040441572666168,
+                  -0.9196598529815674,
+                  -0.5665239095687866,
+                  -0.8731823563575745,
+                  -0.8686226010322571,
+                  -0.24950569868087769,
+                  0.8707967691144943
+                ],
+                [
+                  -0.1752099245786667,
+                  -0.1752099245786667,
+                  -1.0744335651397705,
+                  -0.9220587015151978,
+                  1.333504557609558,
+                  -0.9220587015151978,
+                  -0.1752099245786667,
+                  -0.055401965975761414,
+                  -1.3735592365264893,
+                  -0.055401965975761414,
+                  0.23441436886787415,
+                  0.8756921887397766,
+                  -0.36174276471138,
+                  -0.07419232279062271,
+                  -0.02717169187963009,
+                  -0.02717169187963009,
+                  -0.3030312955379486,
+                  -0.4798443615436554,
+                  -0.31773650646209717,
+                  -0.32468515634536743,
+                  -0.0071970438584685326,
+                  -0.5598258376121521,
+                  -0.6466559767723083,
+                  -0.5598258376121521,
+                  -0.5598258376121521,
+                  -0.003366640768945217,
+                  -0.003366640768945217,
+                  -0.0035828151740133762,
+                  -0.24524430930614471,
+                  -0.14777222275733948,
+                  -0.07866167277097702,
+                  -0.07866167277097702,
+                  -0.07866167277097702,
+                  -0.7481998205184937,
+                  -0.036902233958244324,
+                  -1.0853618383407593,
+                  -0.9043952822685242,
+                  -0.020943159237504005,
+                  -0.5943699479103088,
+                  -0.5901594758033752,
+                  -0.31648725271224976,
+                  -0.31648725271224976,
+                  -0.8098875880241394,
+                  1.22606360912323,
+                  -0.8426297307014465,
+                  -0.8098875880241394,
+                  -0.3109632432460785,
+                  -0.3109632432460785,
+                  -0.9312572479248047,
+                  -0.021096639335155487,
+                  -0.021096639335155487,
+                  8.334129333496094,
+                  3.01259446144104,
+                  4.114397048950195,
+                  4.114397048950195,
+                  4.114397048950195,
+                  5.320858955383301,
+                  -0.21068958938121796,
+                  -0.21068958938121796,
+                  -1.409070611000061,
+                  -0.8978649377822876,
+                  -0.19211159646511078,
+                  -0.21739982068538666,
+                  -0.5057284832000732,
+                  -0.9580985903739929,
+                  -0.2480422407388687,
+                  -0.2480422407388687,
+                  -0.6978143453598022,
+                  -0.44632965326309204,
+                  -0.6160978674888611,
+                  -0.6120885610580444,
+                  -0.15456953644752502,
+                  0.6092178986409933
+                ],
+                [
+                  -0.050968341529369354,
+                  -0.050968341529369354,
+                  -0.6483142971992493,
+                  -0.16956649720668793,
+                  -0.5242100954055786,
+                  -0.16956649720668793,
+                  -0.050968341529369354,
+                  -0.06549501419067383,
+                  -0.7500900030136108,
+                  -0.06549501419067383,
+                  -1.5176032781600952,
+                  0.7203050851821899,
+                  -0.1610146164894104,
+                  -0.11077096313238144,
+                  -0.03558500111103058,
+                  -0.03558500111103058,
+                  -0.027798568829894066,
+                  -0.35811343789100647,
+                  -0.10152804106473923,
+                  -0.18383078277111053,
+                  -0.062391821295022964,
+                  -0.12005725502967834,
+                  -0.12005725502967834,
+                  -0.12005725502967834,
+                  -0.12005725502967834,
+                  -0.06254733353853226,
+                  -0.06254733353853226,
+                  -0.02624429017305374,
+                  -0.31938254833221436,
+                  -0.19148442149162292,
+                  -0.10351203382015228,
+                  -0.10351203382015228,
+                  -0.10351203382015228,
+                  -0.22010473906993866,
+                  -0.06022527813911438,
+                  -0.28851622343063354,
+                  -0.0873144268989563,
+                  -0.07096723467111588,
+                  -0.5761075019836426,
+                  -0.5725331902503967,
+                  -0.3126850724220276,
+                  -0.3126850724220276,
+                  -0.2109851837158203,
+                  0.9251702427864075,
+                  -0.8935747742652893,
+                  -0.2109851837158203,
+                  -0.3088037371635437,
+                  -0.3088037371635437,
+                  1.2189878225326538,
+                  -0.6402311325073242,
+                  -0.6402311325073242,
+                  -0.7410620450973511,
+                  -0.6770380139350891,
+                  -0.0490194708108902,
+                  -0.0490194708108902,
+                  -0.0490194708108902,
+                  -0.0448697954416275,
+                  2.383897066116333,
+                  2.383897066116333,
+                  8.959186553955078,
+                  1.8846688270568848,
+                  4.690907955169678,
+                  -0.22498884797096252,
+                  -0.50760817527771,
+                  -0.3543318212032318,
+                  -0.23925966024398804,
+                  -0.23925966024398804,
+                  -0.6541433334350586,
+                  -0.44151705503463745,
+                  -0.5876381397247314,
+                  -0.5850780010223389,
+                  -0.17015793919563293,
+                  0.5863760777542302
+                ],
+                [
+                  -1.4122496843338013,
+                  -1.4122496843338013,
+                  -1.929827094078064,
+                  2.443103551864624,
+                  0.8652682900428772,
+                  2.443103551864624,
+                  -1.4122496843338013,
+                  -0.04821774736046791,
+                  -0.9910613894462585,
+                  -0.04821774736046791,
+                  2.2235658168792725,
+                  -1.066167950630188,
+                  -0.14983908832073212,
+                  -0.0817498117685318,
+                  -0.01615486666560173,
+                  -0.01615486666560173,
+                  -0.17756283283233643,
+                  -0.41583502292633057,
+                  -0.19425776600837708,
+                  -0.20186641812324524,
+                  -0.007254472468048334,
+                  -0.3657042384147644,
+                  -0.42868590354919434,
+                  -0.3657042384147644,
+                  -0.3657042384147644,
+                  -0.0029913797043263912,
+                  -0.0029913797043263912,
+                  -0.003078712848946452,
+                  -0.26549097895622253,
+                  -0.14050111174583435,
+                  -0.09449157863855362,
+                  -0.09449157863855362,
+                  -0.09449157863855362,
+                  -0.5832874774932861,
+                  -0.05145943537354469,
+                  -0.7419618964195251,
+                  -0.540762722492218,
+                  -0.04619602486491203,
+                  -0.4284716248512268,
+                  -0.42396897077560425,
+                  -0.2681622803211212,
+                  -0.2681622803211212,
+                  -0.5657289028167725,
+                  -0.8625874519348145,
+                  -0.6474777460098267,
+                  -0.5657289028167725,
+                  -0.2523335814476013,
+                  -0.2523335814476013,
+                  -0.06804247945547104,
+                  -0.06804247945547104,
+                  -0.06804247945547104,
+                  -0.4247083067893982,
+                  -0.2922668159008026,
+                  -0.4278798997402191,
+                  -0.4278798997402191,
+                  -0.4278798997402191,
+                  -0.12357296794652939,
+                  -0.14337453246116638,
+                  -0.14337453246116638,
+                  -0.32735443115234375,
+                  0,
+                  -0.1733500063419342,
+                  2.0277488231658936,
+                  5.970579147338867,
+                  5.8822922706604,
+                  3.943547487258911,
+                  3.943547487258911,
+                  -0.6634199619293213,
+                  -0.459637314081192,
+                  -0.5110398530960083,
+                  -0.5024970769882202,
+                  -0.1516847312450409,
+                  0.4196487104854705
+                ],
+                [
+                  -0.08177517354488373,
+                  -0.08177517354488373,
+                  -0.6425802707672119,
+                  -0.08177517354488373,
+                  -0.5604410171508789,
+                  -0.08177517354488373,
+                  -0.08177517354488373,
+                  -0.08244942873716354,
+                  -0.744238018989563,
+                  -0.08244942873716354,
+                  -0.3079991340637207,
+                  -0.23022165894508362,
+                  -0.0435270331799984,
+                  -0.221679225564003,
+                  -0.05316130071878433,
+                  -0.05316130071878433,
+                  -0.033301446586847305,
+                  -0.42241939902305603,
+                  -0.14756864309310913,
+                  -0.25502243638038635,
+                  -0.09557514637708664,
+                  -0.15456829965114594,
+                  -0.15456829965114594,
+                  -0.15456829965114594,
+                  -0.15456829965114594,
+                  -0.09312926977872849,
+                  -0.09312926977872849,
+                  -0.033134590834379196,
+                  -0.36981189250946045,
+                  -0.23168142139911652,
+                  -0.1198224201798439,
+                  -0.1198224201798439,
+                  -0.1198224201798439,
+                  -0.06877966225147247,
+                  -0.15412364900112152,
+                  -1.7846006155014038,
+                  -0.07318512350320816,
+                  -0.2556316554546356,
+                  -0.9378564953804016,
+                  -0.9295274019241333,
+                  -0.4942622482776642,
+                  -0.4942622482776642,
+                  -0.1020767018198967,
+                  -0.19379015266895294,
+                  -0.32616472244262695,
+                  -0.1020767018198967,
+                  -0.49386918544769287,
+                  -0.49386918544769287,
+                  -0.24669292569160461,
+                  -0.2102285921573639,
+                  -0.2102285921573639,
+                  -0.5172378420829773,
+                  -0.040859680622816086,
+                  -0.14420467615127563,
+                  -0.14420467615127563,
+                  -0.14420467615127563,
+                  -0.46914827823638916,
+                  -0.2138344645500183,
+                  -0.2138344645500183,
+                  -0.6214247941970825,
+                  -0.026819754391908646,
+                  -0.36415335536003113,
+                  -0.24796195328235626,
+                  -0.49596673250198364,
+                  -0.24796195328235626,
+                  -0.24750378727912903,
+                  -0.24750378727912903,
+                  12.353747367858887,
+                  1.5471423864364624,
+                  -0.9708899855613708,
+                  -0.9643812775611877,
+                  -1.6983697414398193,
+                  1.0067572830678564
+                ],
+                [
+                  -0.1028340756893158,
+                  -0.1028340756893158,
+                  -1.147274136543274,
+                  -0.1028340756893158,
+                  -1.196758508682251,
+                  -0.1028340756893158,
+                  -0.1028340756893158,
+                  -0.1257755607366562,
+                  -1.6118710041046143,
+                  -0.1257755607366562,
+                  -0.5881164073944092,
+                  -0.352798193693161,
+                  -0.05046309158205986,
+                  -0.47800225019454956,
+                  -0.06786201894283295,
+                  -0.06786201894283295,
+                  -0.038603994995355606,
+                  -0.9135400652885437,
+                  -0.33325934410095215,
+                  -0.6349635124206543,
+                  -0.2713892161846161,
+                  -0.30079951882362366,
+                  -0.30079951882362366,
+                  -0.30079951882362366,
+                  -0.30079951882362366,
+                  -0.3015788793563843,
+                  -0.3015788793563843,
+                  -0.042592257261276245,
+                  -0.8516700267791748,
+                  -0.6190131306648254,
+                  -0.22790919244289398,
+                  -0.22790919244289398,
+                  -0.22790919244289398,
+                  -0.13491830229759216,
+                  -0.38725075125694275,
+                  -0.889739453792572,
+                  -0.3123267889022827,
+                  -0.7601993680000305,
+                  -2.156709909439087,
+                  -2.1326611042022705,
+                  -1.1668407917022705,
+                  -1.1668407917022705,
+                  -0.28395408391952515,
+                  -0.4156144857406616,
+                  -0.7896338105201721,
+                  -0.28395408391952515,
+                  -1.1644644737243652,
+                  -1.1644644737243652,
+                  -0.555160641670227,
+                  -0.5049702525138855,
+                  -0.5049702525138855,
+                  -1.2016863822937012,
+                  -0.07904759049415588,
+                  -0.3856774568557739,
+                  -0.3856774568557739,
+                  -0.3856774568557739,
+                  -1.1202163696289062,
+                  -0.4853661060333252,
+                  -0.4853661060333252,
+                  -1.4266383647918701,
+                  -0.041653748601675034,
+                  -0.8898049592971802,
+                  -0.5873119831085205,
+                  -1.173675537109375,
+                  -0.5873119831085205,
+                  -0.5848466157913208,
+                  -0.5848466157913208,
+                  -2.076946973800659,
+                  -0.9186396598815918,
+                  11.443203926086426,
+                  11.426909446716309,
+                  -0.576886773109436,
+                  2.3869836195633525
+                ],
+                [
+                  -0.04201408475637436,
+                  -0.04201408475637436,
+                  -0.3457791209220886,
+                  -0.04201408475637436,
+                  -2.169534683227539,
+                  -0.04201408475637436,
+                  -0.04201408475637436,
+                  -0.042545173317193985,
+                  -0.30708134174346924,
+                  -0.042545173317193985,
+                  -0.14533273875713348,
+                  -0.11636970192193985,
+                  -0.020280806347727776,
+                  -0.10027625411748886,
+                  -0.02886958234012127,
+                  -0.02886958234012127,
+                  -0.01539543829858303,
+                  -0.20333877205848694,
+                  -0.06965267658233643,
+                  -0.11865290254354477,
+                  -0.04161630570888519,
+                  -0.05708986148238182,
+                  -0.05708986148238182,
+                  -0.05708986148238182,
+                  -0.05708986148238182,
+                  -0.03527097776532173,
+                  -0.03527097776532173,
+                  -0.01840163953602314,
+                  -0.17362351715564728,
+                  -0.10396318882703781,
+                  -0.05174750089645386,
+                  -0.05174750089645386,
+                  -0.05174750089645386,
+                  -0.03659218177199364,
+                  -0.059523023664951324,
+                  4.5044050216674805,
+                  -1.9973106384277344,
+                  -0.04732375964522362,
+                  -0.1494157612323761,
+                  -0.14438951015472412,
+                  -0.11263848841190338,
+                  -0.11263848841190338,
+                  -0.03702773153781891,
+                  -0.07782351225614548,
+                  -0.1077817976474762,
+                  -0.03702773153781891,
+                  -0.10814596712589264,
+                  -0.10814596712589264,
+                  -0.07832284271717072,
+                  -0.059315577149391174,
+                  -0.059315577149391174,
+                  -0.11642564833164215,
+                  -0.013537569902837276,
+                  -0.00969856046140194,
+                  -0.00969856046140194,
+                  -0.00969856046140194,
+                  -0.096269890666008,
+                  -0.0681326687335968,
+                  -0.0681326687335968,
+                  -0.16391167044639587,
+                  -0.011757899075746536,
+                  -0.0672178864479065,
+                  -0.06790278851985931,
+                  -0.1407528668642044,
+                  -0.06790278851985931,
+                  -0.06162533909082413,
+                  -0.06162533909082413,
+                  -3.0450820922851562,
+                  3.4688682556152344,
+                  -0.0688939318060875,
+                  -0.0664326623082161,
+                  6.50048828125,
+                  -0.2897763984412734
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    "intentDomains": {},
+    "extraSentences": [
+      [
+        "en",
+        "how many leaves do i have left"
+      ],
+      [
+        "en",
+        "check my leave balance"
+      ],
+      [
+        "en",
+        "what is my remaining leave"
+      ],
+      [
+        "en",
+        "show me my leave quota"
+      ],
+      [
+        "en",
+        "i want to apply for leave"
+      ],
+      [
+        "en",
+        "apply for sick leave"
+      ],
+      [
+        "en",
+        "i need a day off"
+      ],
+      [
+        "en",
+        "request leave for tomorrow"
+      ],
+      [
+        "en",
+        "take leave from %date% to %date%"
+      ],
+      [
+        "en",
+        "from %date% to %date%"
+      ],
+      [
+        "en",
+        "i want apply for a leave"
+      ],
+      [
+        "en",
+        "from 13th to 15th january"
+      ],
+      [
+        "en",
+        "what is my role"
+      ],
+      [
+        "en",
+        "show my profile"
+      ],
+      [
+        "en",
+        "who am i"
+      ],
+      [
+        "en",
+        "my details"
+      ],
+      [
+        "en",
+        "hello"
+      ],
+      [
+        "en",
+        "hi"
+      ],
+      [
+        "en",
+        "good morning"
+      ],
+      [
+        "en",
+        "what are the working hours"
+      ],
+      [
+        "en",
+        "office timings"
+      ],
+      [
+        "en",
+        "when does work start"
+      ],
+      [
+        "en",
+        "what is the dress code"
+      ],
+      [
+        "en",
+        "can i wear jeans"
+      ],
+      [
+        "en",
+        "dress policy"
+      ],
+      [
+        "en",
+        "list of holidays"
+      ],
+      [
+        "en",
+        "when is the next holiday"
+      ],
+      [
+        "en",
+        "holiday calendar"
+      ],
+      [
+        "en",
+        "medical insurance benefits"
+      ],
+      [
+        "en",
+        "what benefits do i have"
+      ],
+      [
+        "en",
+        "pf and insurance"
+      ],
+      [
+        "en",
+        "thank you"
+      ],
+      [
+        "en",
+        "thanks"
+      ],
+      [
+        "en",
+        "bye"
+      ],
+      [
+        "en",
+        "goodbye"
+      ],
+      [
+        "en",
+        "who made you"
+      ]
+    ]
+  },
+  "ner": {
+    "settings": {
+      "tag": "ner",
+      "entityPreffix": "%",
+      "entitySuffix": "%"
+    },
+    "rules": {}
+  },
+  "nlgManager": {
+    "settings": {
+      "tag": "nlg-manager"
+    },
+    "responses": {
+      "en": {
+        "greeting": [
+          {
+            "answer": "Hello! I am your AI HR Assistant. I can help with leaves, policies, and your profile."
+          },
+          {
+            "answer": "Hi! How can I assist you with your HR needs today?"
+          }
+        ],
+        "policy.hours": [
+          {
+            "answer": "Our general working hours are 9:00 AM to 6:00 PM, Monday to Friday."
+          }
+        ],
+        "policy.dress": [
+          {
+            "answer": "We follow a Business Casual dress code. Formal wear is recommended for client meetings."
+          }
+        ],
+        "policy.holidays": [
+          {
+            "answer": "The next upcoming holiday is Republic Day on January 26th. You can view the full calendar in the Dashboard."
+          }
+        ],
+        "policy.benefits": [
+          {
+            "answer": "You are covered under the company Medical Insurance up to $5000. PF contributions are matched at 12%."
+          }
+        ],
+        "smalltalk.thanks": [
+          {
+            "answer": "You're welcome! Let me know if you need anything else."
+          }
+        ],
+        "smalltalk.bye": [
+          {
+            "answer": "Goodbye! Have a productive day."
+          }
+        ],
+        "smalltalk.creator": [
+          {
+            "answer": "I was built by the NOVA Engineering Team to assist you."
+          }
+        ]
+      }
+    }
+  },
+  "actionManager": {
+    "settings": {
+      "tag": "action-manager"
+    },
+    "actions": {}
+  },
+  "slotManager": {
+    "leave.apply": {
+      "date": {
+        "intent": "leave.apply",
+        "entity": "date",
+        "mandatory": false,
+        "locales": {}
+      }
+    }
+  }
+}

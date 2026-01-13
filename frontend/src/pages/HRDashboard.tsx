@@ -22,6 +22,11 @@ const HRDashboard = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
+  // Employee Management State
+  const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
+  const [showViewEmployeeModal, setShowViewEmployeeModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+
   const [newJob, setNewJob] = useState({
     title: '',
     department: '',
@@ -58,12 +63,26 @@ const HRDashboard = () => {
     joiningDate: new Date().toISOString().split('T')[0],
     project: ''
   });
+
+  // Project Assignment State
+  const [showAssignProjectModal, setShowAssignProjectModal] = useState(false);
+  const [selectedEmployeeForProject, setSelectedEmployeeForProject] = useState<any>(null);
+  const [projectData, setProjectData] = useState({
+    title: '',
+    description: '',
+    role: '',
+    deadline: ''
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     checkAuth();
+    let intervalId: any;
+
     if (activeSection === 'employees') {
       fetchEmployees();
+      // Poll every 30 seconds for real-time attendance updates
+      intervalId = setInterval(fetchEmployees, 30000);
     }
     if (activeSection === 'recruitment') {
       loadPostedJobs();
@@ -72,6 +91,10 @@ const HRDashboard = () => {
     if (activeSection === 'attendance') {
       fetchLeaves();
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [activeSection]);
 
   const fetchLeaves = async () => {
@@ -357,6 +380,45 @@ const HRDashboard = () => {
     }
   };
 
+  const handleAssignProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmployeeForProject) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...projectData,
+          assignedToEmployeeId: selectedEmployeeForProject._id || selectedEmployeeForProject.id
+        })
+      });
+
+      if (response.ok) {
+        alert('Project assigned successfully!');
+        setShowAssignProjectModal(false);
+        setProjectData({
+          title: '',
+          description: '',
+          role: '',
+          deadline: ''
+        });
+        setSelectedEmployeeForProject(null);
+        fetchEmployees(); // Refresh list to show new project status if needed
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to assign project: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error assigning project:', error);
+      alert('Failed to assign project. Please try again.');
+    }
+  };
+
   const handleRejectApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedApplication) return;
@@ -393,12 +455,56 @@ const HRDashboard = () => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('tokenExpiration');
-    localStorage.removeItem('refreshToken');
-    navigate('/login');
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmployee) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const empId = selectedEmployee._id || selectedEmployee.id;
+      const response = await fetch(`http://localhost:5000/api/hr/employees/${empId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(selectedEmployee)
+      });
+
+      if (response.ok) {
+        alert('Employee updated successfully');
+        setShowEditEmployeeModal(false);
+        fetchEmployees();
+      } else {
+        const error = await response.json();
+        alert(`Failed to update employee: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Failed to update employee');
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Call backend to mark attendance checkout
+      await fetch('http://localhost:5000/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage regardless of server response
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tokenExpiration');
+      localStorage.removeItem('refreshToken');
+      navigate('/login');
+    }
   };
 
   const handleLogout = () => {
@@ -610,11 +716,30 @@ const HRDashboard = () => {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-2">
-                          <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
+                          <button
+                            onClick={() => {
+                              setSelectedEmployee(employee);
+                              setShowViewEmployeeModal(true);
+                            }}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
                             View
                           </button>
-                          <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+                          <button
+                            onClick={() => {
+                              setSelectedEmployee(employee);
+                              setShowEditEmployeeModal(true);
+                            }}
+                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
                             Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedEmployeeForProject(employee);
+                              setShowAssignProjectModal(true);
+                            }}
+                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200"
+                          >
+                            Assign Project
                           </button>
                         </div>
                       </td>
@@ -856,8 +981,8 @@ const HRDashboard = () => {
                           </td>
                           <td className="py-4 px-4">
                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                leave.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                  'bg-yellow-100 text-yellow-700'
+                              leave.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
                               }`}>
                               {leave.status}
                             </span>
@@ -1140,6 +1265,7 @@ const HRDashboard = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newEmployee.joiningDate}
                     onChange={(e) => setNewEmployee({ ...newEmployee, joiningDate: e.target.value })}
+                    max={new Date().toISOString().split('T')[0]}
                   />
                 </div>
               </div>
@@ -1274,6 +1400,7 @@ const HRDashboard = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={newJob.deadline}
                     onChange={(e) => setNewJob({ ...newJob, deadline: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
 
@@ -1355,6 +1482,7 @@ const HRDashboard = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                       value={interviewData.date}
                       onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
                     />
                   </div>
 
@@ -1510,6 +1638,231 @@ const HRDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Project Modal */}
+      {showAssignProjectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Assign Project</h3>
+              <button onClick={() => setShowAssignProjectModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium">Assigning to: {selectedEmployeeForProject?.name}</p>
+              <p className="text-xs text-blue-600">{selectedEmployeeForProject?.position}</p>
+            </div>
+            <form onSubmit={handleAssignProject}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={projectData.title}
+                    onChange={(e) => setProjectData({ ...projectData, title: e.target.value })}
+                    required
+                    placeholder="e.g. AI Module Development"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role in Project</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={projectData.role}
+                    onChange={(e) => setProjectData({ ...projectData, role: e.target.value })}
+                    required
+                    placeholder="e.g. Lead Developer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    value={projectData.description}
+                    onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
+                    required
+                    placeholder="Project details..."
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={projectData.deadline}
+                    onChange={(e) => setProjectData({ ...projectData, deadline: e.target.value })}
+                    required
+                  />
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                  Confirm Assignment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditEmployeeModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Employee</h3>
+            <form onSubmit={handleUpdateEmployee} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedEmployee.name}
+                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Department</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-lg"
+                    value={selectedEmployee.department}
+                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, department: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Position</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-lg"
+                    value={selectedEmployee.position}
+                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, position: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedEmployee.phone || ''}
+                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Salary</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedEmployee.salary || ''}
+                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, salary: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditEmployeeModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Employee Detail Modal */}
+      {showViewEmployeeModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative">
+            <button
+              onClick={() => setShowViewEmployeeModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold">
+                {selectedEmployee.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">{selectedEmployee.name}</h3>
+                <p className="text-gray-500">{selectedEmployee.position} • {selectedEmployee.department}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 border-b pb-2">Contact Information</h4>
+                <div>
+                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="text-gray-900">{selectedEmployee.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Phone</p>
+                  <p className="text-gray-900">{selectedEmployee.phone || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 border-b pb-2">Employment Details</h4>
+                <div>
+                  <p className="text-xs text-gray-500">Joining Date</p>
+                  <p className="text-gray-900">{selectedEmployee.joiningDate}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Current Salary</p>
+                  <p className="text-gray-900">{selectedEmployee.salary || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Current Project</p>
+                  <p className="text-gray-900">{selectedEmployee.project || 'Unassigned'}</p>
+                </div>
+              </div>
+
+              <div className="col-span-2 space-y-4">
+                <h4 className="font-semibold text-gray-900 border-b pb-2">Attendance & Status</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Status</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {selectedEmployee.status}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Today's Attendance</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.attendanceStatus === 'Present' ? 'bg-green-100 text-green-700' :
+                      selectedEmployee.attendanceStatus === 'Checked Out' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                      {selectedEmployee.attendanceStatus || 'Absent'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Last Active</p>
+                    <p className="text-gray-900">{selectedEmployee.lastActive || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setShowViewEmployeeModal(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
