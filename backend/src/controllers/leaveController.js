@@ -49,15 +49,26 @@ exports.getMyLeaves = async (req, res) => {
 
         // Mock balances for now (or store in Employee model eventually)
         // We can just return standard balances
+        // Monthly Leave Limits
         const balances = {
-            Sick: 7,
-            Casual: 5,
-            Earned: 15
+            Sick: 2,
+            Casual: 3,
+            Earned: 0 // Not specified, setting to 0 or keeping as is? User only mentioned Sick and Casual.
         };
 
-        // Calculate used
+        // Calculate used leaves for the CURRENT MONTH only
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
         leaves.forEach(l => {
-            if (l.status === 'Approved' && balances[l.type]) {
+            const leaveDate = new Date(l.startDate);
+            if (
+                l.status === 'Approved' &&
+                balances[l.type] !== undefined &&
+                leaveDate.getMonth() === currentMonth &&
+                leaveDate.getFullYear() === currentYear
+            ) {
                 balances[l.type] -= l.days;
             }
         });

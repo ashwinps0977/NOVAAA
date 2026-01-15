@@ -26,6 +26,7 @@ const HRDashboard = () => {
   const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
   const [showViewEmployeeModal, setShowViewEmployeeModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [newJob, setNewJob] = useState({
     title: '',
@@ -72,6 +73,16 @@ const HRDashboard = () => {
     description: '',
     role: '',
     deadline: ''
+  });
+
+  // Task Assignment State
+  const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
+  const [selectedEmployeeForTask, setSelectedEmployeeForTask] = useState<any>(null);
+  const [taskData, setTaskData] = useState({
+    title: '',
+    project: 'General',
+    priority: 'medium',
+    due: 'Today'
   });
   const navigate = useNavigate();
 
@@ -485,6 +496,37 @@ const HRDashboard = () => {
     }
   };
 
+  const handleAssignTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmployeeForTask) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const empId = selectedEmployeeForTask._id || selectedEmployeeForTask.id;
+      const response = await fetch('http://localhost:5000/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...taskData,
+          assignedToEmployeeId: empId
+        })
+      });
+
+      if (response.ok) {
+        alert('Task assigned successfully');
+        setShowAssignTaskModal(false);
+        setTaskData({ title: '', project: 'General', priority: 'medium', due: 'Today' });
+      } else {
+        alert('Failed to assign task');
+      }
+    } catch (error) {
+      console.error('Task assignment error:', error);
+    }
+  };
+
   const logout = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -645,7 +687,8 @@ const HRDashboard = () => {
                     type="text"
                     placeholder="Search employees..."
                     className="pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    onChange={(e) => console.log('Search:', e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
                 <button
@@ -658,95 +701,47 @@ const HRDashboard = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Employee</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Department & Position</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Project</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Contact</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Salary</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Attendance</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {employees.map((employee) => (
-                    <tr key={employee.id || employee._id} className="hover:bg-gray-50">
-                      <td className="py-4 px-4">
+            <div className="flex flex-col space-y-4">
+              {employees
+                .filter(emp =>
+                  emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (emp.email && emp.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                  (emp.department && emp.department.toLowerCase().includes(searchTerm.toLowerCase()))
+                )
+                .map((employee) => {
+                  const isActive = employee.attendanceStatus === 'Present';
+                  return (
+                    <div
+                      key={employee.id || employee._id}
+                      onClick={() => {
+                        setSelectedEmployee(employee);
+                        setShowViewEmployeeModal(true);
+                      }}
+                      className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-sm group-hover:scale-110 transition-transform">
+                          {employee.name.charAt(0)}
+                        </div>
                         <div>
-                          <p className="font-medium text-gray-900">{employee.name}</p>
-                          <p className="text-sm text-gray-500">{employee.email}</p>
-                          <p className="text-xs text-gray-400">Joined: {employee.joiningDate}</p>
+                          <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-lg">{employee.name}</h3>
+                          <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full inline-block mt-1">
+                            ID: {(employee.employeeId || employee._id || '').slice(-6).toUpperCase()}
+                          </p>
                         </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{employee.department}</p>
-                          <p className="text-sm text-gray-500">{employee.position}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="bg-blue-50 px-3 py-1 rounded-lg inline-block">
-                          <span className="text-sm text-blue-700">{employee.project}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="text-sm text-gray-900">{employee.phone}</p>
-                        <p className="text-xs text-gray-500">Last login: {employee.lastLogin}</p>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="font-medium text-gray-900">{employee.salary}</p>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${employee.attendanceStatus === 'Present' ? 'bg-green-100 text-green-700' :
-                          employee.attendanceStatus === 'Checked Out' ? 'bg-gray-100 text-gray-700' :
-                            'bg-red-100 text-red-700'
+                      </div>
+
+                      <div className="flex items-center space-x-4">
+                        <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                           }`}>
-                          {employee.attendanceStatus || 'Absent'}
-                          {employee.attendanceStatus === 'Checked Out' && employee.lastActive && ` (${employee.lastActive})`}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${employee.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {employee.status === 'active' ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => {
-                              setSelectedEmployee(employee);
-                              setShowViewEmployeeModal(true);
-                            }}
-                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
-                            View
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedEmployee(employee);
-                              setShowEditEmployeeModal(true);
-                            }}
-                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedEmployeeForProject(employee);
-                              setShowAssignProjectModal(true);
-                            }}
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200"
-                          >
-                            Assign Project
-                          </button>
+                          <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                          <span>{isActive ? 'Active' : 'Inactive'}</span>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         );
@@ -1080,9 +1075,9 @@ const HRDashboard = () => {
                     : 'text-gray-700 hover:bg-gray-50'
                     } ${item.highlight ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : ''}`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <Icon className={`w-5 h-5 ${activeSection === item.id ? 'text-blue-600' : 'text-gray-500'}`} />
-                    <span className="font-medium">{item.label}</span>
+                  <div className="flex items-center space-x-3 text-left">
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${activeSection === item.id ? 'text-blue-600' : 'text-gray-500'}`} />
+                    <span className="font-medium whitespace-nowrap">{item.label}</span>
                   </div>
                   {item.highlight && activeSection !== item.id && (
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -1855,14 +1850,97 @@ const HRDashboard = () => {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-between items-center border-t pt-6">
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowViewEmployeeModal(false); // Close view modal
+                    setShowEditEmployeeModal(true); // Open edit modal
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium flex items-center"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedEmployeeForProject(selectedEmployee);
+                    setShowAssignProjectModal(true);
+                    // Keep view modal open or close? Usually keep open or close depending on preference. 
+                    // Let's close it to focus on the new task.
+                    setShowViewEmployeeModal(false);
+                  }}
+                  className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium flex items-center"
+                >
+                  Assign Project
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedEmployeeForTask(selectedEmployee);
+                    setShowAssignTaskModal(true);
+                    setShowViewEmployeeModal(false);
+                  }}
+                  className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium flex items-center"
+                >
+                  Assign Task
+                </button>
+              </div>
               <button
                 onClick={() => setShowViewEmployeeModal(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 text-sm font-medium"
               >
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showAssignTaskModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Assign Task</h3>
+              <button onClick={() => setShowAssignTaskModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleAssignTask}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    value={taskData.title}
+                    onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Today, Tomorrow, or YYYY-MM-DD"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    value={taskData.due}
+                    onChange={(e) => setTaskData({ ...taskData, due: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    value={taskData.priority}
+                    onChange={(e) => setTaskData({ ...taskData, priority: e.target.value })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <button type="submit" className="w-full bg-amber-500 text-white py-2 px-4 rounded-lg hover:bg-amber-600 transition-colors">
+                  Assign Task
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

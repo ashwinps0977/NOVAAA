@@ -25,10 +25,8 @@ import {
   HelpCircle,
   Heart,
   Coffee,
-  Sun,
-  Thermometer,
   Brain,
-  Scale,
+
   AlertCircle,
   CheckSquare,
   FileCheck,
@@ -51,6 +49,46 @@ const EmployeeDashboard = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  // Stats State
+  const [stats, setStats] = useState({
+    completedTasks: 0,
+    pendingTasks: 8,
+    productivityScore: 87,
+    leaveBalance: 5,
+    pendingApprovals: 0,
+    skillGap: 2
+  });
+
+  // Dynamic Data State
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [policies, setPolicies] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Attendance State
+  const [attendanceData, setAttendanceData] = useState<any>(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  // Leave State
+  const [leaveData, setLeaveData] = useState<any>({ leaves: [], balances: { Sick: 0, Casual: 0, Earned: 0 } });
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [leaveForm, setLeaveForm] = useState({
+    type: 'Sick',
+    startDate: '',
+    endDate: '',
+    reason: ''
+  });
+
+  // Projects State
+  const [myProjects, setMyProjects] = useState<any[]>([]);
+  const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string }>({
+    show: false,
+    project: null,
+    status: '',
+    feedback: ''
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -111,16 +149,29 @@ const EmployeeDashboard = () => {
     }
   };
 
-  const [stats] = useState({
-    completedTasks: 42,
-    pendingTasks: 8,
-    productivityScore: 87,
-    streakDays: 14,
-    leaveBalance: 12,
-    pendingApprovals: 3,
-    workLifeBalance: 78,
-    skillGap: 2
-  });
+
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data.user);
+        // Update local storage to keep it fresh
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -128,21 +179,102 @@ const EmployeeDashboard = () => {
       const user = JSON.parse(userStr);
       setUserData(user);
     }
+    // Always fetch fresh data on mount
+    fetchUserProfile();
   }, []);
 
-  // Mock data for various sections
-  const tasks = [
-    { id: 1, title: 'Complete Q4 Report', due: 'Today', priority: 'high', status: 'pending', project: 'Quarterly Review' },
-    { id: 2, title: 'Team Meeting Prep', due: 'Tomorrow', priority: 'medium', status: 'pending', project: 'Team Sync' },
-    { id: 3, title: 'Client Presentation', due: 'Dec 15', priority: 'high', status: 'completed', project: 'Sales' },
-    { id: 4, title: 'Training Module', due: 'Dec 18', priority: 'low', status: 'pending', project: 'Learning' },
-  ];
+  // Dynamic Data State
 
-  const goals = [
-    { id: 1, title: 'Complete Certification', progress: 80, dueDate: 'Mar 2024', kpi: 'Technical Skills' },
-    { id: 2, title: 'Lead Project Successfully', progress: 40, dueDate: 'Jun 2024', kpi: 'Leadership' },
-    { id: 3, title: 'Skill Development', progress: 60, dueDate: 'Dec 2024', kpi: 'Personal Growth' },
-  ];
+
+  // Fetch Functions
+  const fetchTasks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/tasks/my-tasks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const allTasks = data.tasks || [];
+        setTasks(allTasks);
+
+        // Update Stats
+        const completedCount = allTasks.filter((t: any) => t.status === 'completed').length;
+        setStats(prev => ({
+          ...prev,
+          completedTasks: completedCount
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
+  const fetchGoals = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/goals/my-goals', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setGoals(data.goals || []);
+      }
+    } catch (error) {
+      console.error('Error fetching goals:', error);
+    }
+  };
+
+  const fetchPolicies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/policies', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPolicies(data.policies || []);
+      }
+    } catch (error) {
+      console.error('Error fetching policies:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        fetchTasks(); // Refresh
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
 
   const trainingCourses = [
     { id: 1, title: 'React Advanced Patterns', provider: 'Internal', duration: '8h', progress: 30, status: 'in-progress' },
@@ -150,17 +282,9 @@ const EmployeeDashboard = () => {
     { id: 3, title: 'Data Visualization', provider: 'Udemy', duration: '12h', progress: 100, status: 'completed' },
   ];
 
-  const notifications = [
-    { id: 1, title: 'Leave Approved', message: 'Your sick leave has been approved', time: '2h ago', read: false },
-    { id: 2, title: 'New Policy Update', message: 'Updated remote work policy', time: '1d ago', read: true },
-    { id: 3, title: 'Performance Review', message: 'Schedule your Q4 review', time: '2d ago', read: false },
-  ];
 
-  const policies = [
-    { id: 1, title: 'Code of Conduct', category: 'General', lastUpdated: '2024-01-01' },
-    { id: 2, title: 'Leave Policy', category: 'HR', lastUpdated: '2024-01-05' },
-    { id: 3, title: 'Remote Work Policy', category: 'Operations', lastUpdated: '2024-01-10' },
-  ];
+
+
 
   const aiChatSuggestions = [
     "How many sick leaves do I have?",
@@ -169,9 +293,7 @@ const EmployeeDashboard = () => {
     "How to apply for leave?"
   ];
 
-  // Attendance state
-  const [attendanceData, setAttendanceData] = useState<any>(null);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
 
   const fetchAttendance = async () => {
     try {
@@ -247,16 +369,7 @@ const EmployeeDashboard = () => {
     }
   };
 
-  // Leave State
-  const [leaveData, setLeaveData] = useState<any>({ leaves: [], balances: { Sick: 0, Casual: 0, Earned: 0 } });
-  const [leaveLoading, setLeaveLoading] = useState(false);
-  const [showApplyModal, setShowApplyModal] = useState(false);
-  const [leaveForm, setLeaveForm] = useState({
-    type: 'Sick',
-    startDate: '',
-    endDate: '',
-    reason: ''
-  });
+
 
   const fetchLeaves = async () => {
     try {
@@ -268,6 +381,16 @@ const EmployeeDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         setLeaveData(data);
+
+        // Update Pending Approvals Stats
+        if (data.leaves && Array.isArray(data.leaves)) {
+          const pendingCount = data.leaves.filter((l: any) => l.status === 'Pending').length;
+          setStats(prev => ({
+            ...prev,
+            pendingApprovals: pendingCount,
+            leaveBalance: data.balances ? (data.balances.Sick + data.balances.Casual + data.balances.Earned) : prev.leaveBalance // Also update total balance if available
+          }));
+        }
       }
     } catch (error) {
       console.error('Fetch leaves error:', error);
@@ -276,14 +399,7 @@ const EmployeeDashboard = () => {
     }
   };
 
-  // Projects State
-  const [myProjects, setMyProjects] = useState<any[]>([]);
-  const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string }>({
-    show: false,
-    project: null,
-    status: '',
-    feedback: ''
-  });
+
 
   const fetchMyProjects = async () => {
     try {
@@ -331,12 +447,39 @@ const EmployeeDashboard = () => {
   };
 
   useEffect(() => {
+    let intervalId: any;
+
     if (activeSection === 'leave') {
       fetchLeaves();
     }
     if (activeSection === 'projects') {
       fetchMyProjects();
     }
+    if (activeSection === 'overview') {
+      fetchTasks();
+      fetchGoals();
+      fetchPolicies();
+      fetchLeaves();
+
+      fetchTasks();
+      fetchGoals();
+      fetchPolicies();
+      fetchLeaves();
+      fetchNotifications();
+
+      // Poll for new tasks and notifications every 15 seconds
+      intervalId = setInterval(() => {
+        fetchTasks();
+        fetchNotifications();
+      }, 15000);
+    }
+    if (activeSection === 'policies') {
+      fetchPolicies();
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [activeSection]);
 
   const handleApplyLeave = async (e: React.FormEvent) => {
@@ -355,6 +498,7 @@ const EmployeeDashboard = () => {
       if (response.ok) {
         alert('Leave application submitted successfully');
         setLeaveForm({ type: 'Sick', startDate: '', endDate: '', reason: '' });
+        setShowApplyModal(false);
         fetchLeaves();
       } else {
         alert('Failed to submit leave application');
@@ -426,15 +570,19 @@ const EmployeeDashboard = () => {
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-gray-600">Employee ID</span>
-                    <span className="font-medium">EMP-{userData?.id || '001'}</span>
+                    <span className="font-medium">EMP-{userData?.employeeId ? userData.employeeId.slice(-6).toUpperCase() : userData?.id ? userData.id.slice(-6).toUpperCase() : '000'}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-gray-600">Department</span>
-                    <span className="font-medium">Engineering</span>
+                    <span className="font-medium">{userData?.department || 'Not Assigned'}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-gray-600">Position</span>
-                    <span className="font-medium">Senior Developer</span>
+                    <span className="font-medium">{userData?.position || 'Not Assigned'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="text-gray-600">Joining Date</span>
+                    <span className="font-medium">{userData?.joiningDate ? new Date(userData.joiningDate).toLocaleDateString() : 'N/A'}</span>
                   </div>
                 </div>
 
@@ -444,47 +592,36 @@ const EmployeeDashboard = () => {
                     <span className="text-gray-600">{userData?.email || 'employee@company.com'}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-gray-600">+1 (555) 123-4567</span>
+                    <span className="text-gray-600">{userData?.phone || 'No phone number'}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-gray-600">123 Main St, City, Country</span>
+                    <span className="text-gray-600">{userData?.address || 'No address provided'}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">Emergency Contact</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Employment Details</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium">Jane Doe</span>
-                    <span className="text-sm text-gray-500">Spouse</span>
+                    <span className="font-medium">Current Project</span>
+                    <span className="text-sm text-blue-600 font-medium">{userData?.project || 'Bench'}</span>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <div className="mb-1">
-                      <span>+1 (555) 987-6543</span>
-                    </div>
-                    <div>
-                      <span>jane.doe@email.com</span>
-                    </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">Salary</span>
+                    <span className="text-sm text-gray-600">{userData?.salary ? `$${userData.salary}` : 'Confidential'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Status</span>
+                    <span className={`px-2 py-0.5 rounded text-xs ${userData?.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}>
+                      {userData?.status?.toUpperCase() || 'ACTIVE'}
+                    </span>
                   </div>
                 </div>
 
-                <h3 className="text-lg font-semibold text-gray-800 mt-6">Profile Completeness</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Profile Progress</span>
-                    <span className="font-medium">85%</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500" style={{ width: '85%' }}></div>
-                  </div>
-                  <p className="text-sm text-gray-500">Complete your profile by adding missing information</p>
-                </div>
 
-                <button className="w-full mt-4 flex items-center justify-center space-x-2 bg-emerald-500 text-white py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors">
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Documents</span>
-                </button>
+
+
               </div>
             </div>
           </div>
@@ -495,11 +632,19 @@ const EmployeeDashboard = () => {
         const isPresent = !!todayRecord;
         const isCheckedOut = !!todayRecord?.checkOut;
 
-        // Generate calendar days for current month
-        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        // Generate calendar days for current month with proper alignment
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday...
+
+        // Create array of empty slots for days before the 1st
+        const emptySlots = Array.from({ length: firstDayOfMonth }, (_, i) => null);
+
         const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
-          const d = new Date();
-          d.setDate(i + 1);
+          const d = new Date(year, month, i + 1);
           const dateStr = d.toISOString().split('T')[0];
           const record = attendanceData?.history?.find((r: any) => r.date === dateStr);
 
@@ -510,6 +655,9 @@ const EmployeeDashboard = () => {
 
           return { date: d, status, record };
         });
+
+        // Combine empty slots and actual days
+        const allCalendarCells = [...emptySlots, ...calendarDays];
 
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -548,31 +696,37 @@ const EmployeeDashboard = () => {
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Calendar ({new Date().toLocaleString('default', { month: 'long' })})</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Calendar ({new Date().toLocaleString('default', { month: 'long', year: 'numeric' })})</h3>
                   <div className="grid grid-cols-7 gap-2">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                       <div key={day} className="text-center font-medium text-gray-600 py-2">
                         {day}
                       </div>
                     ))}
-                    {calendarDays.map((day, index) => (
-                      <div key={index} className={`p-2 border rounded-lg text-center 
+                    {allCalendarCells.map((cell, index) => {
+                      if (!cell) {
+                        return <div key={`empty-${index}`} className="p-2"></div>;
+                      }
+                      const day = cell;
+                      return (
+                        <div key={index} className={`p-2 border rounded-lg text-center 
                       ${day.status === 'present' ? 'bg-green-50 border-green-200' :
-                          day.status === 'holiday' ? 'bg-purple-50 border-purple-200' :
-                            day.status === 'leave' ? 'bg-yellow-50 border-yellow-200' :
-                              day.status === 'future' ? 'bg-gray-50 border-gray-100 opacity-50' :
-                                'bg-red-50 border-red-200'}`}>
-                        <div className="font-medium">{day.date.getDate()}</div>
-                        <div className={`text-xs mt-1 
+                            day.status === 'holiday' ? 'bg-purple-50 border-purple-200' :
+                              day.status === 'leave' ? 'bg-yellow-50 border-yellow-200' :
+                                day.status === 'future' ? 'bg-gray-50 border-gray-100 opacity-50' :
+                                  'bg-red-50 border-red-200'}`}>
+                          <div className="font-medium">{day.date.getDate()}</div>
+                          <div className={`text-xs mt-1 
                         ${day.status === 'present' ? 'text-green-600' :
-                            day.status === 'holiday' ? 'text-purple-600' :
-                              day.status === 'leave' ? 'text-yellow-600' :
-                                day.status === 'future' ? 'text-gray-400' :
-                                  'text-red-600'}`}>
-                          {day.status === 'future' ? '-' : day.status}
+                              day.status === 'holiday' ? 'text-purple-600' :
+                                day.status === 'leave' ? 'text-yellow-600' :
+                                  day.status === 'future' ? 'text-gray-400' :
+                                    'text-red-600'}`}>
+                            {day.status === 'future' ? '-' : day.status}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -749,74 +903,7 @@ const EmployeeDashboard = () => {
               </div>
             )}
 
-            {/* Apply Leave Modal */}
-            {showApplyModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">Apply for Leave</h3>
-                    <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-                  </div>
-                  <form onSubmit={(e) => {
-                    handleApplyLeave(e);
-                    setShowApplyModal(false);
-                  }}>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
-                        <select
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={leaveForm.type}
-                          onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
-                        >
-                          <option value="Sick">Sick Leave</option>
-                          <option value="Casual">Casual Leave</option>
-                          <option value="Earned">Earned Leave</option>
-                          <option value="Unpaid">Unpaid Leave</option>
-                        </select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                          <input
-                            type="date"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                            value={leaveForm.startDate}
-                            onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
-                            required
-                            min={new Date().toISOString().split('T')[0]}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                          <input
-                            type="date"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                            value={leaveForm.endDate}
-                            onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
-                            required
-                            min={new Date().toISOString().split('T')[0]}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                        <textarea
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                          rows={3}
-                          value={leaveForm.reason}
-                          onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-                          required
-                        ></textarea>
-                      </div>
-                      <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                        Submit Application
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
+            {/* Apply Leave Modal Moved to Global Scope */}
           </div>
         );
 
@@ -1013,16 +1100,36 @@ const EmployeeDashboard = () => {
                   <div className="mt-6">
                     <h4 className="font-medium text-gray-700 mb-3">Recent Feedback</h4>
                     <div className="space-y-3">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-blue-600" />
+                      {notifications.map((notif) => (
+                        <div key={notif.id} className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 mt-1">
+                            {notif.type === 'success' ? (
+                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              </div>
+                            ) : notif.type === 'warning' ? (
+                              <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                                <AlertCircle className="w-4 h-4 text-amber-600" />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Bell className="w-4 h-4 text-blue-600" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                            <p className="text-sm text-gray-500">{notif.message}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          {/* Dot for unread */}
+                          {!notif.read && (
+                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                          )}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">From Manager</p>
-                          <p className="text-sm text-gray-600">Great work on the Q4 project! Excellent technical implementation.</p>
-                          <p className="text-xs text-gray-400 mt-1">2 weeks ago</p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
@@ -1397,24 +1504,11 @@ const EmployeeDashboard = () => {
                   </div>
                 </div>
                 <div className="mt-4 text-sm text-blue-600 font-medium">
-                  <span>Sick: 7 | Casual: 5</span>
+                  <span>Sick: {leaveData.balances?.Sick || 0} | Casual: {leaveData.balances?.Casual || 0}</span>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Work-Life Balance</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{stats.workLifeBalance}%</p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Scale className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-                <div className="mt-4 text-sm text-purple-600 font-medium">
-                  {stats.workLifeBalance > 75 ? 'Excellent Balance' : 'Good Balance'}
-                </div>
-              </div>
+
 
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
@@ -1446,76 +1540,46 @@ const EmployeeDashboard = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {tasks.map((task) => (
-                      <div key={task.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-3 h-3 rounded-full ${task.priority === 'high' ? 'bg-red-500' : task.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'}`}></div>
-                          <div>
-                            <h3 className="font-medium text-gray-900">{task.title}</h3>
-                            <div className="flex items-center space-x-3 text-sm text-gray-500">
-                              <span>Due: {task.due}</span>
-                              <span>•</span>
-                              <span>{task.project}</span>
+                    <div className="space-y-4">
+                      {tasks.map((task) => (
+                        <div key={task._id || task.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-3 h-3 rounded-full ${task.priority === 'high' ? 'bg-red-500' : task.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'}`}></div>
+                            <div>
+                              <h3 className="font-medium text-gray-900">{task.title}</h3>
+                              <div className="flex items-center space-x-3 text-sm text-gray-500">
+                                <span>Due: {task.due}</span>
+                                <span>•</span>
+                                <span>{task.project}</span>
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center space-x-3">
+                            {task.status === 'completed' ? (
+                              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+                                Completed
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleUpdateTaskStatus(task._id || task.id, 'completed')}
+                                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                              >
+                                Mark Complete
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          {task.status === 'completed' ? (
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-                              Completed
-                            </span>
-                          ) : (
-                            <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                              Mark Complete
-                            </button>
-                          )}
+                      ))}
+                      {tasks.length === 0 && (
+                        <div className="text-center py-6 text-gray-500">
+                          No tasks assigned yet.
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* AI Insights Section */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">AI Insights & Recommendations</h2>
-                    <Brain className="w-6 h-6 text-indigo-600" />
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <Thermometer className="w-5 h-5 text-amber-500" />
-                        <span className="font-medium text-gray-900">Burnout Risk</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Low risk detected. Your work patterns show good balance.</p>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <TrendingUp className="w-5 h-5 text-emerald-500" />
-                        <span className="font-medium text-gray-900">Productivity Tips</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Schedule deep work sessions in the morning for optimal focus.</p>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <Sun className="w-5 h-5 text-blue-500" />
-                        <span className="font-medium text-gray-900">Work-Life Score</span>
-                      </div>
-                      <p className="text-sm text-gray-600">Your current score is 78/100. Consider taking breaks every 90 minutes.</p>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <Target className="w-5 h-5 text-purple-500" />
-                        <span className="font-medium text-gray-900">Skill Development</span>
-                      </div>
-                      <p className="text-sm text-gray-600">2 skill gaps identified. Check Training section for recommendations.</p>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Right Column - Recent Activities & Notifications */}
@@ -1528,23 +1592,29 @@ const EmployeeDashboard = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`p-3 rounded-lg ${notification.read ? 'bg-gray-50' : 'bg-blue-50'} border ${notification.read ? 'border-gray-200' : 'border-blue-200'}`}>
-                        <div className="flex items-start space-x-3">
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          )}
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">{notification.title}</p>
-                            <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                            <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                    {notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <div key={notification._id} className={`p-3 rounded-lg ${notification.read ? 'bg-gray-50' : 'bg-blue-50'} border ${notification.read ? 'border-gray-200' : 'border-blue-200'}`}>
+                          <div className="flex items-start space-x-3">
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                            )}
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{notification.title}</p>
+                              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                            )}
                           </div>
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No notifications yet.</p>
+                    )}
                   </div>
                 </div>
 
@@ -1820,10 +1890,7 @@ const EmployeeDashboard = () => {
                 <span className="text-sm text-blue-700">Productivity</span>
                 <span className="text-sm font-medium">{stats.productivityScore}%</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-blue-700">Work-Life Balance</span>
-                <span className="text-sm font-medium">{stats.workLifeBalance}%</span>
-              </div>
+
             </div>
           </div>
         </div>
@@ -1855,11 +1922,80 @@ const EmployeeDashboard = () => {
             {/* Footer Note */}
             <div className="text-center text-sm text-gray-500 pt-4">
               <p>Employee Self-Service Portal • AI-Powered HR Management • Academic Project</p>
-              <p className="mt-1">For demonstration purposes only. All data is mock data.</p>
+              <p className="mt-1">Dashboard connected to Live Backend.</p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Global Apply Leave Modal (Moved from Section) */}
+      {showApplyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Apply for Leave</h3>
+              <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={(e) => {
+              handleApplyLeave(e);
+              setShowApplyModal(false);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                  <select
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={leaveForm.type}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
+                  >
+                    <option value="Sick">Sick Leave</option>
+                    <option value="Casual">Casual Leave</option>
+                    <option value="Earned">Earned Leave</option>
+                    <option value="Unpaid">Unpaid Leave</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      value={leaveForm.startDate}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      value={leaveForm.endDate}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                  <textarea
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    rows={3}
+                    value={leaveForm.reason}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                    required
+                  ></textarea>
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                  Submit Application
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

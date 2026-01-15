@@ -108,6 +108,22 @@ app.use('/api/projects', checkDB, projectRoutes);
 const aiRoutes = require('./routes/aiRoutes');
 app.use('/api/ai', checkDB, aiRoutes);
 
+// Task routes
+const taskRoutes = require('./routes/taskRoutes');
+app.use('/api/tasks', checkDB, taskRoutes);
+
+// Goal routes
+const goalRoutes = require('./routes/goalRoutes');
+app.use('/api/goals', checkDB, goalRoutes);
+
+// Policy routes
+const policyRoutes = require('./routes/policyRoutes');
+app.use('/api/policies', checkDB, policyRoutes);
+
+// Notification routes
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', checkDB, notificationRoutes);
+
 // Temporary test endpoints (only used when DB is not connected)
 const tempUsers = [];
 const tempApplications = [];
