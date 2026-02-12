@@ -33,8 +33,19 @@ const employeeSchema = new mongoose.Schema({
   phone: {
     type: String
   },
-  salary: {
-    type: String
+  salaryStructure: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SalaryStructure'
+  },
+  currentSalary: {
+    type: Number, // Actual base salary amount
+    default: 0
+  },
+  bankDetails: {
+    accountNumber: String,
+    bankName: String,
+    ifscCode: String,
+    panNumber: String
   },
   joiningDate: {
     type: Date,

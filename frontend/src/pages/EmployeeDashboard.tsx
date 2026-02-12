@@ -29,7 +29,6 @@ import {
   Thermometer,
   Brain,
   Scale,
-  AlertCircle,
   CheckSquare,
   FileCheck,
   ShieldCheck,
@@ -38,6 +37,7 @@ import {
   Star
 } from 'lucide-react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
+import SalarySection from '../components/dashboard/SalarySection';
 
 const EmployeeDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -213,9 +213,66 @@ const EmployeeDashboard = () => {
     }
   };
 
+  // Projects State
+  const [myProjects, setMyProjects] = useState<any[]>([]);
+  const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string }>({
+    show: false,
+    project: null,
+    status: '',
+    feedback: ''
+  });
+
+  const fetchMyProjects = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/projects/my-projects', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMyProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Fetch my projects error:', error);
+    }
+  };
+
+  const handleUpdateProjectStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectUpdateModal.project) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/projects/${projectUpdateModal.project._id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: projectUpdateModal.status,
+          feedback: projectUpdateModal.feedback
+        })
+      });
+
+      if (response.ok) {
+        alert('Project status updated successfully');
+        setProjectUpdateModal({ show: false, project: null, status: '', feedback: '' });
+        fetchMyProjects();
+      } else {
+        alert('Failed to update project status');
+      }
+    } catch (error) {
+      console.error('Update project status error:', error);
+    }
+  };
+
   useEffect(() => {
     if (activeSection === 'leave') {
       fetchLeaves();
+    }
+    if (activeSection === 'projects') {
+      fetchMyProjects();
     }
   }, [activeSection]);
 
@@ -285,6 +342,25 @@ const EmployeeDashboard = () => {
     }, 1000);
 
     setAiChatMessage('');
+  };
+
+  const handleLogout = async () => {
+    // Attempt to check out before logging out
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/attendance/checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.error('Logout checkout failed:', error);
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login'; // Force refresh/redirect
   };
 
   const renderSection = () => {
@@ -472,7 +548,7 @@ const EmployeeDashboard = () => {
                       </div>
                     </div>
 
-                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors" onClick={() => alert('Report download started...')}>
+                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors" onClick={handleDownloadReport}>
                       <Download className="w-4 h-4" />
                       <span>Download Attendance Report</span>
                     </button>
@@ -496,6 +572,8 @@ const EmployeeDashboard = () => {
           </div>
         );
 
+      case 'salary':
+        return <SalarySection />;
       case 'leave':
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -556,8 +634,8 @@ const EmployeeDashboard = () => {
                               <div className="flex items-center space-x-3">
                                 <span className="font-medium">{leave.type}</span>
                                 <span className={`px-2 py-1 rounded-full text-xs ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                    leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                                      'bg-red-100 text-red-700'
+                                  leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
                                   }`}>
                                   {leave.status}
                                 </span>
@@ -662,6 +740,7 @@ const EmployeeDashboard = () => {
                             value={leaveForm.startDate}
                             onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
                             required
+                            min={new Date().toISOString().split('T')[0]}
                           />
                         </div>
                         <div>
@@ -672,6 +751,7 @@ const EmployeeDashboard = () => {
                             value={leaveForm.endDate}
                             onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
                             required
+                            min={new Date().toISOString().split('T')[0]}
                           />
                         </div>
                       </div>
@@ -984,90 +1064,7 @@ const EmployeeDashboard = () => {
           </div>
         );
 
-      case 'salary':
-        return (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Salary & Payslip (Demo Data)</h2>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-yellow-800">Academic Project Notice</p>
-                  <p className="text-sm text-yellow-600 mt-1">
-                    This section contains mock data for demonstration purposes only.
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg p-6 text-white mb-6">
-                  <h3 className="text-lg font-bold mb-2">Current Month Salary</h3>
-                  <div className="flex items-end space-x-2">
-                    <span className="text-4xl font-bold">$8,500</span>
-                    <span className="text-lg opacity-90">Net Amount</span>
-                  </div>
-                  <p className="mt-2 text-sm opacity-90">Paid on January 31, 2024</p>
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Salary Structure</h3>
-                <div className="space-y-3">
-                  {[
-                    { name: 'Basic Salary', amount: 5000 },
-                    { name: 'House Rent Allowance', amount: 2000 },
-                    { name: 'Special Allowance', amount: 1000 },
-                    { name: 'Performance Bonus', amount: 500 },
-                    { name: 'Tax Deduction', amount: -800 },
-                    { name: 'Provident Fund', amount: -600 },
-                    { name: 'Health Insurance', amount: -200 },
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between py-3 border-b">
-                      <span className="text-gray-600">{item.name}</span>
-                      <span className={`font-medium ${item.amount < 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                        ${Math.abs(item.amount)} {item.amount < 0 ? '-' : '+'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Payslips</h3>
-                <div className="space-y-3">
-                  {[
-                    { month: 'December 2023', amount: 8500, status: 'Paid' },
-                    { month: 'November 2023', amount: 8200, status: 'Paid' },
-                    { month: 'October 2023', amount: 8500, status: 'Paid' },
-                    { month: 'September 2023', amount: 8000, status: 'Paid' },
-                  ].map((payslip, index) => (
-                    <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900">{payslip.month}</span>
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                          {payslip.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">Net Amount</span>
-                        <span className="font-bold text-gray-900">${payslip.amount}</span>
-                      </div>
-                      <button className="w-full mt-3 flex items-center justify-center space-x-2 text-blue-600 hover:text-blue-700 text-sm">
-                        <Eye className="w-4 h-4" />
-                        <span>View Details</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <button className="w-full mt-6 flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-                  <Download className="w-4 h-4" />
-                  <span>Download All Payslips</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        );
 
       case 'policies':
         return (
@@ -1411,11 +1408,182 @@ const EmployeeDashboard = () => {
                       <ShieldCheck className="w-6 h-6 text-gray-600 mb-2" />
                       <span className="text-sm font-medium text-gray-700">Policies</span>
                     </button>
+
+                    <button onClick={() => setActiveSection('salary')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
+                      <DollarSign className="w-6 h-6 text-gray-600 mb-2" />
+                      <span className="text-sm font-medium text-gray-700">Salary</span>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </>
+        );
+
+      case 'projects':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">My Projects</h2>
+
+            {/* Project Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg shadow-blue-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                    <Briefcase className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded">Total</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">{myProjects.length}</h3>
+                <p className="text-blue-100 text-sm">Assigned Projects</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-6 text-white shadow-lg shadow-emerald-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded">Completed</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">
+                  {myProjects.filter(p => p.status === 'Completed').length}
+                </h3>
+                <p className="text-emerald-100 text-sm">Successfully Finished</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg shadow-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded">Active</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">
+                  {myProjects.filter(p => p.status === 'In Progress' || p.status === 'Pending').length}
+                </h3>
+                <p className="text-purple-100 text-sm">Ongoing Tasks</p>
+              </div>
+            </div>
+
+            {/* Projects Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {myProjects.length > 0 ? (
+                myProjects.map((project) => (
+                  <div key={project._id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 overflow-hidden group">
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-3 rounded-xl ${project.status === 'Completed' ? 'bg-green-50 text-green-600' :
+                          project.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
+                            'bg-yellow-50 text-yellow-600'
+                          }`}>
+                          <Briefcase className="w-6 h-6" />
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${project.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                          project.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                          {project.status}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{project.title}</h3>
+                      <p className="text-sm text-blue-600 font-medium mb-3">{project.role}</p>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+
+                      <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-4">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>Due: {new Date(project.deadline).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <User className="w-4 h-4" />
+                          <span>By: {project.assignedBy?.name || 'HR'}</span>
+                        </div>
+                      </div>
+
+                      {project.feedback && (
+                        <div className="mt-4 bg-gray-50 p-3 rounded-lg text-xs text-gray-600 border border-gray-100">
+                          <span className="font-semibold block mb-1">Status Update:</span>
+                          {project.feedback}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
+                      <button
+                        onClick={() => setProjectUpdateModal({
+                          show: true,
+                          project: project,
+                          status: project.status,
+                          feedback: project.feedback || ''
+                        })}
+                        className="w-full flex items-center justify-center space-x-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                      >
+                        <span>Update Progress</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <Briefcase className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">No Projects Assigned</h3>
+                  <p className="text-gray-500 mt-1">You don't have any active projects at the moment.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Project Update Modal - Enhanced */}
+            {projectUpdateModal.show && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl transform transition-all">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">Update Status</h3>
+                      <p className="text-sm text-gray-500 mt-1">{projectUpdateModal.project?.title}</p>
+                    </div>
+                    <button onClick={() => setProjectUpdateModal({ ...projectUpdateModal, show: false })} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600">✕</button>
+                  </div>
+                  <form onSubmit={handleUpdateProjectStatus}>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Current Status</label>
+                        <div className="relative">
+                          <select
+                            className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none font-medium text-gray-700"
+                            value={projectUpdateModal.status}
+                            onChange={(e) => setProjectUpdateModal({ ...projectUpdateModal, status: e.target.value })}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="On Hold">On Hold</option>
+                          </select>
+                          <ChevronRight className="absolute right-4 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none w-4 h-4" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Progress Notes</label>
+                        <textarea
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          rows={4}
+                          value={projectUpdateModal.feedback}
+                          onChange={(e) => setProjectUpdateModal({ ...projectUpdateModal, feedback: e.target.value })}
+                          placeholder="Share your progress, blockers, or completion notes..."
+                        ></textarea>
+                      </div>
+                      <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:-translate-y-0.5">
+                        Save Updates
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
         );
     }
   };
@@ -1423,6 +1591,7 @@ const EmployeeDashboard = () => {
   // Sidebar navigation items
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
+    { id: 'projects', label: 'My Projects', icon: CheckSquare },
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'attendance', label: 'Attendance', icon: CalendarDays },
     { id: 'leave', label: 'Leave Management', icon: Briefcase },
@@ -1472,7 +1641,10 @@ const EmployeeDashboard = () => {
             })}
 
             <div className="pt-4 mt-4 border-t">
-              <button className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
                 <LogOut className="w-5 h-5" />
                 <span className="font-medium">Logout</span>
               </button>

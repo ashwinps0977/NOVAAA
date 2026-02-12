@@ -1,0 +1,2284 @@
+{
+  "settings": {
+    "languages": [
+      "en"
+    ],
+    "forceNER": true,
+    "tag": "nlp",
+    "threshold": 0.5,
+    "autoLoad": true,
+    "autoSave": true,
+    "modelFileName": "model.nlp",
+    "executeActionsBeforeAnswers": false,
+    "calculateSentiment": true
+  },
+  "nluManager": {
+    "settings": {
+      "tag": "nlu-manager"
+    },
+    "locales": [
+      "en"
+    ],
+    "languageNames": {},
+    "domainManagers": {
+      "en": {
+        "settings": {
+          "locale": "en",
+          "trainByDomain": false,
+          "tag": "domain-manager-en",
+          "nluByDomain": {
+            "default": {
+              "className": "NeuralNlu",
+              "settings": {}
+            }
+          },
+          "useStemDict": true
+        },
+        "stemDict": {
+          "do,have,how,i,leav,left,mani": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "balanc,check,leav,my": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "is,leav,my,remain,what": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "leav,me,my,quota,show": {
+            "intent": "leave.balance",
+            "domain": "default"
+          },
+          "appli,for,i,leav,to,want": {
+            "intent": "leave.open_modal",
+            "domain": "default"
+          },
+          "appli,for,leav,sick": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "a,day,i,need,off": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "for,leav,request,tomorrow": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "%date%,from,leav,take,to": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "%date%,from,to": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "a,appli,for,i,leav,want": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "13th,15th,from,januari,to": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "is,my,role,what": {
+            "intent": "employee.role",
+            "domain": "default"
+          },
+          "design,my": {
+            "intent": "employee.role",
+            "domain": "default"
+          },
+          "am,i,who": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "my,profil": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "my,profil,show": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "profil": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "detail,my": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "about,me,myself,tell": {
+            "intent": "employee.info",
+            "domain": "default"
+          },
+          "is,my,salari,what": {
+            "intent": "employee.salary",
+            "domain": "default"
+          },
+          "do,earn,how,i,much": {
+            "intent": "employee.salary",
+            "domain": "default"
+          },
+          "my,packag": {
+            "intent": "employee.salary",
+            "domain": "default"
+          },
+          "incom,my": {
+            "intent": "employee.salary",
+            "domain": "default"
+          },
+          "my,payslip,show": {
+            "intent": "employee.salary",
+            "domain": "default"
+          },
+          "is,my,project,what": {
+            "intent": "employee.project",
+            "domain": "default"
+          },
+          "current,project": {
+            "intent": "employee.project",
+            "domain": "default"
+          },
+          "am,i,on,team,which": {
+            "intent": "employee.project",
+            "domain": "default"
+          },
+          "date,join": {
+            "intent": "employee.joinDate",
+            "domain": "default"
+          },
+          "did,i,join,when": {
+            "intent": "employee.joinDate",
+            "domain": "default"
+          },
+          "appli,for,how,leav,to": {
+            "intent": "leave.howto",
+            "domain": "default"
+          },
+          "applic,for,leav,process": {
+            "intent": "leave.howto",
+            "domain": "default"
+          },
+          "appli,for,guid,leav,me,to": {
+            "intent": "leave.howto",
+            "domain": "default"
+          },
+          "appli,for,leav,now": {
+            "intent": "leave.open_modal",
+            "domain": "default"
+          },
+          "form,leav,open": {
+            "intent": "leave.open_modal",
+            "domain": "default"
+          },
+          "yes": {
+            "intent": "response.yes",
+            "domain": "default"
+          },
+          "pleas,yes": {
+            "intent": "response.yes",
+            "domain": "default"
+          },
+          "sure": {
+            "intent": "response.yes",
+            "domain": "default"
+          },
+          "okay": {
+            "intent": "response.yes",
+            "domain": "default"
+          },
+          "leav,sick,tomorrow": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "casual,for,leav,monday": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "fever,is,reason": {
+            "intent": "leave.apply",
+            "domain": "default"
+          },
+          "hello": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hi": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hey": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "greet": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "hi,there": {
+            "intent": "greeting",
+            "domain": "default"
+          },
+          "good,morn": {
+            "intent": "greeting",
+            "domain": "default"
+          }
+        },
+        "intentDict": {
+          "leave.balance": "default",
+          "leave.apply": "default",
+          "employee.role": "default",
+          "employee.info": "default",
+          "employee.salary": "default",
+          "employee.project": "default",
+          "employee.joinDate": "default",
+          "leave.howto": "default",
+          "leave.open_modal": "default",
+          "response.yes": "default",
+          "greeting": "default"
+        },
+        "sentences": [
+          {
+            "domain": "default",
+            "utterance": "how many leaves do i have left",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "check my leave balance",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is my remaining leave",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "show me my leave quota",
+            "intent": "leave.balance"
+          },
+          {
+            "domain": "default",
+            "utterance": "i want to apply for leave",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "apply for sick leave",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "i need a day off",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "request leave for tomorrow",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "take leave from %date% to %date%",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "from %date% to %date%",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "i want apply for a leave",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "from 13th to 15th january",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is my role",
+            "intent": "employee.role"
+          },
+          {
+            "domain": "default",
+            "utterance": "my designation",
+            "intent": "employee.role"
+          },
+          {
+            "domain": "default",
+            "utterance": "who am i",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "my profile",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "show my profile",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "profile",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "my details",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "tell me about myself",
+            "intent": "employee.info"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is my salary",
+            "intent": "employee.salary"
+          },
+          {
+            "domain": "default",
+            "utterance": "how much do i earn",
+            "intent": "employee.salary"
+          },
+          {
+            "domain": "default",
+            "utterance": "my package",
+            "intent": "employee.salary"
+          },
+          {
+            "domain": "default",
+            "utterance": "my income",
+            "intent": "employee.salary"
+          },
+          {
+            "domain": "default",
+            "utterance": "show my payslip",
+            "intent": "employee.salary"
+          },
+          {
+            "domain": "default",
+            "utterance": "what is my project",
+            "intent": "employee.project"
+          },
+          {
+            "domain": "default",
+            "utterance": "current project",
+            "intent": "employee.project"
+          },
+          {
+            "domain": "default",
+            "utterance": "which team am i on",
+            "intent": "employee.project"
+          },
+          {
+            "domain": "default",
+            "utterance": "joining date",
+            "intent": "employee.joinDate"
+          },
+          {
+            "domain": "default",
+            "utterance": "when did i join",
+            "intent": "employee.joinDate"
+          },
+          {
+            "domain": "default",
+            "utterance": "how to apply for leave",
+            "intent": "leave.howto"
+          },
+          {
+            "domain": "default",
+            "utterance": "process for leave application",
+            "intent": "leave.howto"
+          },
+          {
+            "domain": "default",
+            "utterance": "guide me to apply for leave",
+            "intent": "leave.howto"
+          },
+          {
+            "domain": "default",
+            "utterance": "apply for leave now",
+            "intent": "leave.open_modal"
+          },
+          {
+            "domain": "default",
+            "utterance": "i want to apply for leave",
+            "intent": "leave.open_modal"
+          },
+          {
+            "domain": "default",
+            "utterance": "open leave form",
+            "intent": "leave.open_modal"
+          },
+          {
+            "domain": "default",
+            "utterance": "yes",
+            "intent": "response.yes"
+          },
+          {
+            "domain": "default",
+            "utterance": "yes please",
+            "intent": "response.yes"
+          },
+          {
+            "domain": "default",
+            "utterance": "sure",
+            "intent": "response.yes"
+          },
+          {
+            "domain": "default",
+            "utterance": "okay",
+            "intent": "response.yes"
+          },
+          {
+            "domain": "default",
+            "utterance": "sick leave tomorrow",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "casual leave for monday",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "reason is fever",
+            "intent": "leave.apply"
+          },
+          {
+            "domain": "default",
+            "utterance": "hello",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hi",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hey",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "greetings",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "hi there",
+            "intent": "greeting"
+          },
+          {
+            "domain": "default",
+            "utterance": "good morning",
+            "intent": "greeting"
+          }
+        ],
+        "domains": {
+          "master_domain": {
+            "settings": {
+              "locale": "en",
+              "tag": "nlu-en",
+              "keepStopwords": true,
+              "nonefeatureValue": 1,
+              "nonedeltaMultiplier": 1.2,
+              "spellCheck": false,
+              "spellCheckDistance": 1,
+              "filterZeros": true,
+              "log": true
+            },
+            "features": {
+              "how": 1,
+              "mani": 1,
+              "leav": 1,
+              "do": 1,
+              "i": 1,
+              "have": 1,
+              "left": 1,
+              "check": 1,
+              "my": 1,
+              "balanc": 1,
+              "what": 1,
+              "is": 1,
+              "remain": 1,
+              "show": 1,
+              "me": 1,
+              "quota": 1,
+              "want": 1,
+              "to": 1,
+              "appli": 1,
+              "for": 1,
+              "sick": 1,
+              "need": 1,
+              "a": 1,
+              "day": 1,
+              "off": 1,
+              "request": 1,
+              "tomorrow": 1,
+              "take": 1,
+              "from": 1,
+              "%date%": 1,
+              "13th": 1,
+              "15th": 1,
+              "januari": 1,
+              "role": 1,
+              "design": 1,
+              "who": 1,
+              "am": 1,
+              "profil": 1,
+              "detail": 1,
+              "tell": 1,
+              "about": 1,
+              "myself": 1,
+              "salari": 1,
+              "much": 1,
+              "earn": 1,
+              "packag": 1,
+              "incom": 1,
+              "payslip": 1,
+              "project": 1,
+              "current": 1,
+              "which": 1,
+              "team": 1,
+              "on": 1,
+              "join": 1,
+              "date": 1,
+              "when": 1,
+              "did": 1,
+              "process": 1,
+              "applic": 1,
+              "guid": 1,
+              "now": 1,
+              "open": 1,
+              "form": 1,
+              "yes": 1,
+              "pleas": 1,
+              "sure": 1,
+              "okay": 1,
+              "casual": 1,
+              "monday": 1,
+              "reason": 1,
+              "fever": 1,
+              "hello": 1,
+              "hi": 1,
+              "hey": 1,
+              "greet": 1,
+              "there": 1,
+              "good": 1,
+              "morn": 1
+            },
+            "intents": {
+              "leave.balance": 1,
+              "leave.apply": 1,
+              "employee.role": 1,
+              "employee.info": 1,
+              "employee.salary": 1,
+              "employee.project": 1,
+              "employee.joinDate": 1,
+              "leave.howto": 1,
+              "leave.open_modal": 1,
+              "response.yes": 1,
+              "greeting": 1
+            },
+            "intentFeatures": {
+              "leave.balance": {
+                "how": 1,
+                "mani": 1,
+                "leav": 1,
+                "do": 1,
+                "i": 1,
+                "have": 1,
+                "left": 1,
+                "check": 1,
+                "my": 1,
+                "balanc": 1,
+                "what": 1,
+                "is": 1,
+                "remain": 1,
+                "show": 1,
+                "me": 1,
+                "quota": 1
+              },
+              "leave.apply": {
+                "i": 1,
+                "want": 1,
+                "to": 1,
+                "appli": 1,
+                "for": 1,
+                "leav": 1,
+                "sick": 1,
+                "need": 1,
+                "a": 1,
+                "day": 1,
+                "off": 1,
+                "request": 1,
+                "tomorrow": 1,
+                "take": 1,
+                "from": 1,
+                "%date%": 1,
+                "13th": 1,
+                "15th": 1,
+                "januari": 1,
+                "casual": 1,
+                "monday": 1,
+                "reason": 1,
+                "is": 1,
+                "fever": 1
+              },
+              "employee.role": {
+                "what": 1,
+                "is": 1,
+                "my": 1,
+                "role": 1,
+                "design": 1
+              },
+              "employee.info": {
+                "who": 1,
+                "am": 1,
+                "i": 1,
+                "my": 1,
+                "profil": 1,
+                "show": 1,
+                "detail": 1,
+                "tell": 1,
+                "me": 1,
+                "about": 1,
+                "myself": 1
+              },
+              "employee.salary": {
+                "what": 1,
+                "is": 1,
+                "my": 1,
+                "salari": 1,
+                "how": 1,
+                "much": 1,
+                "do": 1,
+                "i": 1,
+                "earn": 1,
+                "packag": 1,
+                "incom": 1,
+                "show": 1,
+                "payslip": 1
+              },
+              "employee.project": {
+                "what": 1,
+                "is": 1,
+                "my": 1,
+                "project": 1,
+                "current": 1,
+                "which": 1,
+                "team": 1,
+                "am": 1,
+                "i": 1,
+                "on": 1
+              },
+              "employee.joinDate": {
+                "join": 1,
+                "date": 1,
+                "when": 1,
+                "did": 1,
+                "i": 1
+              },
+              "leave.howto": {
+                "how": 1,
+                "to": 1,
+                "appli": 1,
+                "for": 1,
+                "leav": 1,
+                "process": 1,
+                "applic": 1,
+                "guid": 1,
+                "me": 1
+              },
+              "leave.open_modal": {
+                "appli": 1,
+                "for": 1,
+                "leav": 1,
+                "now": 1,
+                "i": 1,
+                "want": 1,
+                "to": 1,
+                "open": 1,
+                "form": 1
+              },
+              "response.yes": {
+                "yes": 1,
+                "pleas": 1,
+                "sure": 1,
+                "okay": 1
+              },
+              "greeting": {
+                "hello": 1,
+                "hi": 1,
+                "hey": 1,
+                "greet": 1,
+                "there": 1,
+                "good": 1,
+                "morn": 1
+              }
+            },
+            "featuresToIntent": {
+              "how": [
+                "leave.balance",
+                "employee.salary",
+                "leave.howto"
+              ],
+              "mani": [
+                "leave.balance"
+              ],
+              "leav": [
+                "leave.balance",
+                "leave.apply",
+                "leave.howto",
+                "leave.open_modal"
+              ],
+              "do": [
+                "leave.balance",
+                "employee.salary"
+              ],
+              "i": [
+                "leave.balance",
+                "leave.apply",
+                "employee.info",
+                "employee.salary",
+                "employee.project",
+                "employee.joinDate",
+                "leave.open_modal"
+              ],
+              "have": [
+                "leave.balance"
+              ],
+              "left": [
+                "leave.balance"
+              ],
+              "check": [
+                "leave.balance"
+              ],
+              "my": [
+                "leave.balance",
+                "employee.role",
+                "employee.info",
+                "employee.salary",
+                "employee.project"
+              ],
+              "balanc": [
+                "leave.balance"
+              ],
+              "what": [
+                "leave.balance",
+                "employee.role",
+                "employee.salary",
+                "employee.project"
+              ],
+              "is": [
+                "leave.balance",
+                "leave.apply",
+                "employee.role",
+                "employee.salary",
+                "employee.project"
+              ],
+              "remain": [
+                "leave.balance"
+              ],
+              "show": [
+                "leave.balance",
+                "employee.info",
+                "employee.salary"
+              ],
+              "me": [
+                "leave.balance",
+                "employee.info",
+                "leave.howto"
+              ],
+              "quota": [
+                "leave.balance"
+              ],
+              "want": [
+                "leave.apply",
+                "leave.open_modal"
+              ],
+              "to": [
+                "leave.apply",
+                "leave.howto",
+                "leave.open_modal"
+              ],
+              "appli": [
+                "leave.apply",
+                "leave.howto",
+                "leave.open_modal"
+              ],
+              "for": [
+                "leave.apply",
+                "leave.howto",
+                "leave.open_modal"
+              ],
+              "sick": [
+                "leave.apply"
+              ],
+              "need": [
+                "leave.apply"
+              ],
+              "a": [
+                "leave.apply"
+              ],
+              "day": [
+                "leave.apply"
+              ],
+              "off": [
+                "leave.apply"
+              ],
+              "request": [
+                "leave.apply"
+              ],
+              "tomorrow": [
+                "leave.apply"
+              ],
+              "take": [
+                "leave.apply"
+              ],
+              "from": [
+                "leave.apply"
+              ],
+              "%date%": [
+                "leave.apply"
+              ],
+              "13th": [
+                "leave.apply"
+              ],
+              "15th": [
+                "leave.apply"
+              ],
+              "januari": [
+                "leave.apply"
+              ],
+              "casual": [
+                "leave.apply"
+              ],
+              "monday": [
+                "leave.apply"
+              ],
+              "reason": [
+                "leave.apply"
+              ],
+              "fever": [
+                "leave.apply"
+              ],
+              "role": [
+                "employee.role"
+              ],
+              "design": [
+                "employee.role"
+              ],
+              "who": [
+                "employee.info"
+              ],
+              "am": [
+                "employee.info",
+                "employee.project"
+              ],
+              "profil": [
+                "employee.info"
+              ],
+              "detail": [
+                "employee.info"
+              ],
+              "tell": [
+                "employee.info"
+              ],
+              "about": [
+                "employee.info"
+              ],
+              "myself": [
+                "employee.info"
+              ],
+              "salari": [
+                "employee.salary"
+              ],
+              "much": [
+                "employee.salary"
+              ],
+              "earn": [
+                "employee.salary"
+              ],
+              "packag": [
+                "employee.salary"
+              ],
+              "incom": [
+                "employee.salary"
+              ],
+              "payslip": [
+                "employee.salary"
+              ],
+              "project": [
+                "employee.project"
+              ],
+              "current": [
+                "employee.project"
+              ],
+              "which": [
+                "employee.project"
+              ],
+              "team": [
+                "employee.project"
+              ],
+              "on": [
+                "employee.project"
+              ],
+              "join": [
+                "employee.joinDate"
+              ],
+              "date": [
+                "employee.joinDate"
+              ],
+              "when": [
+                "employee.joinDate"
+              ],
+              "did": [
+                "employee.joinDate"
+              ],
+              "process": [
+                "leave.howto"
+              ],
+              "applic": [
+                "leave.howto"
+              ],
+              "guid": [
+                "leave.howto"
+              ],
+              "now": [
+                "leave.open_modal"
+              ],
+              "open": [
+                "leave.open_modal"
+              ],
+              "form": [
+                "leave.open_modal"
+              ],
+              "yes": [
+                "response.yes"
+              ],
+              "pleas": [
+                "response.yes"
+              ],
+              "sure": [
+                "response.yes"
+              ],
+              "okay": [
+                "response.yes"
+              ],
+              "hello": [
+                "greeting"
+              ],
+              "hi": [
+                "greeting"
+              ],
+              "hey": [
+                "greeting"
+              ],
+              "greet": [
+                "greeting"
+              ],
+              "there": [
+                "greeting"
+              ],
+              "good": [
+                "greeting"
+              ],
+              "morn": [
+                "greeting"
+              ]
+            },
+            "neuralNetwork": {
+              "settings": {
+                "locale": "en",
+                "tag": "nlu-en",
+                "keepStopwords": true,
+                "nonefeatureValue": 1,
+                "nonedeltaMultiplier": 1.2,
+                "spellCheck": false,
+                "spellCheckDistance": 1,
+                "filterZeros": true,
+                "log": true
+              },
+              "features": [
+                "how",
+                "mani",
+                "leav",
+                "do",
+                "i",
+                "have",
+                "left",
+                "check",
+                "my",
+                "balanc",
+                "what",
+                "is",
+                "remain",
+                "show",
+                "me",
+                "quota",
+                "want",
+                "to",
+                "appli",
+                "for",
+                "sick",
+                "need",
+                "a",
+                "day",
+                "off",
+                "request",
+                "tomorrow",
+                "take",
+                "from",
+                "%date%",
+                "13th",
+                "15th",
+                "januari",
+                "role",
+                "design",
+                "who",
+                "am",
+                "profil",
+                "detail",
+                "tell",
+                "about",
+                "myself",
+                "salari",
+                "much",
+                "earn",
+                "packag",
+                "incom",
+                "payslip",
+                "project",
+                "current",
+                "which",
+                "team",
+                "on",
+                "join",
+                "date",
+                "when",
+                "did",
+                "process",
+                "applic",
+                "guid",
+                "now",
+                "open",
+                "form",
+                "yes",
+                "pleas",
+                "sure",
+                "okay",
+                "casual",
+                "monday",
+                "reason",
+                "fever",
+                "hello",
+                "hi",
+                "hey",
+                "greet",
+                "there",
+                "good",
+                "morn"
+              ],
+              "intents": [
+                "leave.balance",
+                "leave.apply",
+                "employee.role",
+                "employee.info",
+                "employee.salary",
+                "employee.project",
+                "employee.joinDate",
+                "leave.howto",
+                "leave.open_modal",
+                "response.yes",
+                "greeting"
+              ],
+              "perceptrons": [
+                [
+                  1.3835601806640625,
+                  2.296069622039795,
+                  6.8699951171875,
+                  1.4209651947021484,
+                  0.21299058198928833,
+                  2.296069622039795,
+                  2.296069622039795,
+                  3.717289686203003,
+                  2.4711482524871826,
+                  3.717289686203003,
+                  0.8266429901123047,
+                  0.8266429901123047,
+                  5.781271934509277,
+                  1.1552188396453857,
+                  2.935248374938965,
+                  3.344108819961548,
+                  -0.8807876706123352,
+                  -1.8873957395553589,
+                  -1.7560112476348877,
+                  -3.55303692817688,
+                  -2.107790231704712,
+                  -0.15007813274860382,
+                  -0.47366610169410706,
+                  -0.15007813274860382,
+                  -0.15007813274860382,
+                  -0.763102650642395,
+                  -2.2721967697143555,
+                  -1.009240984916687,
+                  -1.0455795526504517,
+                  -1.03377366065979,
+                  -0.005354601424187422,
+                  -0.005354601424187422,
+                  -0.005354601424187422,
+                  -1.670546531677246,
+                  -0.833236038684845,
+                  -0.06129678711295128,
+                  -0.06129678711295128,
+                  -1.6057887077331543,
+                  -0.703548014163971,
+                  -0.2620781362056732,
+                  -0.2620781362056732,
+                  -0.2620781362056732,
+                  -1.6483485698699951,
+                  -0.7854159474372864,
+                  -0.7854159474372864,
+                  -0.516920804977417,
+                  -0.45770201086997986,
+                  -1.2031375169754028,
+                  -1.6344155073165894,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.5188405513763428,
+                  -0.5188405513763428,
+                  -0.11879481375217438,
+                  0,
+                  -2.1899936199188232,
+                  -2.1899936199188232,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.4134759306907654,
+                  -0.4134759306907654,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -2.490004865112333
+                ],
+                [
+                  -5.235109806060791,
+                  -0.2368653416633606,
+                  0.12121843546628952,
+                  -0.7650443315505981,
+                  0.596169114112854,
+                  -0.2368653416633606,
+                  -0.2368653416633606,
+                  -0.307335764169693,
+                  -3.2600133419036865,
+                  -0.307335764169693,
+                  -1.5626753568649292,
+                  3.4450337886810303,
+                  -0.9084434509277344,
+                  -0.2787897288799286,
+                  -3.0560414791107178,
+                  -0.039584480226039886,
+                  1.99611234664917,
+                  -0.7024374008178711,
+                  -1.085777997970581,
+                  4.165729999542236,
+                  9.258944511413574,
+                  2.228281259536743,
+                  5.720116138458252,
+                  2.228281259536743,
+                  2.228281259536743,
+                  4.19143533706665,
+                  3.8939404487609863,
+                  -0.5274495482444763,
+                  7.778212070465088,
+                  5.842860221862793,
+                  1.9352298974990845,
+                  1.9352298974990845,
+                  1.9352298974990845,
+                  -0.40704530477523804,
+                  -0.28679272532463074,
+                  -1.2108265161514282,
+                  -1.8817381858825684,
+                  -1.3856439590454102,
+                  -0.13885198533535004,
+                  -0.3007594048976898,
+                  -0.3007594048976898,
+                  -0.3007594048976898,
+                  -0.18160925805568695,
+                  -0.40562203526496887,
+                  -0.40562203526496887,
+                  -0.08522428572177887,
+                  -0.07331046462059021,
+                  -0.0308377742767334,
+                  -0.8033140301704407,
+                  -0.7736334800720215,
+                  -0.6069014072418213,
+                  -0.6069014072418213,
+                  -0.6069014072418213,
+                  -1.4495036602020264,
+                  -0.525373637676239,
+                  -0.8785269260406494,
+                  -0.8785269260406494,
+                  -3.27217698097229,
+                  -3.27217698097229,
+                  -2.59587025642395,
+                  -5.640210151672363,
+                  -1.40890371799469,
+                  -1.40890371799469,
+                  -0.7977023124694824,
+                  -0.2421213835477829,
+                  -0.7924144268035889,
+                  -0.792175829410553,
+                  4.490808963775635,
+                  4.490808963775635,
+                  5.025265693664551,
+                  5.025265693664551,
+                  -0.7891897559165955,
+                  -0.8617241978645325,
+                  -0.7890032529830933,
+                  -0.7888384461402893,
+                  -0.2873412072658539,
+                  -0.45320868492126465,
+                  -0.45320868492126465,
+                  0.7904207251454697
+                ],
+                [
+                  -0.06060413271188736,
+                  0,
+                  -2.105865478515625,
+                  -0.0492791011929512,
+                  -0.2781897485256195,
+                  0,
+                  0,
+                  -0.25875014066696167,
+                  2.2483625411987305,
+                  -0.25875014066696167,
+                  0.929219126701355,
+                  0.5607073307037354,
+                  -1.7601028680801392,
+                  -1.5212448835372925,
+                  -0.15324628353118896,
+                  -0.009300478734076023,
+                  0,
+                  -0.0576857328414917,
+                  -0.017804866656661034,
+                  -0.0354999303817749,
+                  -0.0043792724609375,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.0043792724609375,
+                  0,
+                  -0.04010283574461937,
+                  -0.029908588156104088,
+                  -0.010174677707254887,
+                  -0.010174677707254887,
+                  -0.010174677707254887,
+                  10.419411659240723,
+                  11.908873558044434,
+                  -0.19544659554958344,
+                  -0.20257718861103058,
+                  -2.3760628700256348,
+                  -2.376173973083496,
+                  -0.12796065211296082,
+                  -0.12796065211296082,
+                  -0.12796065211296082,
+                  -3.87503981590271,
+                  -0.0492791011929512,
+                  -0.0492791011929512,
+                  -2.3759963512420654,
+                  -2.37573504447937,
+                  -0.854844868183136,
+                  -3.865701913833618,
+                  -0.00538796279579401,
+                  -0.0032486554700881243,
+                  -0.0032486554700881243,
+                  -0.0032486554700881243,
+                  -0.0684032291173935,
+                  -0.062411531805992126,
+                  -0.002995847724378109,
+                  -0.002995847724378109,
+                  -0.008523544296622276,
+                  -0.008523544296622276,
+                  -0.00326932524330914,
+                  -0.003237163880839944,
+                  -0.007667826488614082,
+                  -0.007667826488614082,
+                  -0.12783870100975037,
+                  -0.0325256772339344,
+                  -0.12771287560462952,
+                  -0.1277024894952774,
+                  -0.0013025953667238355,
+                  -0.0013025953667238355,
+                  -0.36709222197532654,
+                  -0.36709222197532654,
+                  -0.12769077718257904,
+                  -0.12768766283988953,
+                  -0.12767112255096436,
+                  -0.12765750288963318,
+                  -0.02806309051811695,
+                  -0.06384894251823425,
+                  -0.06384894251823425,
+                  0.12769877615756284
+                ],
+                [
+                  -0.8845872282981873,
+                  0,
+                  -2.799037218093872,
+                  -0.7792211771011353,
+                  1.7989585399627686,
+                  0,
+                  0,
+                  -0.4028640389442444,
+                  0.6266911029815674,
+                  -0.4028640389442444,
+                  -1.5488728284835815,
+                  -1.6065245866775513,
+                  -0.017085757106542587,
+                  -0.37616655230522156,
+                  1.8466346263885498,
+                  -1.5807207822799683,
+                  0,
+                  -0.7282840013504028,
+                  -0.3751853406429291,
+                  -0.5308990478515625,
+                  -0.048020943999290466,
+                  -0.7941189408302307,
+                  -0.7941189408302307,
+                  -0.7941189408302307,
+                  -0.7941189408302307,
+                  0,
+                  -0.048020943999290466,
+                  0,
+                  -0.3699076771736145,
+                  -0.276602178812027,
+                  -0.09303101897239685,
+                  -0.09303101897239685,
+                  -0.09303101897239685,
+                  -0.02322840504348278,
+                  -2.8807668685913086,
+                  6.804314136505127,
+                  4.307198524475098,
+                  12.616168975830078,
+                  12.155850410461426,
+                  3.685609817504883,
+                  3.685609817504883,
+                  3.685609817504883,
+                  -0.9312084317207336,
+                  -0.7792211771011353,
+                  -0.7792211771011353,
+                  -3.0351552963256836,
+                  -3.0349392890930176,
+                  -2.5266544818878174,
+                  -0.9912736415863037,
+                  -0.5079802870750427,
+                  -2.496910572052002,
+                  -2.496910572052002,
+                  -2.496910572052002,
+                  -1.3794002532958984,
+                  -0.4402402639389038,
+                  -0.9013509750366211,
+                  -0.9013509750366211,
+                  -0.09302078187465668,
+                  -0.09302078187465668,
+                  -0.2200794219970703,
+                  -0.025437382981181145,
+                  -0.1006496474146843,
+                  -0.1006496474146843,
+                  -1.3685555458068848,
+                  -0.4032178223133087,
+                  -1.367640733718872,
+                  -1.3667652606964111,
+                  -0.00829073041677475,
+                  -0.00829073041677475,
+                  -0.03824060782790184,
+                  -0.03824060782790184,
+                  -1.3658729791641235,
+                  -1.3650306463241577,
+                  -1.364067792892456,
+                  -1.36312997341156,
+                  -0.3196195662021637,
+                  -0.6863420605659485,
+                  -0.6863420605659485,
+                  1.379349770381452
+                ],
+                [
+                  2.6391963958740234,
+                  -0.9009705185890198,
+                  -4.663300514221191,
+                  2.863560914993286,
+                  0.9292987585067749,
+                  -0.9009705185890198,
+                  -0.9009705185890198,
+                  -0.840481698513031,
+                  5.110516548156738,
+                  -0.840481698513031,
+                  -0.23880815505981445,
+                  -0.5233768820762634,
+                  -0.836344838142395,
+                  1.5222795009613037,
+                  -1.3131179809570312,
+                  -1.2369498014450073,
+                  -0.04417702183127403,
+                  -0.44517695903778076,
+                  -0.3892700970172882,
+                  -0.5277906060218811,
+                  -0.025511616840958595,
+                  -0.4055313169956207,
+                  -0.4055313169956207,
+                  -0.4055313169956207,
+                  -0.4055313169956207,
+                  0,
+                  -0.025511616840958595,
+                  0,
+                  -0.05629434809088707,
+                  -0.03465985134243965,
+                  -0.018062561750411987,
+                  -0.018062561750411987,
+                  -0.018062561750411987,
+                  -4.625953674316406,
+                  -5.38654088973999,
+                  -0.3539873957633972,
+                  -0.8735406398773193,
+                  -6.907842636108398,
+                  -5.385081768035889,
+                  0,
+                  0,
+                  0,
+                  9.661884307861328,
+                  3.789057493209839,
+                  3.789057493209839,
+                  8.899530410766602,
+                  8.899004936218262,
+                  7.376789093017578,
+                  -4.6316657066345215,
+                  -0.16017146408557892,
+                  -0.44428014755249023,
+                  -0.44428014755249023,
+                  -0.44428014755249023,
+                  -0.8541702628135681,
+                  -0.2973655164241791,
+                  -0.4969099760055542,
+                  -0.4969099760055542,
+                  -0.05710821971297264,
+                  -0.05710821971297264,
+                  -0.038085274398326874,
+                  -0.02929718978703022,
+                  -0.06462261080741882,
+                  -0.06462261080741882,
+                  -0.6734438538551331,
+                  -0.2636750638484955,
+                  -0.49744200706481934,
+                  -0.4890271723270416,
+                  -0.0030632242560386658,
+                  -0.0030632242560386658,
+                  -0.2570534646511078,
+                  -0.2570534646511078,
+                  -0.4691088795661926,
+                  -0.5591112375259399,
+                  -0.45352157950401306,
+                  -0.4455719292163849,
+                  -0.1968175619840622,
+                  -0.29070714116096497,
+                  -0.29070714116096497,
+                  0.27560845568013187
+                ],
+                [
+                  -0.3899034559726715,
+                  -0.11959049105644226,
+                  -1.8832951784133911,
+                  -0.2986862063407898,
+                  0.4853598475456238,
+                  -0.11959049105644226,
+                  -0.11959049105644226,
+                  -0.039533212780952454,
+                  0.36197108030319214,
+                  -0.039533212780952454,
+                  1.6855813264846802,
+                  1.0953688621520996,
+                  -0.9430806636810303,
+                  -0.15435148775577545,
+                  -0.13266006112098694,
+                  -0.01885319873690605,
+                  -0.11951766163110733,
+                  -0.41271865367889404,
+                  -0.33376821875572205,
+                  -0.4623091518878937,
+                  -0.044022440910339355,
+                  -0.3643333613872528,
+                  -0.3643333613872528,
+                  -0.3643333613872528,
+                  -0.3643333613872528,
+                  0,
+                  -0.044022440910339355,
+                  0,
+                  -0.09332969784736633,
+                  -0.050852254033088684,
+                  -0.030661070719361305,
+                  -0.030661070719361305,
+                  -0.030661070719361305,
+                  -2.8223977088928223,
+                  -0.3659970760345459,
+                  -2.194594383239746,
+                  1.881040096282959,
+                  -0.34350812435150146,
+                  -0.25333306193351746,
+                  -0.03728025406599045,
+                  -0.03728025406599045,
+                  -0.03728025406599045,
+                  -2.820408821105957,
+                  -0.15033996105194092,
+                  -0.15033996105194092,
+                  -0.14538970589637756,
+                  -0.12214066088199615,
+                  -0.013431999832391739,
+                  11.441015243530273,
+                  3.16843581199646,
+                  4.077815055847168,
+                  4.077815055847168,
+                  4.077815055847168,
+                  -0.7565541863441467,
+                  -0.2514508366584778,
+                  -0.44870641827583313,
+                  -0.44870641827583313,
+                  -0.08233252912759781,
+                  -0.08233252912759781,
+                  -0.02916538715362549,
+                  -0.044799577444791794,
+                  -0.0696912407875061,
+                  -0.0696912407875061,
+                  -0.5508750677108765,
+                  -0.20099391043186188,
+                  -0.3816395103931427,
+                  -0.36958903074264526,
+                  -0.001459857914596796,
+                  -0.001459857914596796,
+                  -0.5639522075653076,
+                  -0.5639522075653076,
+                  -0.3466408848762512,
+                  -0.4382518529891968,
+                  -0.32881852984428406,
+                  -0.3190331757068634,
+                  -0.15868617594242096,
+                  -0.22920282185077667,
+                  -0.22920282185077667,
+                  -0.31456912967620165
+                ],
+                [
+                  -0.5350752472877502,
+                  -0.14503997564315796,
+                  -0.743281364440918,
+                  -0.4816026985645294,
+                  0.489155650138855,
+                  -0.14503997564315796,
+                  -0.14503997564315796,
+                  0,
+                  -0.43029406666755676,
+                  0,
+                  -0.04618793725967407,
+                  -0.23915234208106995,
+                  0,
+                  -0.05264972150325775,
+                  -0.14923088252544403,
+                  0,
+                  -0.22590020298957825,
+                  -0.3957313895225525,
+                  -0.3490331768989563,
+                  -0.4253089427947998,
+                  -0.03543635457754135,
+                  -0.4231187403202057,
+                  -0.45214763283729553,
+                  -0.4231187403202057,
+                  -0.4231187403202057,
+                  0,
+                  -0.03543635457754135,
+                  0,
+                  -0.08750692009925842,
+                  -0.051291573792696,
+                  -0.029715722426772118,
+                  -0.029715722426772118,
+                  -0.029715722426772118,
+                  -0.037884294986724854,
+                  -0.1027371734380722,
+                  -0.5636157393455505,
+                  -0.86240154504776,
+                  -0.44977375864982605,
+                  -0.06434514373540878,
+                  -0.11513686180114746,
+                  -0.11513686180114746,
+                  -0.11513686180114746,
+                  -0.0026993209030479193,
+                  -0.2887515723705292,
+                  -0.2887515723705292,
+                  -0.04606863856315613,
+                  -0.04262172058224678,
+                  -0.017090581357479095,
+                  -0.22784750163555145,
+                  -0.22784750163555145,
+                  -0.27408039569854736,
+                  -0.27408039569854736,
+                  -0.27408039569854736,
+                  8.20372486114502,
+                  5.632201671600342,
+                  2.5715255737304688,
+                  2.5715255737304688,
+                  -0.04966522380709648,
+                  -0.04966522380709648,
+                  -0.017080362886190414,
+                  -0.024066638201475143,
+                  -0.06222953647375107,
+                  -0.06222953647375107,
+                  -0.5064738988876343,
+                  -0.18952301144599915,
+                  -0.45469897985458374,
+                  -0.45270851254463196,
+                  -0.00009592955029802397,
+                  -0.00009592955029802397,
+                  -0.18008728325366974,
+                  -0.18008728325366974,
+                  -0.4509732723236084,
+                  -0.45905181765556335,
+                  -0.4500257074832916,
+                  -0.4498129189014435,
+                  -0.14299646019935608,
+                  -0.2369733452796936,
+                  -0.2369733452796936,
+                  0.4497821422202514
+                ],
+                [
+                  6.270452976226807,
+                  -0.3100888133049011,
+                  0.5178514122962952,
+                  -0.5162882208824158,
+                  -4.265717029571533,
+                  -0.3100888133049011,
+                  -0.3100888133049011,
+                  -0.13470257818698883,
+                  -0.9767862558364868,
+                  -0.13470257818698883,
+                  -0.09376821666955948,
+                  -0.12797869741916656,
+                  -0.09376821666955948,
+                  -0.6912685632705688,
+                  2.508017063140869,
+                  -0.6912685632705688,
+                  -3.7494242191314697,
+                  4.717300891876221,
+                  0.48847493529319763,
+                  3.3675427436828613,
+                  -3.297748327255249,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1.2404797077178955,
+                  -1.5732359886169434,
+                  -0.7132374048233032,
+                  -2.0826010704040527,
+                  -1.558634638786316,
+                  -0.5228585600852966,
+                  -0.5228585600852966,
+                  -0.5228585600852966,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.5476698875427246,
+                  -0.5476698875427246,
+                  -0.5476698875427246,
+                  0,
+                  -0.20619797706604004,
+                  -0.20619797706604004,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  5.738168239593506,
+                  5.738168239593506,
+                  3.7625834941864014,
+                  -3.34519100189209,
+                  -0.46059587597846985,
+                  -0.46059587597846985,
+                  -0.14176857471466064,
+                  -0.04821822792291641,
+                  -0.06982678920030594,
+                  -0.06705125421285629,
+                  -1.5811245441436768,
+                  -1.5811245441436768,
+                  -0.02213241718709469,
+                  -0.02213241718709469,
+                  -0.024057185277342796,
+                  -0.04958555847406387,
+                  -0.02215099334716797,
+                  -0.021241838112473488,
+                  -0.017952024936676025,
+                  -0.01921340450644493,
+                  -0.01921340450644493,
+                  -1.076025260710114
+                ],
+                [
+                  -4.436286449432373,
+                  -0.551571786403656,
+                  2.361081838607788,
+                  -0.551571786403656,
+                  0.7498979568481445,
+                  -0.551571786403656,
+                  -0.551571786403656,
+                  -0.6920236945152283,
+                  -1.5454864501953125,
+                  -0.6920236945152283,
+                  -0.46808919310569763,
+                  -0.5683849453926086,
+                  -0.46808919310569763,
+                  -0.34538233280181885,
+                  -2.326859951019287,
+                  -0.34538233280181885,
+                  1.6387790441513062,
+                  0.9331260919570923,
+                  2.752124309539795,
+                  -0.15927255153656006,
+                  -4.424726486206055,
+                  -0.022585591301321983,
+                  -6.016112804412842,
+                  -0.022585591301321983,
+                  -0.022585591301321983,
+                  -0.7371724247932434,
+                  -1.3725792169570923,
+                  -0.8371413350105286,
+                  -0.8874531388282776,
+                  -0.8678386211395264,
+                  -0.009807267226278782,
+                  -0.009807267226278782,
+                  -0.009807267226278782,
+                  0,
+                  0,
+                  -0.09480015933513641,
+                  -0.11320476979017258,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  -0.018320944160223007,
+                  -0.018320944160223007,
+                  -0.018320944160223007,
+                  -0.0490821935236454,
+                  0,
+                  -0.0490821935236454,
+                  -0.0490821935236454,
+                  -0.6061516404151917,
+                  -0.6061516404151917,
+                  -1.958410620689392,
+                  10.700897216796875,
+                  6.030094623565674,
+                  6.030094623565674,
+                  -0.4113321900367737,
+                  -0.1595463752746582,
+                  -0.2960084080696106,
+                  -0.2911897301673889,
+                  -1.5310677289962769,
+                  -1.5310677289962769,
+                  -0.06581874191761017,
+                  -0.06581874191761017,
+                  -0.23604311048984528,
+                  -0.2662792503833771,
+                  -0.22733372449874878,
+                  -0.2238473743200302,
+                  -0.08964108675718307,
+                  -0.14290158450603485,
+                  -0.14290158450603485,
+                  0.01900880424499756
+                ],
+                [
+                  -0.3960188329219818,
+                  -0.08200129121541977,
+                  -2.121260643005371,
+                  -0.3960188329219818,
+                  -1.6548137664794922,
+                  -0.08200129121541977,
+                  -0.08200129121541977,
+                  -0.07295918464660645,
+                  -2.569887161254883,
+                  -0.07295918464660645,
+                  -0.17386223375797272,
+                  -1.1306800842285156,
+                  -0.027575667947530746,
+                  -0.3036860525608063,
+                  -0.799717128276825,
+                  -0.04596836864948273,
+                  -0.029654627665877342,
+                  -1.1258656978607178,
+                  -0.13813476264476776,
+                  -0.6914603114128113,
+                  -0.6227568984031677,
+                  -0.33823361992836,
+                  -0.33823361992836,
+                  -0.33823361992836,
+                  -0.33823361992836,
+                  -0.027038194239139557,
+                  -0.6043491363525391,
+                  -0.03707034885883331,
+                  -1.0863046646118164,
+                  -0.7841408252716064,
+                  -0.2795281708240509,
+                  -0.2795281708240509,
+                  -0.2795281708240509,
+                  -0.1012873500585556,
+                  -0.47312095761299133,
+                  -0.5750743746757507,
+                  -0.7667705416679382,
+                  -2.991427421569824,
+                  -0.42659205198287964,
+                  -0.7321826815605164,
+                  -0.7321826815605164,
+                  -0.7321826815605164,
+                  -0.004970398731529713,
+                  -0.27487635612487793,
+                  -0.27487635612487793,
+                  -0.4263295531272888,
+                  -0.4261447489261627,
+                  -0.12293600291013718,
+                  -1.4974726438522339,
+                  -1.4974726438522339,
+                  -0.19164332747459412,
+                  -0.19164332747459412,
+                  -0.19164332747459412,
+                  -1.551609992980957,
+                  -1.4432179927825928,
+                  -0.10024427622556686,
+                  -0.10024427622556686,
+                  -0.0918578952550888,
+                  -0.0918578952550888,
+                  0,
+                  -0.04545722156763077,
+                  -0.43723809719085693,
+                  -0.43723809719085693,
+                  11.15089225769043,
+                  0.21224667131900787,
+                  11.290149688720703,
+                  11.289871215820312,
+                  -0.39736834168434143,
+                  -0.39736834168434143,
+                  -0.9334640502929688,
+                  -0.9334640502929688,
+                  -2.994013547897339,
+                  -2.9937360286712646,
+                  -2.9931936264038086,
+                  -2.992710590362549,
+                  -0.6993986368179321,
+                  -1.4979809522628784,
+                  -1.4979809522628784,
+                  2.9975054368891425
+                ],
+                [
+                  -0.6282340288162231,
+                  -0.2198207527399063,
+                  -3.2708237171173096,
+                  -0.6282340288162231,
+                  -2.6734559535980225,
+                  -0.2198207527399063,
+                  -0.2198207527399063,
+                  -0.20964275300502777,
+                  -4.014152526855469,
+                  -0.20964275300502777,
+                  -0.5083988904953003,
+                  -1.8733171224594116,
+                  -0.1587429791688919,
+                  -0.49449285864830017,
+                  -1.284177303314209,
+                  -0.13634805381298065,
+                  -0.12342926859855652,
+                  -1.807436227798462,
+                  -0.5611605644226074,
+                  -1.1890300512313843,
+                  -0.6383466124534607,
+                  -0.5450400710105896,
+                  -0.5450400710105896,
+                  -0.5450400710105896,
+                  -0.5450400710105896,
+                  -0.3884199261665344,
+                  -0.6286503672599792,
+                  -0.12773242592811584,
+                  -1.6298048496246338,
+                  -1.101519227027893,
+                  -0.4950662851333618,
+                  -0.4950662851333618,
+                  -0.4950662851333618,
+                  -0.24840331077575684,
+                  -0.7019705176353455,
+                  -0.813197910785675,
+                  -1.0771926641464233,
+                  -4.535719871520996,
+                  -0.5524318218231201,
+                  -1.0848667621612549,
+                  -1.0848667621612549,
+                  -1.0848667621612549,
+                  -0.016241272911429405,
+                  -0.3045191466808319,
+                  -0.3045191466808319,
+                  -0.5243805050849915,
+                  -0.524215042591095,
+                  -0.1203681081533432,
+                  -2.268969774246216,
+                  -2.268969774246216,
+                  -0.26271289587020874,
+                  -0.26271289587020874,
+                  -0.26271289587020874,
+                  -2.3580586910247803,
+                  -2.1797993183135986,
+                  -0.15746605396270752,
+                  -0.15746605396270752,
+                  -0.1090744361281395,
+                  -0.1090744361281395,
+                  0,
+                  0,
+                  -0.6567109227180481,
+                  -0.6567109227180481,
+                  -4.5349860191345215,
+                  -1.1481603384017944,
+                  -4.5341997146606445,
+                  -4.533551216125488,
+                  -0.03908606991171837,
+                  -0.03908606991171837,
+                  -1.3321330547332764,
+                  -1.3321330547332764,
+                  9.750739097595215,
+                  9.65199089050293,
+                  9.744558334350586,
+                  9.744211196899414,
+                  0.1467686891555786,
+                  4.873584270477295,
+                  4.873584270477295,
+                  4.5395358167451905
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    "intentDomains": {},
+    "extraSentences": [
+      [
+        "en",
+        "how many leaves do i have left"
+      ],
+      [
+        "en",
+        "check my leave balance"
+      ],
+      [
+        "en",
+        "what is my remaining leave"
+      ],
+      [
+        "en",
+        "show me my leave quota"
+      ],
+      [
+        "en",
+        "i want to apply for leave"
+      ],
+      [
+        "en",
+        "apply for sick leave"
+      ],
+      [
+        "en",
+        "i need a day off"
+      ],
+      [
+        "en",
+        "request leave for tomorrow"
+      ],
+      [
+        "en",
+        "take leave from %date% to %date%"
+      ],
+      [
+        "en",
+        "from %date% to %date%"
+      ],
+      [
+        "en",
+        "i want apply for a leave"
+      ],
+      [
+        "en",
+        "from 13th to 15th january"
+      ],
+      [
+        "en",
+        "what is my role"
+      ],
+      [
+        "en",
+        "my designation"
+      ],
+      [
+        "en",
+        "who am i"
+      ],
+      [
+        "en",
+        "my profile"
+      ],
+      [
+        "en",
+        "show my profile"
+      ],
+      [
+        "en",
+        "profile"
+      ],
+      [
+        "en",
+        "my details"
+      ],
+      [
+        "en",
+        "tell me about myself"
+      ],
+      [
+        "en",
+        "what is my salary"
+      ],
+      [
+        "en",
+        "how much do i earn"
+      ],
+      [
+        "en",
+        "my package"
+      ],
+      [
+        "en",
+        "my income"
+      ],
+      [
+        "en",
+        "show my payslip"
+      ],
+      [
+        "en",
+        "what is my project"
+      ],
+      [
+        "en",
+        "current project"
+      ],
+      [
+        "en",
+        "which team am i on"
+      ],
+      [
+        "en",
+        "joining date"
+      ],
+      [
+        "en",
+        "when did i join"
+      ],
+      [
+        "en",
+        "how to apply for leave"
+      ],
+      [
+        "en",
+        "process for leave application"
+      ],
+      [
+        "en",
+        "guide me to apply for leave"
+      ],
+      [
+        "en",
+        "apply for leave now"
+      ],
+      [
+        "en",
+        "i want to apply for leave"
+      ],
+      [
+        "en",
+        "open leave form"
+      ],
+      [
+        "en",
+        "yes"
+      ],
+      [
+        "en",
+        "yes please"
+      ],
+      [
+        "en",
+        "sure"
+      ],
+      [
+        "en",
+        "okay"
+      ],
+      [
+        "en",
+        "sick leave tomorrow"
+      ],
+      [
+        "en",
+        "casual leave for monday"
+      ],
+      [
+        "en",
+        "reason is fever"
+      ],
+      [
+        "en",
+        "hello"
+      ],
+      [
+        "en",
+        "hi"
+      ],
+      [
+        "en",
+        "hey"
+      ],
+      [
+        "en",
+        "greetings"
+      ],
+      [
+        "en",
+        "hi there"
+      ],
+      [
+        "en",
+        "good morning"
+      ]
+    ]
+  },
+  "ner": {
+    "settings": {
+      "tag": "ner",
+      "entityPreffix": "%",
+      "entitySuffix": "%"
+    },
+    "rules": {}
+  },
+  "nlgManager": {
+    "settings": {
+      "tag": "nlg-manager"
+    },
+    "responses": {
+      "en": {
+        "greeting": [
+          {
+            "answer": "Hello! I am your AI HR Assistant. I can help with leaves, policies, and your profile."
+          },
+          {
+            "answer": "Hi! How can I assist you with your HR needs today?"
+          }
+        ],
+        "policy.hours": [
+          {
+            "answer": "Our general working hours are 9:00 AM to 6:00 PM, Monday to Friday."
+          }
+        ],
+        "policy.dress": [
+          {
+            "answer": "We follow a Business Casual dress code. Formal wear is recommended for client meetings."
+          }
+        ],
+        "policy.holidays": [
+          {
+            "answer": "The next upcoming holiday is Republic Day on January 26th. You can view the full calendar in the Dashboard."
+          }
+        ],
+        "policy.benefits": [
+          {
+            "answer": "You are covered under the company Medical Insurance up to $5000. PF contributions are matched at 12%."
+          }
+        ],
+        "smalltalk.thanks": [
+          {
+            "answer": "You're welcome! Let me know if you need anything else."
+          }
+        ],
+        "smalltalk.bye": [
+          {
+            "answer": "Goodbye! Have a productive day."
+          }
+        ],
+        "smalltalk.creator": [
+          {
+            "answer": "I was built by the NOVA Engineering Team to assist you."
+          }
+        ]
+      }
+    }
+  },
+  "actionManager": {
+    "settings": {
+      "tag": "action-manager"
+    },
+    "actions": {}
+  },
+  "slotManager": {
+    "leave.apply": {
+      "date": {
+        "intent": "leave.apply",
+        "entity": "date",
+        "mandatory": false,
+        "locales": {}
+      }
+    }
+  }
+}

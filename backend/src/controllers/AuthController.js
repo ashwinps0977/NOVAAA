@@ -183,12 +183,38 @@ exports.login = async (req, res) => {
         lastLogin: user.lastLogin
       }
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error during login'
+    });
+  }
+};
+
+// Logout User
+exports.logout = async (req, res) => {
+  try {
+    // Auto-mark check-out
+    try {
+      if (req.user && req.user.id) {
+        const attendanceController = require('./attendanceController');
+        await attendanceController.markCheckOut(req.user.id);
+      }
+    } catch (attError) {
+      console.error('Auto-checkout failed:', attError);
+      // We don't fail logout just because attendance update failed
+    }
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during logout'
     });
   }
 };

@@ -128,11 +128,15 @@ exports.cancelLeave = async (req, res) => {
     }
 };
 
+const sendEmail = require('../utils/mailer');
+
+// ... existing code ...
+
 // HR: Update Status
 exports.updateLeaveStatus = async (req, res) => {
     try {
         const { status, adminComments } = req.body;
-        const leave = await Leave.findById(req.params.id);
+        const leave = await Leave.findById(req.params.id).populate('user');
 
         if (!leave) {
             return res.status(404).json({
@@ -146,7 +150,52 @@ exports.updateLeaveStatus = async (req, res) => {
 
         await leave.save();
 
-        // TODO: Send email notification to employee?
+        // Send Email Notification
+        if (leave.user && leave.user.email) {
+            const employeeName = leave.user.name;
+            const applicationDate = new Date(leave.createdAt).toLocaleDateString();
+            const startDate = new Date(leave.startDate).toLocaleDateString();
+            const endDate = new Date(leave.endDate).toLocaleDateString();
+            const companyName = "NOVA Workforce"; // Or from env/config
+
+            let subject = '';
+            let html = '';
+
+            if (status === 'Approved') {
+                subject = 'Leave Application Approved';
+                html = `
+                    <p>Dear ${employeeName},</p>
+                    <p>This is to inform you that your leave application submitted on ${applicationDate} for the period from <b>${startDate}</b> to <b>${endDate}</b> has been <strong>approved</strong>.</p>
+                    <p>You are requested to ensure that your responsibilities are properly handed over to the concerned team member before proceeding on leave.</p>
+                    <p>We wish you a pleasant time off. Please feel free to reach out if any assistance is required.</p>
+                    <br>
+                    <p>Regards,</p>
+                    <p>Ashwin P S</p>
+                    <p>HR Department</p>
+                    <p>${companyName}</p>
+                `;
+            } else if (status === 'Rejected') {
+                subject = 'Leave Application Status – Rejected';
+                const reason = adminComments || 'work requirements / staffing constraints';
+                html = `
+                    <p>Dear ${employeeName},</p>
+                    <p>Thank you for submitting your leave application dated ${applicationDate} for the period from <b>${startDate}</b> to <b>${endDate}</b>.</p>
+                    <p>After careful consideration, we regret to inform you that your leave request has <strong>not been approved</strong> due to: ${reason}.</p>
+                    <p>You may apply for leave on alternate dates or discuss the matter with your reporting manager for further clarification.</p>
+                    <p>Thank you for your understanding.</p>
+                    <br>
+                    <p>Regards,</p>
+                    <p>Ashwin P S</p>
+                    <p>HR Department</p>
+                    <p>${companyName}</p>
+                `;
+            }
+
+            if (subject && html) {
+                await sendEmail(leave.user.email, subject, html);
+                console.log(`📧 Leave notification sent to ${leave.user.email}`);
+            }
+        }
 
         res.json({
             success: true,

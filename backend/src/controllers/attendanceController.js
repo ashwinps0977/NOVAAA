@@ -10,7 +10,18 @@ exports.markCheckIn = async (userId) => {
         // Check if already checked in
         const existing = await Attendance.findOne({ user: userId, date });
         if (existing) {
-            return existing; // Already checked in
+            // If user checked out previously today and is logging in again, reset checkOut
+            if (existing.checkOut) {
+                console.log(`ℹ️ User ${userId} logging in again after check out. Resetting check-out status.`);
+                existing.checkOut = null;
+                existing.workingHours = 0; // Reset hours as they are still working
+                // Optionally keep original checkIn or update checkIn to now?
+                // Standard: Keep original checkIn to track total duration from first login
+                // OR: multiple sessions? Simpler model: Single session per day. 
+                // Let's keep original checkIn.
+                await existing.save();
+            }
+            return existing;
         }
 
         const attendance = new Attendance({
@@ -31,16 +42,16 @@ exports.markCheckIn = async (userId) => {
     }
 };
 
-exports.checkOut = async (req, res) => {
+exports.markCheckOut = async (userId) => {
     try {
         const date = getTodayDate();
-        const attendance = await Attendance.findOne({ user: req.user.id, date });
+        const attendance = await Attendance.findOne({ user: userId, date });
 
         if (!attendance) {
-            return res.status(404).json({
+            return {
                 success: false,
                 message: 'No check-in record found for today'
-            });
+            };
         }
 
         attendance.checkOut = new Date();
@@ -52,14 +63,33 @@ exports.checkOut = async (req, res) => {
         }
 
         await attendance.save();
+        console.log(`✅ User ${userId} checked out at ${attendance.checkOut}`);
+
+        return {
+            success: true,
+            attendance
+        };
+    } catch (error) {
+        console.error('Mark check-out error:', error);
+        throw error;
+    }
+};
+
+exports.checkOut = async (req, res) => {
+    try {
+        const result = await exports.markCheckOut(req.user.id);
+
+        if (!result.success) {
+            return res.status(404).json(result);
+        }
 
         res.json({
             success: true,
             message: 'Checked out successfully',
-            attendance
+            attendance: result.attendance
         });
     } catch (error) {
-        console.error('Check-out error:', error);
+        console.error('Check-out route error:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to check out'
