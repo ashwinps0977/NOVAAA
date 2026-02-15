@@ -1,0 +1,41 @@
+PAYSLIP GENERATION RULES
+
+1. Payslip is generated monthly for every active employee.
+
+2. Payslip contains:
+   - Employee Name
+   - Employee ID
+   - Department
+   - Designation
+   - Month and Year
+   - Basic Pay
+   - HRA
+   - Special Allowance
+   - Deductions (PF, Tax, Professional Tax)
+   - Net Pay
+
+3. Payslip format follows company payroll template.
+
+4. Payslip is generated only after attendance verification.
+
+5. Loss of Pay (LOP) is calculated based on:
+   - Total working days
+   - Unpaid leave days
+
+6. Payslip is accessible through employee portal.
+
+7. HR can regenerate payslip if correction is needed.
+
+8. Digital signature of HR is included.
+
+9. Payslip is password protected (DOB or Employee ID).
+
+10. Payslip data is stored securely for audit purposes.
+
+11. Payslips are retained for minimum 7 years.
+
+12. Salary breakup shown in payslip must match salary policy.
+
+13. Payslip generation date is between 1st and 5th of every month.
+
+14. Payslip cannot be edited by employees.

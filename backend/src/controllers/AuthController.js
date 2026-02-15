@@ -257,9 +257,29 @@ exports.getCurrentUser = async (req, res) => {
       });
     }
 
+    let profileData = { ...user.toObject() };
+
+    // If user is an employee, fetch extended profile details
+    if (user.role === 'employee') {
+      const employee = await Employee.findOne({ email: user.email }).select('-password');
+      if (employee) {
+        profileData = {
+          ...profileData,
+          employeeId: employee._id,
+          department: employee.department,
+          position: employee.position,
+          phone: employee.phone,
+          salary: employee.salary,
+          joiningDate: employee.joiningDate,
+          project: employee.project,
+          status: employee.status
+        };
+      }
+    }
+
     res.json({
       success: true,
-      user
+      user: profileData
     });
   } catch (error) {
     console.error('Get current user error:', error);

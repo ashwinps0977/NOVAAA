@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Download, Calendar, CreditCard, PieChart, AlertCircle, TrendingUp, FileText, Send } from 'lucide-react';
+import { DollarSign, Download, Calendar, Send, Briefcase, Landmark, ShieldCheck, FileText, TrendingUp, Wallet, Receipt, Percent, Scale, CreditCard } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -10,7 +10,6 @@ const SalarySection = () => {
     const [queries, setQueries] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Query Form State
     const [queryForm, setQueryForm] = useState({
         subject: '',
         category: 'Payslip Correction',
@@ -70,57 +69,80 @@ const SalarySection = () => {
 
     const handleDownloadPayslip = (salary: any) => {
         const doc = new jsPDF();
-
-        // Header
         doc.setFontSize(22);
         doc.setTextColor(41, 128, 185);
         doc.text('NOVA WORKS', 105, 20, { align: 'center' });
-
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text('Payslip', 105, 30, { align: 'center' });
-        doc.setFontSize(12);
+        doc.text('Detailed Payslip', 105, 30, { align: 'center' });
+        doc.setFontSize(11);
         doc.text(`${salary.month} ${salary.year}`, 105, 38, { align: 'center' });
 
-        // Employee Details
-        doc.setFontSize(10);
-        doc.text(`Employee ID: ${salary.employee}`, 15, 50); // In real app, name would be populated
-        doc.text(`Bank Account: ${salary.accountNumber}`, 15, 56);
-        doc.text(`Bank Name: ${salary.bankName}`, 15, 62);
-        doc.text(`Payment Date: ${new Date(salary.paymentDate).toLocaleDateString()}`, 150, 50);
+        doc.setFontSize(9);
+        const emp = salary.employee || {};
+        const startY = 50;
+        doc.text(`Employee ID: ${emp._id || 'N/A'}`, 15, startY);
+        doc.text(`Name: ${emp.name || 'N/A'}`, 15, startY + 5);
+        doc.text(`Designation: ${emp.position || 'N/A'}`, 15, startY + 10);
+        doc.text(`Department: ${emp.department || 'N/A'}`, 15, startY + 15);
 
-        // Earnings Table
+        doc.text(`PAN: ${salary.pan || 'N/A'}`, 120, startY);
+        doc.text(`Bank: ${salary.bankName || 'N/A'}`, 120, startY + 5);
+        doc.text(`A/C: ${salary.accountNumber || 'N/A'}`, 120, startY + 10);
+        doc.text(`IFSC: ${salary.ifsc || 'N/A'}`, 120, startY + 15);
+
         autoTable(doc, {
-            startY: 70,
-            head: [['Earnings', 'Amount', 'Deductions', 'Amount']],
+            startY: startY + 25,
+            head: [['Earnings & Contributions', 'Amount', 'Deductions', 'Amount']],
             body: [
-                ['Basic Salary', salary.basic.toFixed(2), 'Provident Fund (PF)', salary.pf.toFixed(2)],
-                ['HRA', salary.hra.toFixed(2), 'Income Tax', salary.tax.toFixed(2)],
-                ['DA', salary.da.toFixed(2), 'Other Deductions', salary.deductions.toFixed(2)],
-                ['Bonus', salary.bonus.toFixed(2), '', ''],
-                ['Total Earnings', (salary.basic + salary.hra + salary.da + salary.bonus).toFixed(2), 'Total Deductions', (salary.pf + salary.tax + salary.deductions).toFixed(2)]
+                ['Basic Pay', salary.basic?.toFixed(2), 'Provident Fund (PF)', salary.pf?.toFixed(2)],
+                ['HRA', salary.hra?.toFixed(2), 'Income Tax (TDS)', salary.incomeTaxTDS?.toFixed(2)],
+                ['Special Allowance', salary.specialAllowance?.toFixed(2), 'Professional Tax', salary.professionalTax?.toFixed(2)],
+                ['Internet/Conveyance', ((salary.internetAllowance || 0) + (salary.conveyanceAllowance || 0)).toFixed(2), 'Insurance Premium', salary.insurancePremium?.toFixed(2)],
+                ['Medical/Meal', ((salary.medicalAllowance || 0) + (salary.mealAllowance || 0)).toFixed(2), 'Loan/Advance', ((salary.loanDeduction || 0) + (salary.advanceSalaryDeduction || 0)).toFixed(2)],
+                ['Employer PF', salary.employerPF?.toFixed(2), 'Late Penalty/LOP', ((salary.latePenalty || 0) + (salary.lop || 0)).toFixed(2)],
+                ['Employer Insurance/ESI', ((salary.employerInsurance || 0) + (salary.esi || 0)).toFixed(2), 'Other Deductions', salary.otherDeductions?.toFixed(2)],
+                ['Variable/Bonus', ((salary.bonus || 0) + (salary.performanceIncentive || 0)).toFixed(2), '', ''],
+                [
+                    { content: 'Gross Monthly', styles: { fontStyle: 'bold' } },
+                    { content: (salary.basic + salary.hra + (salary.specialAllowance || 0) + (salary.bonus || 0)).toFixed(2), styles: { fontStyle: 'bold' } },
+                    { content: 'Total Deductions', styles: { fontStyle: 'bold' } },
+                    { content: (salary.pf + (salary.incomeTaxTDS || 0) + (salary.professionalTax || 0) + (salary.otherDeductions || 0)).toFixed(2), styles: { fontStyle: 'bold' } }
+                ]
             ],
-            theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185] },
-            styles: { fontSize: 10 }
+            theme: 'striped',
+            headStyles: { fillColor: [63, 81, 181] },
+            styles: { fontSize: 8 }
         });
 
         const finalY = (doc as any).lastAutoTable.finalY + 10;
-
-        // Net Pay Box
-        doc.setFillColor(236, 240, 241);
-        doc.rect(15, finalY, 180, 20, 'F');
-        doc.setFontSize(14);
+        doc.setFillColor(245, 247, 250);
+        doc.rect(15, finalY, 180, 15, 'F');
+        doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Net Payable: $${salary.netSalary.toFixed(2)}`, 105, finalY + 13, { align: 'center' });
+        doc.text(`Net Payable: ₹${salary.netSalary?.toLocaleString()}`, 105, finalY + 10, { align: 'center' });
 
-        // Footer
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('This is a computer-generated document and does not require a signature.', 105, 280, { align: 'center' });
-
-        doc.save(`Payslip_${salary.month}_${salary.year}.pdf`);
+        doc.save(`NOVA_Payslip_${salary.month}_${salary.year}.pdf`);
     };
+
+    const renderDataPoint = (label: string, value: any, icon?: React.ReactNode) => (
+        <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors px-1 rounded-lg">
+            <div className="flex items-center space-x-2.5">
+                {icon && <div className="text-gray-400">{icon}</div>}
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-tight">{label}</span>
+            </div>
+            <span className="text-sm font-bold text-gray-800">{value || '—'}</span>
+        </div>
+    );
+
+    const renderMoneyLine = (label: string, value: number, isNegative = false) => (
+        <div className="flex justify-between items-center py-2.5 hover:bg-white/40 transition-colors px-2 rounded-lg group">
+            <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">{label}</span>
+            <span className={`text-sm font-black tracking-tight ${isNegative ? 'text-red-500' : 'text-gray-900'}`}>
+                {isNegative ? '-' : ''}₹{value?.toLocaleString() || '0'}
+            </span>
+        </div>
+    );
 
     const handleSubmitQuery = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -151,211 +173,234 @@ const SalarySection = () => {
     };
 
     return (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 min-h-[600px]">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div className="p-4 md:p-8 bg-gray-50/50 min-h-screen">
+            {/* Header with Glassmorphism */}
+            <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between space-y-4 md:space-y-0">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Salary & Payslips</h2>
-                    <p className="text-gray-500">Manage your earnings, download payslips and raise queries</p>
+                    <h2 className="text-4xl font-black text-gray-900 tracking-tighter flex items-center">
+                        Salary <span className="text-indigo-600 ml-2">Analytics</span>
+                    </h2>
+                    <p className="text-gray-500 font-medium mt-1">Comprehensive compensation and benefits overview</p>
                 </div>
-                <div className="flex gap-2 mt-4 md:mt-0">
-                    <button
-                        onClick={() => setActiveTab('overview')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        Overview
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('payslips')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'payslips' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        Payslips
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('queries')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'queries' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        Queries
-                    </button>
+                <div className="flex bg-white/80 backdrop-blur-md p-1 rounded-2xl shadow-sm border border-gray-100">
+                    {(['overview', 'payslips', 'queries'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all duration-300 ${activeTab === tab
+                                ? 'bg-indigo-600 text-white shadow-indigo-100 shadow-lg scale-100'
+                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 scale-95'
+                                }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
                 </div>
             </div>
 
             {activeTab === 'overview' && (
-                <div className="space-y-6">
-                    {!salaryData ? (
-                        <div className="text-center py-20 bg-gray-50 rounded-lg">
-                            <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500">No salary data available yet.</p>
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    {/* Section A: Profile Overview Card */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-100">
+                            <div className="relative z-10 flex flex-col h-full justify-between">
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center space-x-2 bg-white/10 px-3 py-1 rounded-full w-fit">
+                                            <ShieldCheck size={14} className="text-indigo-200" />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-100">Verified Employee Profile</span>
+                                        </div>
+                                        <h3 className="text-3xl font-black tracking-tight mt-4">{salaryData?.employee?.name || 'Loading...'}</h3>
+                                        <p className="text-indigo-100/80 font-medium text-sm flex items-center">
+                                            <Briefcase size={14} className="mr-2" /> {salaryData?.employee?.position} • {salaryData?.employee?.department}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] uppercase font-black text-indigo-200 tracking-widest block mb-1">Current CTC (Annual)</span>
+                                        <p className="text-4xl font-black tracking-tighter">₹{salaryData?.employee?.currentCTC?.toLocaleString() || '0'}</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10 pt-8 border-t border-white/10">
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-indigo-200">Employee ID</span>
+                                        <p className="font-bold text-sm truncate">{salaryData?.employee?._id || '—'}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-indigo-200">Employment</span>
+                                        <p className="font-bold text-sm">{salaryData?.employee?.employmentType || 'Full-time'}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-indigo-200">Grade / Band</span>
+                                        <p className="font-bold text-sm">{salaryData?.employee?.salaryGrade || 'C'} / {salaryData?.employee?.salaryBand || '1'}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-indigo-200">Joining Date</span>
+                                        <p className="font-bold text-sm">{salaryData?.employee?.joiningDate ? new Date(salaryData.employee.joiningDate).toLocaleDateString() : '—'}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    ) : (
-                        <>
-                            {/* Key Stats Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <p className="text-blue-100 text-sm font-medium">Net Salary (Latest)</p>
-                                            <h3 className="text-3xl font-bold mt-1">${salaryData.netSalary?.toLocaleString()}</h3>
-                                        </div>
-                                        <div className="p-2 bg-white/20 rounded-lg">
-                                            <DollarSign className="w-6 h-6 text-white" />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center text-sm text-blue-100">
-                                        <Calendar className="w-4 h-4 mr-1" />
-                                        <span>{salaryData.month} {salaryData.year}</span>
-                                    </div>
-                                </div>
 
-                                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <p className="text-gray-500 text-sm font-medium">Next Pay Date</p>
-                                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                                                {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString()}
-                                            </h3>
-                                        </div>
-                                        <div className="p-2 bg-purple-50 rounded-lg">
-                                            <TrendingUp className="w-6 h-6 text-purple-600" />
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-green-600 font-medium">On schedule</p>
+                        {/* Net Pay Card */}
+                        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-100 border border-gray-100 flex flex-col justify-between">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="p-3 bg-emerald-50 rounded-2xl">
+                                    <Wallet className="text-emerald-600" size={24} />
                                 </div>
+                                <div>
+                                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Net Payable</h4>
+                                    <p className="text-[11px] text-gray-500 font-medium">For the month of {salaryData?.month}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="text-center py-6 bg-gray-50/50 rounded-2xl border border-gray-50">
+                                    <span className="text-sm text-gray-400 font-bold uppercase tracking-widest block mb-1">In Bank Account</span>
+                                    <p className="text-5xl font-black text-gray-900 tracking-tighter">₹{salaryData?.netSalary?.toLocaleString()}</p>
+                                </div>
+                                <div className="flex justify-between items-center text-xs px-2">
+                                    <span className="text-gray-500 font-medium flex items-center"><Calendar size={12} className="mr-1.5" /> Next Credit</span>
+                                    <span className="text-emerald-600 font-black">28th {salaryData?.month}, {salaryData?.year}</span>
+                                </div>
+                                <button onClick={() => handleDownloadPayslip(salaryData)} className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-sm hover:bg-black transition-colors shadow-lg shadow-gray-100 flex items-center justify-center space-x-2">
+                                    <Download size={16} />
+                                    <span>Download Latest Payslip</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <p className="text-gray-500 text-sm font-medium">Bank Account</p>
-                                            <h3 className="text-xl font-bold text-gray-900 mt-1">{salaryData.bankName}</h3>
-                                        </div>
-                                        <div className="p-2 bg-green-50 rounded-lg">
-                                            <CreditCard className="w-6 h-6 text-green-600" />
-                                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Section B: Salary Structure Card */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group transition-all duration-300 hover:shadow-2xl">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center space-x-3">
+                                    <div className="p-2.5 bg-indigo-50 rounded-xl group-hover:bg-indigo-600 transition-colors">
+                                        <DollarSign className="text-indigo-600 group-hover:text-white transition-colors" size={20} />
                                     </div>
-                                    <p className="text-sm text-gray-600">{salaryData.accountNumber}</p>
+                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">A. Earnings Breakup</h4>
+                                </div>
+                                <TrendingUp size={16} className="text-emerald-500" />
+                            </div>
+                            <div className="bg-indigo-50/30 p-4 rounded-2xl space-y-1 mb-4 border border-indigo-50/50">
+                                {renderMoneyLine('Basic Pay', salaryData?.basic)}
+                                {renderMoneyLine('HRA', salaryData?.hra)}
+                                {renderMoneyLine('Special Allowance', salaryData?.specialAllowance)}
+                                {renderMoneyLine('Conveyance Allowance', salaryData?.conveyanceAllowance)}
+                                {renderMoneyLine('Medical Allowance', salaryData?.medicalAllowance)}
+                                {renderMoneyLine('Internet Allowance', salaryData?.internetAllowance)}
+                                {renderMoneyLine('Shift/Project Allow.', (salaryData?.shiftAllowance || 0) + (salaryData?.projectAllowance || 0))}
+                                <div className="pt-2 mt-2 border-t border-indigo-100/50 flex justify-between items-center">
+                                    <span className="text-[10px] font-black uppercase text-indigo-400">Total Monthly Gross</span>
+                                    <span className="font-black text-indigo-600">₹{(salaryData?.basic + salaryData?.hra + (salaryData?.specialAllowance || 0) + (salaryData?.bonus || 0))?.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section C: Deductions Card */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group transition-all duration-300 hover:shadow-2xl">
+                            <div className="flex items-center space-x-3 mb-6">
+                                <div className="p-2.5 bg-red-50 rounded-xl group-hover:bg-red-500 transition-colors">
+                                    <Receipt className="text-red-500 group-hover:text-white transition-colors" size={20} />
+                                </div>
+                                <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">B. Deductions Section</h4>
+                            </div>
+                            <div className="bg-red-50/30 p-4 rounded-2xl space-y-1 border border-red-50/50 mb-6">
+                                {renderMoneyLine('Provident Fund (PF)', salaryData?.pf, true)}
+                                {renderMoneyLine('Professional Tax', salaryData?.professionalTax, true)}
+                                {renderMoneyLine('Income Tax (TDS)', salaryData?.incomeTaxTDS, true)}
+                                {renderMoneyLine('Insurance Premium', salaryData?.insurancePremium, true)}
+                                {renderMoneyLine('Loan / Advance', (salaryData?.loanDeduction || 0) + (salaryData?.advanceSalaryDeduction || 0), true)}
+                                {renderMoneyLine('Late / LOP Penalty', (salaryData?.latePenalty || 0) + (salaryData?.lop || 0), true)}
+                                <div className="pt-2 mt-2 border-t border-red-100/50 flex justify-between items-center">
+                                    <span className="text-[10px] font-black uppercase text-red-400">Total Deductions</span>
+                                    <span className="font-black text-red-600">-₹{(salaryData?.pf + (salaryData?.incomeTaxTDS || 0) + (salaryData?.professionalTax || 0) + (salaryData?.otherDeductions || 0))?.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section E & F: Tax & Bank info */}
+                        <div className="space-y-6">
+                            <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group">
+                                <div className="flex items-center space-x-3 mb-6">
+                                    <div className="p-2.5 bg-slate-50 rounded-xl group-hover:bg-slate-600 transition-colors">
+                                        <Scale className="text-slate-500 group-hover:text-white transition-colors" size={20} />
+                                    </div>
+                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">D. Tax & Compliance</h4>
+                                </div>
+                                <div className="space-y-1">
+                                    {renderDataPoint('PAN Number', salaryData?.pan, <FileText size={16} />)}
+                                    {renderDataPoint('Tax Regime', salaryData?.taxRegime, <Percent size={16} />)}
+                                    {renderDataPoint('Tax Slab', salaryData?.taxSlab || '—', <Scale size={16} />)}
+                                    {renderDataPoint('Section 80C Invest.', `₹${salaryData?.investmentDeclarations?.section80C?.toLocaleString()}`, <Scale size={16} />)}
+                                    {renderDataPoint('HRA Declared', `₹${salaryData?.hraDeclaration?.toLocaleString()}`, <Landmark size={16} />)}
                                 </div>
                             </div>
 
-                            {/* Detailed Breakdown */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                        <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
-                                        Earnings
-                                    </h3>
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600">Basic Salary</span>
-                                            <span className="font-medium text-gray-900">${salaryData.basic?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600">HRA</span>
-                                            <span className="font-medium text-gray-900">${salaryData.hra?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600">Special Allowance (DA)</span>
-                                            <span className="font-medium text-gray-900">${salaryData.da?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-2">
-                                            <span className="text-gray-600">Bonus</span>
-                                            <span className="font-medium text-gray-900">${salaryData.bonus?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-3 mt-2 bg-green-100 px-3 rounded-lg">
-                                            <span className="font-bold text-green-800">Total Earnings</span>
-                                            <span className="font-bold text-green-800">
-                                                ${(salaryData.basic + salaryData.hra + salaryData.da + salaryData.bonus).toLocaleString()}
-                                            </span>
-                                        </div>
+                            <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group">
+                                <div className="flex items-center space-x-3 mb-6">
+                                    <div className="p-2.5 bg-blue-50 rounded-xl group-hover:bg-blue-600 transition-colors">
+                                        <CreditCard className="text-blue-500 group-hover:text-white transition-colors" size={20} />
                                     </div>
+                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">E. Bank & Payment Info</h4>
                                 </div>
-
-                                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                        <PieChart className="w-5 h-5 mr-2 text-red-600" />
-                                        Deductions
-                                    </h3>
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600">Provident Fund (PF)</span>
-                                            <span className="font-medium text-gray-900">${salaryData.pf?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600">Income Tax</span>
-                                            <span className="font-medium text-gray-900">${salaryData.tax?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-2">
-                                            <span className="text-gray-600">Other Deductions</span>
-                                            <span className="font-medium text-gray-900">${salaryData.deductions?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-3 mt-10 bg-red-100 px-3 rounded-lg">
-                                            <span className="font-bold text-red-800">Total Deductions</span>
-                                            <span className="font-bold text-red-800">
-                                                ${(salaryData.pf + salaryData.tax + salaryData.deductions).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
+                                <div className="space-y-1">
+                                    {renderDataPoint('Bank Name', salaryData?.bankName, <Landmark size={16} />)}
+                                    {renderDataPoint('Account No.', salaryData?.accountNumber?.slice(-4).padStart(12, '•'), <CreditCard size={16} />)}
+                                    {renderDataPoint('Payment Mode', salaryData?.paymentMode, <Wallet size={16} />)}
                                 </div>
                             </div>
-                        </>
-                    )}
+                        </div>
+                    </div>
                 </div>
             )}
 
             {activeTab === 'payslips' && (
-                <div className="space-y-4">
-                    <div className="overflow-hidden rounded-lg border border-gray-200">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                <div className="bg-white rounded-[32px] shadow-2xl shadow-gray-100 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="p-8 border-b border-gray-50 flex justify-between items-center">
+                        <div>
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Section G. Salary History</h3>
+                            <p className="text-gray-500 text-sm font-medium">Record of all past disbursements</p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50/50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month/Year</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Pay</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deductions</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Pay</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-400 tracking-widest text">Month & Year</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-400 tracking-widest text">Gross Salary</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-400 tracking-widest text">Net Salary</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-400 tracking-widest text">Deductions</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-400 tracking-widest text text-center">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {salaryHistory.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
-                                            No payslips found
+                            <tbody className="divide-y divide-gray-50">
+                                {salaryHistory.map((item, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50/30 transition-colors group">
+                                        <td className="px-8 py-5">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-500 text-xs">
+                                                    {item.month.slice(0, 3)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-gray-900">{item.month}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold">{item.year}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 font-bold text-gray-900">₹{(item.basic + item.hra + (item.specialAllowance || 0) + (item.bonus || 0)).toLocaleString()}</td>
+                                        <td className="px-8 py-5 font-black text-indigo-600">₹{item.netSalary.toLocaleString()}</td>
+                                        <td className="px-8 py-5 font-bold text-red-400">-₹{(item.pf + (item.incomeTaxTDS || 0) + (item.professionalTax || 0) + (item.insurancePremium || 0) + (item.loanDeduction || 0) + (item.advanceSalaryDeduction || 0) + (item.latePenalty || 0) + (item.lop || 0) + (item.otherDeductions || 0))?.toLocaleString()}</td>
+                                        <td className="px-8 py-5">
+                                            <button
+                                                onClick={() => handleDownloadPayslip(item)}
+                                                className="w-full flex items-center justify-center space-x-2 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-sm"
+                                            >
+                                                <Download size={12} />
+                                                <span>Download PDF</span>
+                                            </button>
                                         </td>
                                     </tr>
-                                ) : (
-                                    salaryHistory.map((item) => (
-                                        <tr key={item._id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {item.month} {item.year}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                ${(item.basic + item.hra + item.da + item.bonus).toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-500">
-                                                -${(item.pf + item.tax + item.deductions).toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                                                ${item.netSalary.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    {item.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => handleDownloadPayslip(item)}
-                                                    className="text-blue-600 hover:text-blue-900 flex items-center justify-end"
-                                                >
-                                                    <Download className="w-4 h-4 mr-1" />
-                                                    Download
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -363,98 +408,73 @@ const SalarySection = () => {
             )}
 
             {activeTab === 'queries' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1">
-                        <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Raise a Query</h3>
-                            <form onSubmit={handleSubmitQuery} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                    <select
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        value={queryForm.category}
-                                        onChange={(e) => setQueryForm({ ...queryForm, category: e.target.value })}
-                                    >
-                                        <option>Payslip Correction</option>
-                                        <option>Salary Discrepancy</option>
-                                        <option>Tax Query</option>
-                                        <option>Bonus Query</option>
-                                        <option>Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Brief subject..."
-                                        required
-                                        value={queryForm.subject}
-                                        onChange={(e) => setQueryForm({ ...queryForm, subject: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                    <textarea
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        rows={4}
-                                        placeholder="Describe your issue detailed..."
-                                        required
-                                        value={queryForm.description}
-                                        onChange={(e) => setQueryForm({ ...queryForm, description: e.target.value })}
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                                >
-                                    {loading ? 'Submitting...' : (
-                                        <>
-                                            <Send className="w-4 h-4 mr-2" />
-                                            Submit Query
-                                        </>
-                                    )}
-                                </button>
-                            </form>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="bg-white rounded-[32px] p-8 shadow-2xl shadow-gray-100 border border-gray-100">
+                        <div className="flex items-center space-x-4 mb-8">
+                            <div className="p-3 bg-indigo-50 rounded-2xl">
+                                <Send className="text-indigo-600" size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Support & Queries</h3>
+                                <p className="text-gray-500 text-sm font-medium">Raise requests for corrections</p>
+                            </div>
                         </div>
+                        <form onSubmit={handleSubmitQuery} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Subject</label>
+                                <input
+                                    type="text"
+                                    value={queryForm.subject}
+                                    onChange={(e) => setQueryForm({ ...queryForm, subject: e.target.value })}
+                                    className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none transition-all font-medium text-gray-800"
+                                    placeholder="e.g., HRA Component discrepancy"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Detailed Description</label>
+                                <textarea
+                                    value={queryForm.description}
+                                    onChange={(e) => setQueryForm({ ...queryForm, description: e.target.value })}
+                                    rows={4}
+                                    className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none transition-all font-medium text-gray-800 resize-none"
+                                    placeholder="Describe your concern..."
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-indigo-600 text-white py-5 rounded-[20px] font-black text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50 flex items-center justify-center space-x-2"
+                            >
+                                {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
+                                    <>
+                                        <Send size={16} />
+                                        <span>Submit Ticket</span>
+                                    </>
+                                )}
+                            </button>
+                        </form>
                     </div>
 
-                    <div className="lg:col-span-2">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Query History</h3>
-                        <div className="space-y-4">
-                            {queries.length === 0 ? (
-                                <div className="text-center py-10 border border-dashed border-gray-300 rounded-xl">
-                                    <p className="text-gray-500">No previous queries.</p>
-                                </div>
-                            ) : (
-                                queries.map((query) => (
-                                    <div key={query._id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-center space-x-2">
-                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${query.status === 'Open' ? 'bg-blue-100 text-blue-800' :
-                                                    query.status === 'Resolved' ? 'bg-green-100 text-green-800' :
-                                                        'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {query.status}
-                                                </span>
-                                                <h4 className="font-semibold text-gray-900">{query.subject}</h4>
-                                            </div>
-                                            <span className="text-xs text-gray-500">
-                                                {new Date(query.createdAt).toLocaleDateString()}
-                                            </span>
+                    <div className="space-y-6">
+                        <h4 className="text-xl font-black text-gray-900 tracking-tighter px-4">Past Tickets</h4>
+                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            {queries.map((query, idx) => (
+                                <div key={idx} className="bg-white rounded-[24px] p-6 shadow-lg shadow-gray-100 border border-gray-100 group">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="p-2 bg-indigo-50 rounded-xl">
+                                            <FileText className="text-indigo-600" size={18} />
                                         </div>
-                                        <p className="text-sm text-gray-600 mb-3">{query.description}</p>
-
-                                        {query.adminResponse && (
-                                            <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                                <p className="text-xs font-bold text-gray-700 mb-1">HR Response:</p>
-                                                <p className="text-sm text-gray-600">{query.adminResponse}</p>
-                                            </div>
-                                        )}
+                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${query.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                                            }`}>
+                                            {query.status}
+                                        </span>
                                     </div>
-                                ))
-                            )}
+                                    <p className="font-black text-gray-900 mb-1">{query.subject}</p>
+                                    <p className="text-gray-500 text-sm font-medium line-clamp-2">{query.description}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -464,5 +484,3 @@ const SalarySection = () => {
 };
 
 export default SalarySection;
-
-

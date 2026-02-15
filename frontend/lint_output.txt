@@ -1,0 +1,177 @@
+﻿
+D:\NOVA_FINAL\frontend\src\components\dashboard\PoliciesSection.tsx
+  7:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  9:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\SalarySection.tsx
+    8:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    9:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   10:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   70:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\SettingsSection.tsx
+   10:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   14:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   43:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   61:18  error  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  196:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\HRAnalyticsSection.tsx
+   49:38   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+   69:8    warning  React Hook useEffect has missing dependencies: 'fetchAnalyticsData' and 'handleGenerateReport'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   94:70   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  143:108  error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  284:55   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  372:55   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  383:55   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  407:52   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  467:44   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+  547:60   error    Unexpected any. Specify a different type                                                                                                            @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\HRPayrollSection.tsx
+   15:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   16:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   20:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  313:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\HRSettingsSection.tsx
+  28:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  71:18  error  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\HRTrainingSection.tsx
+   28:40   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   29:44   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   30:48   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   31:48   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:51   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:62   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  176:67   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:110  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\PayrollAIInsights.tsx
+   37:46   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:45   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:51   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:66   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  194:100  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  202:64   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\PayslipTemplate.tsx
+   4:13   error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+   5:15   error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+   6:16   error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+  61:100  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\PayslipTemplate.tsx:61:100
+  59 |                         <div>
+  60 |                             <p className="text-gray-500">Payment Date</p>
+> 61 |                             <p className="font-bold text-gray-800">{new Date(salary.paymentDate || Date.now()).toLocaleDateString()}</p>
+     |                                                                                                    ^^^^^^^^^^ Cannot call impure function
+  62 |                         </div>
+  63 |                     </div>
+  64 |  react-hooks/purity
+
+D:\NOVA_FINAL\frontend\src\components\dashboard\hr\SalaryComponentsManager.tsx
+   64:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\hr\InterviewModel.tsx
+  7:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\hr\JobPostingForm.tsx
+  206:87  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  223:95  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\components\hr\RejectionModel.tsx
+  7:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\pages\AdminDashboard.tsx
+  37:44  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  40:50  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  61:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\NOVA_FINAL\frontend\src\pages\AdminDashboard.tsx:61:7
+  59 |     if (userStr) {
+  60 |       const user = JSON.parse(userStr);
+> 61 |       setUserData(user);
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  62 |     }
+  63 |   }, []);
+  64 |  react-hooks/set-state-in-effect
+
+D:\NOVA_FINAL\frontend\src\pages\EmployeeDashboard.tsx
+   41:44  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   64:38  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   65:38  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   66:54  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   69:56  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   73:46  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   84:48  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   85:90  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  201:52  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  368:55  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  431:21  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  607:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  608:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  609:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  612:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  613:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  614:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  616:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  617:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  620:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  622:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  625:60  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  636:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  807:54  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\pages\HRDashboard.tsx
+    17:44  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    21:46  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    22:48  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    23:58  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    24:40  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    28:66  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    33:60  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    75:80  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    85:74  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+    96:21  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   114:6   warning  React Hook useEffect has a missing dependency: 'checkAuth'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   199:69  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   250:64  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   981:42  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  1043:7   error    Duplicate case label                                                                                          no-duplicate-case
+
+D:\NOVA_FINAL\frontend\src\pages\Jobs.tsx
+  112:9   error  'filtered' is never reassigned. Use 'const' instead  prefer-const
+  133:43  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  236:18  error  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  241:21  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\pages\auth\Login.tsx
+  47:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\pages\auth\Register.tsx
+  160:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\NOVA_FINAL\frontend\src\services\api.ts
+   37:12  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+   89:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 107 problems (105 errors, 2 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

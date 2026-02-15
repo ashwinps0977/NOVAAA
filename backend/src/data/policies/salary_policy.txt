@@ -1,0 +1,32 @@
+SALARY STRUCTURE POLICY
+
+1. Salary is calculated on Cost To Company (CTC) basis.
+
+2. Components of salary include:
+   - Basic Pay (50% of CTC)
+   - House Rent Allowance (HRA) (40% of Basic)
+   - Special Allowance (Remaining amount)
+   - Conveyance Allowance (Fixed ₹1600 per month)
+   - Medical Allowance (₹1250 per month)
+
+3. Statutory deductions:
+   - Provident Fund (PF) = 12% of Basic Pay
+   - Professional Tax = As per state government rules
+   - Income Tax = As per Income Tax Act of India
+
+4. Net Salary = Gross Salary - Total Deductions
+
+5. Salary is credited on or before the 5th of every month.
+
+6. Salary revisions are done annually based on:
+   - Performance review
+   - Company financial status
+   - Market benchmarks
+
+7. Interns receive consolidated salary without PF or tax deduction.
+
+8. Salary details are confidential and accessible only to the employee, HR, and Admin.
+
+9. Salary discrepancies must be reported within 7 working days.
+
+10. Overtime is applicable only for approved roles and requires prior manager approval.

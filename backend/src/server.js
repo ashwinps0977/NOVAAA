@@ -95,6 +95,10 @@ app.use('/api/applications', checkDB, applicationRoutes);
 // Attendance routes
 const attendanceRoutes = require('./routes/attendanceRoutes');
 app.use('/api/attendance', checkDB, attendanceRoutes);
+const settingsRoutes = require('./routes/settingsRoutes');
+app.use('/api/settings', checkDB, settingsRoutes);
+const hrSettingsRoutes = require('./routes/hrSettingsRoutes');
+app.use('/api/hr-settings', checkDB, hrSettingsRoutes);
 
 // Leave routes
 const leaveRoutes = require('./routes/leaveRoutes');
@@ -102,9 +106,43 @@ app.use('/api/leave', checkDB, leaveRoutes);
 
 // Project routes
 const projectRoutes = require('./routes/projectRoutes');
-app.use('/api/projects', require('./routes/projectRoutes'));
-app.use('/api/salary', require('./routes/salaryRoutes'));
-app.use('/api/ai', require('./routes/payrollAIRoutes'));
+app.use('/api/projects', checkDB, projectRoutes);
+
+// Salary routes
+const salaryRoutes = require('./routes/salaryRoutes');
+app.use('/api/salary', checkDB, salaryRoutes);
+
+// AI routes
+const payrollAIRoutes = require('./routes/payrollAIRoutes');
+app.use('/api/ai', checkDB, payrollAIRoutes);
+
+// Task routes
+const taskRoutes = require('./routes/taskRoutes');
+app.use('/api/tasks', checkDB, taskRoutes);
+
+// Goal routes
+const goalRoutes = require('./routes/goalRoutes');
+app.use('/api/goals', checkDB, goalRoutes);
+
+// Policy routes
+const policyRoutes = require('./routes/policyRoutes');
+app.use('/api/policies', checkDB, policyRoutes);
+
+// Notification routes
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', checkDB, notificationRoutes);
+
+// Training routes
+const trainingRoutes = require('./routes/trainingRoutes');
+app.use('/api/trainings', checkDB, trainingRoutes);
+
+// Skill routes
+const skillRoutes = require('./routes/skillRoutes');
+app.use('/api/skills', checkDB, skillRoutes);
+
+// Analytics routes
+const hrAnalyticsRoutes = require('./routes/hrAnalyticsRoutes');
+app.use('/api/analytics', checkDB, hrAnalyticsRoutes);
 
 // Temporary test endpoints (only used when DB is not connected)
 const tempUsers = [];

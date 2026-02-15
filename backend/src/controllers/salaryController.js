@@ -5,12 +5,15 @@ const Payroll = require('../models/Payroll');
 const Employee = require('../models/Employee');
 const { validationResult } = require('express-validator');
 
-// @desc    Get salary history for current employee
-// @route   GET /api/salary/history
-// @access  Private
+// 1. Get salary history for current employee
 exports.getSalaryHistory = async (req, res) => {
     try {
-        const salaries = await Salary.find({ employee: req.user.id }).sort({ createdAt: -1 });
+        const emp = await Employee.findOne({ email: req.user.email });
+        if (!emp) return res.status(404).json({ message: 'Employee profile not found' });
+
+        const salaries = await Salary.find({ employee: emp._id })
+            .populate('employee')
+            .sort({ createdAt: -1 });
         res.json(salaries);
     } catch (err) {
         console.error(err.message);
@@ -18,19 +21,24 @@ exports.getSalaryHistory = async (req, res) => {
     }
 };
 
-// @desc    Get latest salary slip
-// @route   GET /api/salary/latest
-// @access  Private
+// 2. Get latest salary slip
 exports.getLatestSalary = async (req, res) => {
     try {
-        const salary = await Salary.findOne({ employee: req.user.id }).sort({ createdAt: -1 });
+        // Find existing employee record first
+        const emp = await Employee.findOne({ email: req.user.email });
+        if (!emp) return res.status(404).json({ message: 'Employee profile not found' });
+
+        const salary = await Salary.findOne({ employee: emp._id })
+            .populate('employee')
+            .sort({ createdAt: -1 });
+
         if (!salary) {
-            return res.status(404).json({ msg: 'No salary records found' });
+            return res.status(404).json({ message: 'No salary record found' });
         }
         res.json(salary);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
@@ -91,16 +99,7 @@ exports.seedSalary = async (req, res) => {
             employee: req.user.id,
             month,
             year,
-            basic,
-            hra,
-            da,
-            pf,
-            tax,
-            bonus,
-            deductions,
-            netSalary,
-            accountNumber,
-            bankName,
+            ...req.body,
             status: 'Paid'
         });
 
@@ -178,7 +177,7 @@ const calculateTax = (annualIncome, taxRules) => {
     // Simplified slab calculation
     for (const rule of rules) {
         if (annualIncome > rule.minIncome) {
-            const taxableAmount = Math.min(annualIncome, rule.maxIncome) - rule.minIncome;
+            const taxableAmount = Math.min(annualIncome, rule.maxIncome || Infinity) - rule.minIncome;
             tax += (taxableAmount * (rule.percentage / 100));
         }
     }
@@ -228,36 +227,77 @@ exports.generatePayroll = async (req, res) => {
         const salaryRecords = [];
 
         for (const emp of employees) {
+            if (!emp.salaryStructure) {
+                console.warn(`Employee ${emp._id} has no salary structure assigned. Skipping.`);
+                continue;
+            }
+
             const struct = emp.salaryStructure;
             const base = emp.currentSalary || struct.baseSalary;
 
-            // Base Components
+            // Section B: Earnings Calculation
             let hra = (base * (struct.components.hra / 100));
-            let da = (base * (struct.components.da / 100));
-            let special = struct.components.specialAllowance || 0;
+            let specialAllowance = struct.components.specialAllowance || 0;
+            let conveyanceAllowance = struct.components.conveyanceAllowance || 0;
+            let medicalAllowance = struct.components.medicalAllowance || 1250; // Default if not in structure
+            let internetAllowance = struct.components.internetAllowance || 500; // Default if not in structure
+            let transportAllowance = struct.components.transportAllowance || 0;
+            let mealAllowance = struct.components.mealAllowance || 2200; // Default if not in structure
+            let shiftAllowance = struct.components.shiftAllowance || 0;
+            let projectAllowance = struct.components.projectAllowance || 0;
+            let performancePay = struct.components.performancePay || 0;
 
             // Add Variable Bonuses
             const empBonuses = periodBonuses.filter(b => b.employee.toString() === emp._id.toString());
             const totalBonus = empBonuses.reduce((sum, b) => sum + b.amount, 0);
 
-            // Gross Salary
-            const gross = base + hra + da + special + totalBonus;
+            // Granular Variable Earnings (from bonus model or direct input)
+            let performanceIncentive = 0; // Example, could come from Bonus model with specific type
+            let salesCommission = 0;
+            let projectBonus = 0;
+            let spotAward = 0;
+            let referralBonus = 0;
+
+            // Aggregate all earnings
+            const totalEarnings = base + hra + specialAllowance + conveyanceAllowance +
+                medicalAllowance + internetAllowance + transportAllowance +
+                mealAllowance + shiftAllowance + projectAllowance +
+                performancePay + totalBonus + performanceIncentive +
+                salesCommission + projectBonus + spotAward + referralBonus;
+
+            // Employer Contributions
+            let employerPF = base * (struct.employerContributions?.pf || 0.12); // Default 12%
+            let employerInsurance = struct.employerContributions?.insurance || 500; // Default
+            let gratuity = base * (struct.employerContributions?.gratuity || 0.0481); // Rough estimation
+            let esi = (base < 21000) ? (base * (struct.employerContributions?.esi || 0.0325)) : 0; // Default 3.25%
+
+            // Section C: Deductions
+            let pf = (base * (struct.deductions.pf / 100));
+            let professionalTax = struct.deductions.professionalTax || 200; // Default
+            let insurancePremium = struct.deductions.insurancePremium || 300; // Default
+
+            // Calculate Tax (Dynamic)
+            let incomeTaxTDS = 0;
+            if (taxRules.length > 0) {
+                incomeTaxTDS = calculateTax(totalEarnings * 12, taxRules);
+            }
 
             // Calculate Variable Deductions
             const empDeductions = periodDeductions.filter(d => d.employee.toString() === emp._id.toString());
             const totalVariableDeductions = empDeductions.reduce((sum, d) => sum + d.amount, 0);
 
-            // Calculate Statutory Deductions
-            const pf = (base * (struct.deductions.pf / 100));
+            // Granular Variable Deductions (from deduction model or direct input)
+            let loanDeduction = 0;
+            let advanceSalaryDeduction = 0;
+            let latePenalty = 0;
+            let lop = 0;
 
-            // Calculate Tax (Dynamic)
-            let tax = (base * (struct.deductions.tax / 100)); // Default from structure
-            if (taxRules.length > 0) {
-                tax = calculateTax(gross * 12, taxRules); // Override with slab calculation
-            }
+            // Aggregate all deductions
+            const totalDeductions = pf + professionalTax + insurancePremium + incomeTaxTDS +
+                totalVariableDeductions + loanDeduction + advanceSalaryDeduction +
+                latePenalty + lop;
 
-            const totalDeductions = pf + tax + totalVariableDeductions;
-            const netSalary = gross - totalDeductions;
+            const netSalary = totalEarnings - totalDeductions;
 
             // Create or Update Salary Record
             let salary = await Salary.findOne({ employee: emp._id, month, year });
@@ -268,28 +308,62 @@ exports.generatePayroll = async (req, res) => {
                     year,
                     basic: base,
                     hra,
-                    da,
+                    specialAllowance,
+                    conveyanceAllowance,
+                    medicalAllowance,
+                    internetAllowance,
+                    transportAllowance,
+                    mealAllowance,
+                    shiftAllowance,
+                    projectAllowance,
+                    performancePay,
+                    bonus: totalBonus, // Aggregate from Bonus model
+                    performanceIncentive,
+                    salesCommission,
+                    projectBonus,
+                    spotAward,
+                    referralBonus,
+                    employerPF,
+                    employerInsurance,
+                    gratuity,
+                    esi,
                     pf,
-                    tax,
-                    bonus: totalBonus,
-                    deductions: totalVariableDeductions,
+                    professionalTax,
+                    insurancePremium,
+                    incomeTaxTDS,
+                    otherDeductions: totalVariableDeductions,
                     netSalary,
                     status: 'Pending',
                     payroll: payroll._id,
                     accountNumber: emp.bankDetails?.accountNumber || 'N/A',
-                    bankName: emp.bankDetails?.bankName || 'N/A'
+                    bankName: emp.bankDetails?.bankName || 'N/A',
+                    ifsc: emp.bankDetails?.ifscCode || 'N/A',
+                    pan: emp.bankDetails?.panNumber || 'N/A',
+                    taxRegime: emp.taxRegime || 'New'
                 });
             } else if (salary.status === 'Pending') {
                 salary.basic = base;
                 salary.hra = hra;
-                salary.da = da;
-                salary.pf = pf;
-                salary.tax = tax;
+                salary.specialAllowance = specialAllowance;
+                salary.conveyanceAllowance = conveyanceAllowance;
+                salary.medicalAllowance = medicalAllowance;
+                salary.internetAllowance = internetAllowance;
+                salary.transportAllowance = transportAllowance;
+                salary.mealAllowance = mealAllowance;
+                salary.shiftAllowance = shiftAllowance;
+                salary.performancePay = performancePay;
                 salary.bonus = totalBonus;
-                salary.deductions = totalVariableDeductions;
+                salary.pf = pf;
+                salary.professionalTax = professionalTax;
+                salary.insurancePremium = insurancePremium;
+                salary.incomeTaxTDS = incomeTaxTDS;
+                salary.otherDeductions = totalVariableDeductions;
                 salary.netSalary = netSalary;
                 salary.accountNumber = emp.bankDetails?.accountNumber || 'N/A';
                 salary.bankName = emp.bankDetails?.bankName || 'N/A';
+                salary.ifsc = emp.bankDetails?.ifscCode || 'N/A';
+                salary.pan = emp.bankDetails?.panNumber || 'N/A';
+                salary.taxRegime = emp.taxRegime || 'New';
                 salary.payroll = payroll._id;
             }
 

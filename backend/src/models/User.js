@@ -33,6 +33,37 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  preferences: {
+    theme: { type: String, enum: ['light', 'dark'], default: 'light' },
+    language: { type: String, default: 'en' },
+    timezone: { type: String, default: 'UTC' },
+    dateFormat: { type: String, default: 'MMM DD, YYYY' }
+  },
+  security: {
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorMethod: { type: String, enum: ['email', 'app'], default: 'email' },
+    loginHistory: [{
+      device: String,
+      time: { type: Date, default: Date.now },
+      ip: String,
+      location: String
+    }],
+    securityAlerts: { type: Boolean, default: true }
+  },
+  notifications: {
+    email: { type: Boolean, default: true },
+    sms: { type: Boolean, default: false },
+    inApp: { type: Boolean, default: true },
+    leaveUpdates: { type: Boolean, default: true },
+    salaryUpdates: { type: Boolean, default: true },
+    hrAnnouncements: { type: Boolean, default: true },
+    aiAlerts: { type: Boolean, default: true }
+  },
+  privacy: {
+    hideContactInfo: { type: Boolean, default: false },
+    profileVisibility: { type: String, enum: ['public', 'private', 'team'], default: 'team' },
+    dataSharingConsent: { type: Boolean, default: true }
   }
 });
 

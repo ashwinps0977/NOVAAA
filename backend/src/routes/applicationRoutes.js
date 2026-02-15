@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const optionalAuth = require('../middleware/optionalAuth');
 const applicationController = require('../controllers/jobApplicationController');
 
 const multer = require('multer');
@@ -43,7 +44,7 @@ const upload = multer({
 });
 
 // Apply for job (public or authenticated)
-router.post('/apply', auth, upload.single('resume'), applicationController.submitApplication);
+router.post('/apply', optionalAuth, upload.single('resume'), applicationController.submitApplication);
 
 // Get my applications
 router.get('/my-applications', auth, async (req, res) => {

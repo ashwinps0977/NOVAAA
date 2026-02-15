@@ -9,7 +9,7 @@ const jobApplicationSchema = new mongoose.Schema({
   candidate: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   fullName: {
     type: String,
@@ -55,7 +55,23 @@ const jobApplicationSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
-  interviewScheduled: Date
+  interviewScheduled: Date,
+  // Analytics Fields
+  source: {
+    type: String,
+    enum: ['LinkedIn', 'Referral', 'Portal', 'Direct', 'Other'],
+    default: 'Portal'
+  },
+  hiredDate: {
+    type: Date
+  },
+  offerAcceptedDate: {
+    type: Date
+  },
+  recruitmentCost: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: true
 });

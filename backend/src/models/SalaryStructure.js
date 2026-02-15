@@ -12,15 +12,20 @@ const salaryStructureSchema = new mongoose.Schema({
         required: true
     },
     components: {
-        hra: { type: Number, default: 0 }, // Percentage or fixed amount
-        da: { type: Number, default: 0 },
-        travelAllowance: { type: Number, default: 0 },
+        hra: { type: Number, default: 0 },
+        specialAllowance: { type: Number, default: 0 },
+        conveyanceAllowance: { type: Number, default: 0 },
         medicalAllowance: { type: Number, default: 0 },
-        specialAllowance: { type: Number, default: 0 }
+        internetAllowance: { type: Number, default: 0 },
+        transportAllowance: { type: Number, default: 0 },
+        mealAllowance: { type: Number, default: 0 },
+        shiftAllowance: { type: Number, default: 0 },
+        performancePay: { type: Number, default: 0 }
     },
     deductions: {
-        pf: { type: Number, default: 0 }, // Percentage
-        tax: { type: Number, default: 0 } // Percentage
+        pf: { type: Number, default: 0 },
+        professionalTax: { type: Number, default: 0 },
+        insurancePremium: { type: Number, default: 0 }
     },
     isActive: {
         type: Boolean,
