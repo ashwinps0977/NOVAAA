@@ -13,6 +13,7 @@ import HRSettingsSection from '../components/dashboard/hr/HRSettingsSection';
 import HRTrainingSection from '../components/dashboard/hr/HRTrainingSection';
 import PoliciesSection from '../components/dashboard/PoliciesSection';
 import HRAnalyticsSection from '../components/dashboard/hr/HRAnalyticsSection';
+import HRPerformanceSection from '../components/dashboard/hr/HRPerformanceSection';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -1209,6 +1210,9 @@ const HRDashboard = () => {
       case 'analytics':
       case 'attrition':
         return <HRAnalyticsSection />;
+
+      case 'performance':
+        return <HRPerformanceSection />;
 
       case 'training':
         return <HRTrainingSection />;
