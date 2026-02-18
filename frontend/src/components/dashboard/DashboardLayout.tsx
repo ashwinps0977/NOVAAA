@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  LogOut, 
-  Settings, 
-  Bell, 
+import {
+  LogOut,
+  Settings,
+  Bell,
   Search
 } from 'lucide-react';
+import Logo from '../Logo';
 
 interface DashboardLayoutProps {
   role: 'employee' | 'hr' | 'admin';
@@ -15,9 +16,9 @@ interface DashboardLayoutProps {
   showSidebarToggle?: boolean;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
-  role, 
-  userName, 
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  role,
+  userName,
   userEmail,
   children
 }) => {
@@ -37,11 +38,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <div className="flex-1 px-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg"></div>
-              <span className="text-xl font-bold text-emerald-700">NOVA</span>
-            </div>
-            
+            <Logo />
+
             {/* User Info */}
             <div className="hidden md:block border-l pl-4">
               <p className="text-sm font-medium text-gray-700">{userName}</p>
@@ -72,12 +70,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <Bell size={22} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            
+
             <button className="p-2 text-gray-500 hover:text-gray-700">
               <Settings size={22} />
             </button>
-            
-            <button 
+
+            <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
             >

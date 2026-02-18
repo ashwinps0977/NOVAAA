@@ -1,4 +1,6 @@
 const Leave = require('../models/Leave');
+const User = require('../models/User');
+const sendEmail = require('../utils/mailer');
 
 // Helper to calculate days between dates
 const calculateDays = (start, end) => {
@@ -16,7 +18,34 @@ exports.applyLeave = async (req, res) => {
         // Auto-calculate days
         const days = calculateDays(startDate, endDate);
 
-        // Check if overlap exists? (Optional enhancement)
+        // Get current balances and validate
+        const leaves = await Leave.find({ user: req.user.id });
+        const balances = { Sick: 2, Casual: 3, Earned: 0 };
+
+        // Calculate used leaves this month
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        leaves.forEach(l => {
+            const leaveDate = new Date(l.startDate);
+            if (
+                l.status === 'Approved' &&
+                balances[l.type] !== undefined &&
+                leaveDate.getMonth() === currentMonth &&
+                leaveDate.getFullYear() === currentYear
+            ) {
+                balances[l.type] -= l.days;
+            }
+        });
+
+        // Validation: Check if user has sufficient balance
+        if (balances[type] < days) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient ${type} leave balance. Available: ${balances[type]} days, Requested: ${days} days`
+            });
+        }
 
         const leave = new Leave({
             user: req.user.id,
@@ -28,6 +57,39 @@ exports.applyLeave = async (req, res) => {
         });
 
         await leave.save();
+
+        // Send notification to admin/HR
+        try {
+            const admins = await User.find({ role: { $in: ['admin', 'hr'] } });
+            const employee = await User.findById(req.user.id);
+
+            for (const admin of admins) {
+                if (admin.email) {
+                    await sendEmail(
+                        admin.email,
+                        'New Leave Request Pending Approval',
+                        `
+                            <p>Dear ${admin.name},</p>
+                            <p>A new leave request has been submitted and requires your attention.</p>
+                            <br>
+                            <p><b>Employee:</b> ${employee.name} (${employee.email})</p>
+                            <p><b>Leave Type:</b> ${type}</p>
+                            <p><b>Duration:</b> ${startDate} to ${endDate} (${days} day${days > 1 ? 's' : ''})</p>
+                            <p><b>Reason:</b> ${reason}</p>
+                            <br>
+                            <p>Please review and approve/reject this request in the HR dashboard.</p>
+                            <br>
+                            <p>Regards,</p>
+                            <p>NOVA HR System</p>
+                        `
+                    );
+                    console.log(`📧 Leave notification sent to ${admin.email}`);
+                }
+            }
+        } catch (emailError) {
+            console.error('Failed to send admin notification:', emailError);
+            // Don't fail the request if email fails
+        }
 
         res.status(201).json({
             success: true,
@@ -138,10 +200,6 @@ exports.cancelLeave = async (req, res) => {
         });
     }
 };
-
-const sendEmail = require('../utils/mailer');
-
-// ... existing code ...
 
 // HR: Update Status
 exports.updateLeaveStatus = async (req, res) => {

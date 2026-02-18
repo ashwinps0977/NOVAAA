@@ -108,6 +108,44 @@ const HRDashboard = () => {
     due: 'Today'
   });
 
+  // Manual Attendance State
+  const [attendanceForm, setAttendanceForm] = useState({
+    userId: '',
+    date: new Date().toISOString().split('T')[0],
+    status: 'present'
+  });
+
+  const handleMarkAttendance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!attendanceForm.userId) {
+      alert('Please select an employee');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/attendance/hr-mark', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(attendanceForm)
+      });
+
+      if (response.ok) {
+        alert('Attendance marked successfully');
+        setAttendanceForm({ ...attendanceForm, userId: '' });
+      } else {
+        const error = await response.json();
+        alert(`Failed: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('HR mark attendance error:', error);
+      alert('Error marking attendance');
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
@@ -1202,6 +1240,60 @@ const HRDashboard = () => {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800">Manual Attendance Tool</h3>
+                <p className="text-sm text-gray-500">Correct or manually log attendance for an employee</p>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleMarkAttendance} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                    <select
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={attendanceForm.userId}
+                      onChange={(e) => setAttendanceForm({ ...attendanceForm, userId: e.target.value })}
+                    >
+                      <option value="">Select Employee</option>
+                      {employees.map(emp => (
+                        <option key={emp._id || emp.id} value={emp._id || emp.id}>{emp.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input
+                      type="date"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={attendanceForm.date}
+                      onChange={(e) => setAttendanceForm({ ...attendanceForm, date: e.target.value })}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={attendanceForm.status}
+                      onChange={(e) => setAttendanceForm({ ...attendanceForm, status: e.target.value })}
+                    >
+                      <option value="present">Present</option>
+                      <option value="absent">Absent</option>
+                      <option value="holiday">Holiday</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    Mark Attendance
+                  </button>
+                </form>
               </div>
             </div>
           </div>

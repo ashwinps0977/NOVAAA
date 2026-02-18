@@ -27,7 +27,7 @@ import {
   CheckSquare,
   FileCheck,
   ShieldCheck,
-  Plus,
+
   Send,
   Star
 } from 'lucide-react';
@@ -88,6 +88,9 @@ const EmployeeDashboard = () => {
     status: '',
     feedback: ''
   });
+
+  // Live Timer State
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -299,28 +302,38 @@ const EmployeeDashboard = () => {
   useEffect(() => {
     if (activeSection === 'attendance') {
       fetchAttendance();
+      fetchLeaves();
     }
   }, [activeSection]);
 
-  const handleCheckOut = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/attendance/checkout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        alert('Checked out successfully');
-        fetchAttendance();
-      } else {
-        alert('Failed to check out');
-      }
-    } catch (error) {
-      console.error('Check out error:', error);
+  // Live Timer Effect
+  useEffect(() => {
+    if (!attendanceData?.today?.checkIn || attendanceData?.today?.checkOut) {
+      setElapsedTime('00:00:00');
+      return;
     }
-  };
+
+    const updateTimer = () => {
+      const checkInTime = new Date(attendanceData.today.checkIn);
+      const now = new Date();
+      const diff = now.getTime() - checkInTime.getTime();
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    };
+
+    updateTimer(); // Initial call
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [attendanceData]);
+
+
 
   const handleDownloadReport = async () => {
     try {
@@ -352,7 +365,7 @@ const EmployeeDashboard = () => {
 
 
 
-  const fetchLeaves = async () => {
+  async function fetchLeaves() {
     try {
       setLeaveLoading(true);
       const token = localStorage.getItem('token');
@@ -456,6 +469,21 @@ const EmployeeDashboard = () => {
 
   const handleApplyLeave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Calculate days requested
+    const startDate = new Date(leaveForm.startDate);
+    const endDate = new Date(leaveForm.endDate);
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const daysRequested = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    // Check available balance
+    const availableBalance = leaveData.balances?.[leaveForm.type] || 0;
+
+    if (daysRequested > availableBalance) {
+      alert(`Insufficient ${leaveForm.type} leave balance.\nAvailable: ${availableBalance} days\nRequested: ${daysRequested} days\n\nPlease reduce the duration or choose a different leave type.`);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/leave/apply', {
@@ -473,10 +501,12 @@ const EmployeeDashboard = () => {
         setShowApplyModal(false);
         fetchLeaves();
       } else {
-        alert('Failed to submit leave application');
+        const data = await response.json();
+        alert(data.message || 'Failed to submit leave application');
       }
     } catch (error) {
       console.error('Apply leave error:', error);
+      alert('Error submitting leave application');
     }
   };
 
@@ -629,266 +659,363 @@ const EmployeeDashboard = () => {
           if (d.getDay() === 0 || d.getDay() === 6) status = 'holiday'; // Simple weekend logic
           if (d > new Date()) status = 'future';
 
+          // Dynamic update for today if manually checked in
+          if (dateStr === new Date().toISOString().split('T')[0] && isPresent) {
+            status = 'present';
+          }
+
           return { date: d, status, record };
         });
 
         // Combine empty slots and actual days
         const allCalendarCells = [...emptySlots, ...calendarDays];
 
+        const handleCheckIn = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/attendance/checkin', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (response.ok) {
+              // alert('Checked in successfully'); // Optional: remove alert for smoother UX
+              fetchAttendance();
+            } else {
+              const data = await response.json();
+              alert(data.message || 'Failed to check in');
+            }
+          } catch (error) {
+            console.error('Check in error:', error);
+            alert('Error checking in');
+          }
+        };
+
+        const handleCheckOutLogout = async () => {
+          // Call the existing logout function which handles checkout internally if needed
+          // But here we specifically want to mark checkout then logout
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/attendance/checkout', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              // Redirect to login immediately
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+            } else {
+              alert('Failed to check out. Please try again.');
+            }
+          } catch (error) {
+            console.error('Check out error:', error);
+            alert('Error checking out');
+          }
+        };
+
+        // Calculate Summary from Calendar Data (Current Month)
+        const presentCount = calendarDays.filter(d => d.status === 'present').length;
+        const absentCount = calendarDays.filter(d => d.status === 'absent' && d.date < new Date()).length;
+        const leaveCount = calendarDays.filter(d => d.status === 'leave').length;
+        // Total work days = passed days excluding weekends? Or just present + absent?
+        // Let's approximate total work days as days passed in month excluding weekends/holidays if we want accuracy,
+        // or just sum of recorded statuses. For now, let's use present + absent.
+        const totalWorkDays = presentCount + absentCount;
+
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Attendance Management</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Attendance & Leave Management</h2>
 
-            {attendanceLoading ? (
-              <div className="text-center py-10">Loading attendance data...</div>
+            {attendanceLoading || leaveLoading ? (
+              <div className="text-center py-10">Loading data...</div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg p-6 text-white mb-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Today's Status & Action */}
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-xl font-bold mb-2">Today's Attendance</h3>
+                        <p className="opacity-90 mb-4">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
                         <div className="flex items-center space-x-4">
-                          <div className={`px-4 py-2 rounded-lg ${isPresent ? 'bg-green-500' : 'bg-red-500'}`}>
-                            <span className="font-semibold">{isPresent ? 'PRESENT' : 'NOT CHECKED IN'}</span>
+                          <div className={`px-4 py-2 rounded-lg backdrop-blur-md bg-white/20 border border-white/30`}>
+                            <span className="font-bold tracking-wide">{isPresent ? 'PRESENT' : 'NOT CHECKED IN'}</span>
                           </div>
-                          <div>
-                            {todayRecord?.checkIn && <p className="text-sm opacity-90">Check-in: {new Date(todayRecord.checkIn).toLocaleTimeString()}</p>}
-                            {todayRecord?.checkOut && <p className="text-sm opacity-90">Check-out: {new Date(todayRecord.checkOut).toLocaleTimeString()}</p>}
+                          <div className="text-sm space-y-1">
+                            {todayRecord?.checkIn && (
+                              <div className="flex items-center">
+                                <Clock className="w-4 h-4 mr-1" />
+                                Check-in: {new Date(todayRecord.checkIn).toLocaleTimeString()}
+                              </div>
+                            )}
+                            {todayRecord?.checkIn && !todayRecord?.checkOut && (
+                              <div className="flex items-center font-bold text-lg">
+                                <TrendingUp className="w-4 h-4 mr-1 animate-pulse" />
+                                Elapsed: {elapsedTime}
+                              </div>
+                            )}
+                            {todayRecord?.checkOut && (
+                              <div className="flex items-center">
+                                <Clock className="w-4 h-4 mr-1" />
+                                Check-out: {new Date(todayRecord.checkOut).toLocaleTimeString()}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                      {isPresent && !isCheckedOut && (
-                        <button
-                          onClick={handleCheckOut}
-                          className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
-                        >
-                          Check Out
-                        </button>
-                      )}
-                      {isCheckedOut && (
-                        <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg">Checked Out</div>
-                      )}
+
+                      <div className="flex flex-col space-y-3">
+                        {!isPresent && (
+                          <button
+                            onClick={handleCheckIn}
+                            className="px-6 py-3 bg-white text-emerald-700 font-bold rounded-lg hover:bg-emerald-50 transition-all shadow-md flex items-center justify-center transform hover:scale-105"
+                          >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Check In
+                          </button>
+                        )}
+
+                        {isPresent && !isCheckedOut && (
+                          <button
+                            onClick={handleCheckOutLogout}
+                            className="px-6 py-3 bg-red-500/90 hover:bg-red-600 text-white font-bold rounded-lg transition-all shadow-md flex items-center justify-center backdrop-blur-sm border border-red-400"
+                          >
+                            <LogOut className="w-5 h-5 mr-2" />
+                            Check Out
+                          </button>
+                        )}
+
+                        {isCheckedOut && (
+                          <div className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg text-center font-medium border border-white/30">
+                            Checked Out
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Calendar ({new Date().toLocaleString('default', { month: 'long', year: 'numeric' })})</h3>
-                  <div className="grid grid-cols-7 gap-2">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <div key={day} className="text-center font-medium text-gray-600 py-2">
-                        {day}
+                  {/* Leave Balances Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                      <div>
+                        <p className="text-sm text-green-600 font-medium">Sick Leave</p>
+                        <p className="text-2xl font-bold text-green-700">{leaveData.balances?.Sick || 0}</p>
                       </div>
-                    ))}
-                    {allCalendarCells.map((cell, index) => {
-                      if (!cell) {
-                        return <div key={`empty-${index}`} className="p-2"></div>;
-                      }
-                      const day = cell;
-                      return (
-                        <div key={index} className={`p-2 border rounded-lg text-center 
-                      ${day.status === 'present' ? 'bg-green-50 border-green-200' :
-                            day.status === 'holiday' ? 'bg-purple-50 border-purple-200' :
-                              day.status === 'leave' ? 'bg-yellow-50 border-yellow-200' :
-                                day.status === 'future' ? 'bg-gray-50 border-gray-100 opacity-50' :
-                                  'bg-red-50 border-red-200'}`}>
-                          <div className="font-medium">{day.date.getDate()}</div>
-                          <div className={`text-xs mt-1 
-                        ${day.status === 'present' ? 'text-green-600' :
-                              day.status === 'holiday' ? 'text-purple-600' :
-                                day.status === 'leave' ? 'text-yellow-600' :
-                                  day.status === 'future' ? 'text-gray-400' :
-                                    'text-red-600'}`}>
-                            {day.status === 'future' ? '-' : day.status}
-                          </div>
+                      <Heart className="w-8 h-8 text-green-400 opacity-80" />
+                    </div>
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                      <div>
+                        <p className="text-sm text-blue-600 font-medium">Casual Leave</p>
+                        <p className="text-2xl font-bold text-blue-700">{leaveData.balances?.Casual || 0}</p>
+                      </div>
+                      <Coffee className="w-8 h-8 text-blue-400 opacity-80" />
+                    </div>
+                    <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                      <div>
+                        <p className="text-sm text-purple-600 font-medium">Earned Leave</p>
+                        <p className="text-2xl font-bold text-purple-700">{leaveData.balances?.Earned || 0}</p>
+                      </div>
+                      <Award className="w-8 h-8 text-purple-400 opacity-80" />
+                    </div>
+                  </div>
+
+                  {/* Calendar View - Redesigned */}
+                  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                        <CalendarDays className="w-5 h-5 mr-2 text-emerald-600" />
+                        Attendance Calendar
+                      </h3>
+                      <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-3 mb-3">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+                          {day}
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-3">
+                      {allCalendarCells.map((cell, index) => {
+                        if (!cell) return <div key={`empty-${index}`} className="aspect-square bg-gray-50/50 rounded-lg"></div>;
+
+                        const day = cell;
+                        const dateStr = day.date.toLocaleDateString();
+                        const todayStr = new Date().toLocaleDateString();
+                        const isToday = dateStr === todayStr;
+
+                        // Refined Styles
+                        let cellClass = "bg-white border-gray-100 text-gray-400 hover:border-gray-300"; // default
+                        let textClass = "text-gray-500";
+                        let statusDot = null;
+
+                        if (day.status === 'present') {
+                          cellClass = "bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm";
+                          textClass = "text-emerald-700 font-bold";
+                          statusDot = <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mx-auto mt-1"></div>;
+                        } else if (day.status === 'absent' && day.date < new Date(new Date().setHours(0, 0, 0, 0))) {
+                          cellClass = "bg-red-50 border-red-200 text-red-800";
+                          textClass = "text-red-500 font-medium";
+                          statusDot = <div className="w-1.5 h-1.5 bg-red-400 rounded-full mx-auto mt-1"></div>;
+                        } else if (day.status === 'leave') {
+                          cellClass = "bg-amber-50 border-amber-200 text-amber-800";
+                          textClass = "text-amber-600 font-medium";
+                          statusDot = <div className="w-1.5 h-1.5 bg-amber-400 rounded-full mx-auto mt-1"></div>;
+                        } else if (day.status === 'holiday') {
+                          cellClass = "bg-indigo-50 border-indigo-200 text-indigo-800";
+                          textClass = "text-indigo-500 font-medium";
+                        }
+
+                        if (isToday) {
+                          cellClass += " ring-2 ring-emerald-400 ring-offset-2 z-10";
+                        }
+
+                        return (
+                          <div key={index} className={`aspect-square p-1 border rounded-xl flex flex-col items-center justify-center relative transition-all duration-200 ${cellClass}`}>
+                            <span className={`text-sm font-medium ${textClass}`}>{day.date.getDate()}</span>
+                            <div className="mt-1">
+                              {statusDot}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Attendance Summary</h3>
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-600">Total Recorded</span>
-                        <span className="font-bold text-gray-900">{attendanceData?.summary?.totalDays || 0}</span>
+                <div className="space-y-6">
+                  {/* Summary Stats - Calculated from Calendar */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                      <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
+                      Monthly Summary
+                    </h3>
+                    <div className="space-y-5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Total Work Days</span>
+                        <span className="font-bold text-gray-900 text-lg">{attendanceData?.summary?.totalDays || totalWorkDays}</span>
                       </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-600">Present Days</span>
-                        <span className="font-bold text-green-600">{attendanceData?.summary?.presentDays || 0}</span>
+                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gray-800 h-full" style={{ width: '100%' }}></div>
                       </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-600">Absent Days</span>
-                        <span className="font-bold text-red-600">{attendanceData?.summary?.absentDays || 0}</span>
+
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-gray-600 font-medium">Present</span>
+                        <span className="font-bold text-emerald-600 text-lg">{presentCount}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div className="bg-emerald-500 h-full" style={{ width: `${(presentCount / (totalWorkDays || 1)) * 100}%` }}></div>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-gray-600 font-medium">Absent</span>
+                        <span className="font-bold text-red-500 text-lg">{absentCount}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                        <div className="bg-red-400 h-full" style={{ width: `${(absentCount / (totalWorkDays || 1)) * 100}%` }}></div>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-gray-600 font-medium">Leaves Taken</span>
+                        <span className="font-bold text-amber-500 text-lg">{leaveCount}</span>
                       </div>
                     </div>
 
-                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors" onClick={handleDownloadReport}>
+                    <button className="w-full mt-8 flex items-center justify-center space-x-2 bg-gray-50 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 font-semibold" onClick={handleDownloadReport}>
                       <Download className="w-4 h-4" />
-                      <span>Download Attendance Report</span>
+                      <span>Download Report</span>
                     </button>
-
-                    <div className="mt-6">
-                      <h4 className="font-medium text-gray-700 mb-3">AI Insights</h4>
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-start space-x-3">
-                          <Brain className="w-5 h-5 text-blue-600 mt-0.5" />
-                          <div>
-                            <p className="font-medium text-blue-800">Attendance Trend Analysis</p>
-                            <p className="text-sm text-blue-600 mt-1">Your attendance is consistent. Great job maintaining punctuality!</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'salary':
-        return <SalarySection />;
-      case 'leave':
-        return (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Leave Management</h2>
-
-            {leaveLoading ? (
-              <div className="text-center py-10">Loading leave data...</div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-green-600">Sick Leave</p>
-                          <p className="text-2xl font-bold text-green-700">{leaveData.balances?.Sick || 0} days</p>
-                        </div>
-                        <Heart className="w-8 h-8 text-green-500" />
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-blue-600">Casual Leave</p>
-                          <p className="text-2xl font-bold text-blue-700">{leaveData.balances?.Casual || 0} days</p>
-                        </div>
-                        <Coffee className="w-8 h-8 text-blue-500" />
-                      </div>
-                    </div>
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-purple-600">Earned Leave</p>
-                          <p className="text-2xl font-bold text-purple-700">{leaveData.balances?.Earned || 0} days</p>
-                        </div>
-                        <Award className="w-8 h-8 text-purple-500" />
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
+                  {/* Leave Requests */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-semibold text-gray-800">Leave Requests</h3>
                       <button
                         onClick={() => setShowApplyModal(true)}
-                        className="flex items-center space-x-2 bg-emerald-500 text-white py-2 px-4 rounded-lg hover:bg-emerald-600 transition-colors"
+                        className="text-sm bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md font-medium hover:bg-blue-100 transition-colors"
                       >
-                        <Plus className="w-4 h-4" />
-                        <span>Apply for Leave</span>
+                        + New Request
                       </button>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm max-h-[400px] overflow-y-auto">
                       {leaveData.leaves?.length > 0 ? (
-                        leaveData.leaves.map((leave: any) => (
-                          <div key={leave._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                            <div>
-                              <div className="flex items-center space-x-3">
-                                <span className="font-medium">{leave.type}</span>
-                                <span className={`px-2 py-1 rounded-full text-xs ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                        <div className="divide-y divide-gray-100">
+                          {leaveData.leaves.map((leave: any) => (
+                            <div key={leave._id} className="p-4 hover:bg-gray-50 transition-colors">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-gray-800 text-sm">{leave.type}</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
                                   leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-red-100 text-red-700'
                                   }`}>
                                   {leave.status}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-500 mt-1">
-                                {leave.startDate} to {leave.endDate} ({leave.days} days) - {leave.reason}
+                              <p className="text-xs text-gray-500 mb-2">
+                                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                               </p>
-                            </div>
-                            <div className="flex items-center space-x-2">
+
                               {leave.status === 'Pending' && (
-                                <>
-                                  <button
-                                    onClick={() => handleCancelLeave(leave._id)}
-                                    className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
+                                <button
+                                  onClick={() => handleCancelLeave(leave._id)}
+                                  className="text-xs text-red-600 hover:text-red-800 hover:underline"
+                                >
+                                  Cancel Request
+                                </button>
                               )}
                             </div>
-                          </div>
-                        ))
+                          ))}
+                        </div>
                       ) : (
-                        <div className="text-center py-8 text-gray-500">No leave history found.</div>
+                        <div className="p-8 text-center text-gray-400 text-sm">
+                          No leave history found.
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">AI Leave Suggestions</h3>
-                  <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-100 mb-6">
-                    <div className="flex items-start space-x-3">
-                      <Brain className="w-5 h-5 text-emerald-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-emerald-800">Smart Leave Planning</p>
-                        <p className="text-sm text-emerald-600 mt-1">
-                          Based on your balance and team calendar, consider taking leave on Feb 12-14 for optimal coverage.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-700 mb-3">Upcoming Holidays</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between py-2 border-b">
+                  {/* Upcoming Holidays - Compact */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Upcoming Holidays</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">New Year's Day</span>
-                        <span className="font-medium">Jan 1</span>
+                        <span className="font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-700">Jan 1</span>
                       </div>
-                      <div className="flex items-center justify-between py-2 border-b">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Spring Festival</span>
-                        <span className="font-medium">Feb 10-12</span>
+                        <span className="font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-700">Feb 10</span>
                       </div>
-                      <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Labor Day</span>
-                        <span className="font-medium">May 1</span>
+                        <span className="font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-700">May 1</span>
                       </div>
                     </div>
                   </div>
-
-                  <button className="w-full mt-4 flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-                    <Calendar className="w-4 h-4" />
-                    <span>View Holiday Calendar</span>
-                  </button>
                 </div>
               </div>
             )}
 
-            {/* Apply Leave Modal */}
+            {/* Modal remains separate */}
             {
               showApplyModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                    <div className="flex items-center justify-between mb-6">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                  <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100">
+                    <div className="flex items-center justify-between mb-6 border-b pb-3">
                       <h3 className="text-xl font-bold text-gray-900">Apply for Leave</h3>
-                      <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                      <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1">
+                        <LogOut className="w-5 h-5 rotate-45" /> {/* Close icon */}
+                      </button>
                     </div>
                     <form onSubmit={(e) => {
                       handleApplyLeave(e);
@@ -898,7 +1025,7 @@ const EmployeeDashboard = () => {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
                           <select
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             value={leaveForm.type}
                             onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
                           >
@@ -913,7 +1040,7 @@ const EmployeeDashboard = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
                             <input
                               type="date"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                               value={leaveForm.startDate}
                               onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
                               required
@@ -924,7 +1051,7 @@ const EmployeeDashboard = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
                             <input
                               type="date"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                               value={leaveForm.endDate}
                               onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
                               required
@@ -935,14 +1062,15 @@ const EmployeeDashboard = () => {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
                           <textarea
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                             rows={3}
                             value={leaveForm.reason}
                             onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
                             required
+                            placeholder="Please explain why you need leave..."
                           ></textarea>
                         </div>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                        <button type="submit" className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md">
                           Submit Application
                         </button>
                       </div>
@@ -951,9 +1079,11 @@ const EmployeeDashboard = () => {
                 </div>
               )
             }
-          </div >
+          </div>
         );
 
+      case 'salary':
+        return <SalarySection />;
       case 'ai-chat':
         return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-[600px] grid grid-cols-1 lg:grid-cols-3">
@@ -1372,9 +1502,9 @@ const EmployeeDashboard = () => {
                       <span className="text-sm font-medium text-gray-700">AI Assistant</span>
                     </button>
 
-                    <button onClick={() => setActiveSection('leave')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
+                    <button onClick={() => setActiveSection('attendance')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
                       <Calendar className="w-6 h-6 text-gray-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">Apply Leave</span>
+                      <span className="text-sm font-medium text-gray-700">Attendance</span>
                     </button>
 
                     <button onClick={() => setActiveSection('training')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
@@ -1573,8 +1703,7 @@ const EmployeeDashboard = () => {
     { id: 'overview', label: 'Dashboard', icon: Home },
     { id: 'projects', label: 'My Projects', icon: CheckSquare },
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'attendance', label: 'Attendance', icon: CalendarDays },
-    { id: 'leave', label: 'Leave Management', icon: Briefcase },
+    { id: 'attendance', label: 'Attendance & Leave', icon: CalendarDays },
     { id: 'ai-chat', label: 'AI Assistant', icon: MessageCircle, highlight: true },
     { id: 'performance', label: 'Performance', icon: Target },
     { id: 'training', label: 'Training', icon: GraduationCap },
