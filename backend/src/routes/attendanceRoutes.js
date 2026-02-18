@@ -10,9 +10,11 @@ router.use(auth);
 
 router.get('/my-history', attendanceController.getMyAttendance);
 router.get('/download-report', attendanceController.downloadReport);
+router.post('/checkin', attendanceController.checkIn);
 router.post('/checkout', attendanceController.checkOut);
 
 // HR routes
 router.get('/all', attendanceController.getAllAttendance);
+router.post('/hr-mark', attendanceController.hrMarkAttendance);
 
 module.exports = router;

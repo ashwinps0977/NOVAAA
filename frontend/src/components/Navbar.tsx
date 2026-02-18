@@ -1,10 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
 
-const Navbar = () => {
+interface NavbarProps {
+  isImageHovered?: boolean;
+}
+
+const Navbar = ({ isImageHovered = false }: NavbarProps) => {
   const location = useLocation();
-  
+
   const isActive = (path: string) => {
-    return location.pathname === path ? "text-green-600 border-green-600" : "text-gray-700 border-transparent";
+    if (location.pathname === path) {
+      return isImageHovered
+        ? "text-pink-500 border-pink-500"
+        : "text-green-600 border-green-600";
+    }
+    return isImageHovered
+      ? "border-transparent text-gray-700 hover:text-pink-400"
+      : "border-transparent text-gray-700 hover:text-green-600";
   };
 
   return (
@@ -13,50 +24,59 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <Link to="/" className="flex items-center space-x-2">
-              <h1 className="text-3xl font-bold text-gray-900">NO<span className="text-green-600">VA</span></h1>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">AI</span>
+            <Link to="/" className="flex items-center space-x-2 group/logo relative px-3 py-2">
+
+              <h1 className="text-3xl font-bold relative z-10 transition-all duration-300 group-hover/logo:scale-110">
+                <span className={`transition-colors duration-500 ${isImageHovered ? 'text-pink-500' : 'text-gray-900 group-hover/logo:text-green-600'
+                  }`}>NO</span>
+                <span className={`transition-colors duration-500 ${isImageHovered ? 'text-pink-500' : 'text-green-600 group-hover/logo:text-gray-900'
+                  }`}>VA</span>
+              </h1>
+              <span className={`text-xs px-2 py-1 rounded-full font-semibold transition-all duration-500 relative z-10 group-hover/logo:scale-110 ${isImageHovered
+                ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-pink-100 shadow-lg shadow-pink-500/50'
+                : 'bg-green-100 text-green-700'
+                }`}>AI</span>
             </Link>
           </div>
 
           {/* Navigation Links */}
-          <ul className="hidden md:flex gap-8 text-gray-700 font-medium">
+          <ul className="hidden md:flex gap-8 font-medium text-gray-700">
             <li>
-              <Link 
+              <Link
                 to="/"
-                className={`hover:text-green-600 transition-colors duration-300 py-2 px-1 border-b-2 hover:border-green-600 ${isActive("/")}`}
+                className={`transition-colors duration-300 py-2 px-1 border-b-2 ${isActive("/")}`}
               >
                 Home
               </Link>
             </li>
             <li>
-              <Link 
+              <Link
                 to="/features"
-                className={`hover:text-green-600 transition-colors duration-300 py-2 px-1 border-b-2 hover:border-green-600 ${isActive("/features")}`}
+                className={`transition-colors duration-300 py-2 px-1 border-b-2 ${isActive("/features")}`}
               >
                 Features
               </Link>
             </li>
             <li>
-              <Link 
+              <Link
                 to="/jobs"
-                className={`hover:text-green-600 transition-colors duration-300 py-2 px-1 border-b-2 hover:border-green-600 ${isActive("/jobs")}`}
+                className={`transition-colors duration-300 py-2 px-1 border-b-2 ${isActive("/jobs")}`}
               >
                 Jobs
               </Link>
             </li>
             <li>
-              <Link 
+              <Link
                 to="/about"
-                className={`hover:text-green-600 transition-colors duration-300 py-2 px-1 border-b-2 hover:border-green-600 ${isActive("/about")}`}
+                className={`transition-colors duration-300 py-2 px-1 border-b-2 ${isActive("/about")}`}
               >
                 About
               </Link>
             </li>
             <li>
-              <Link 
+              <Link
                 to="/contact"
-                className={`hover:text-green-600 transition-colors duration-300 py-2 px-1 border-b-2 hover:border-green-600 ${isActive("/contact")}`}
+                className={`transition-colors duration-300 py-2 px-1 border-b-2 ${isActive("/contact")}`}
               >
                 Contact
               </Link>
@@ -65,19 +85,22 @@ const Navbar = () => {
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-4">
-            <Link 
+            <Link
               to="/login"
-              className="hidden md:block px-6 py-2 text-gray-700 hover:text-green-600 font-medium transition-colors duration-300"
+              className="hidden md:block px-6 py-2 font-medium text-gray-700 hover:text-green-600 transition-colors"
             >
               Login
             </Link>
-            <Link 
+            <Link
               to="/register"
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-full transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+              className={`px-6 py-2 font-medium rounded-full transition-all duration-500 transform hover:scale-105 shadow-md hover:shadow-lg ${isImageHovered
+                ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-pink-500/50 hover:shadow-pink-600/60'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
             >
               Create Account
             </Link>
-            
+
             {/* Mobile menu button (optional) */}
             <button className="md:hidden text-gray-700">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

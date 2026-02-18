@@ -1,4 +1,5 @@
 const Attendance = require('../models/Attendance');
+const Leave = require('../models/Leave');
 
 // Get today's date string YYYY-MM-DD
 const getTodayDate = () => new Date().toISOString().split('T')[0];
@@ -97,32 +98,88 @@ exports.checkOut = async (req, res) => {
     }
 };
 
+exports.checkIn = async (req, res) => {
+    try {
+        const attendance = await exports.markCheckIn(req.user.id);
+
+        if (!attendance) {
+            return res.status(400).json({
+                success: false,
+                message: 'Already checked in for today or error occurred'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Checked in successfully',
+            attendance
+        });
+    } catch (error) {
+        console.error('Check-in route error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check in'
+        });
+    }
+};
+
 exports.getMyAttendance = async (req, res) => {
     try {
-        // Get last 30 days history
+        // Get last 35 days history for calendar view
         const history = await Attendance.find({ user: req.user.id })
             .sort({ date: -1 })
-            .limit(35); // Enough for a calendar view
+            .limit(35);
+
+        // Get approved leaves to merge into calendar
+        const leaves = await Leave.find({
+            user: req.user.id,
+            status: 'Approved'
+        });
+
+        // Create a map of dates with leave data
+        const leaveMap = new Map();
+        leaves.forEach(leave => {
+            const start = new Date(leave.startDate);
+            const end = new Date(leave.endDate);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                leaveMap.set(dateStr, { type: leave.type, leaveId: leave._id });
+            }
+        });
+
+        // Enrich history with leave data
+        const enrichedHistory = history.map(record => {
+            const recordObj = record.toObject();
+            const leaveInfo = leaveMap.get(record.date);
+
+            if (leaveInfo) {
+                recordObj.status = 'leave';
+                recordObj.leaveType = leaveInfo.type;
+            }
+
+            return recordObj;
+        });
 
         // Get today's status
         const today = getTodayDate();
-        const todayRecord = history.find(r => r.date === today);
+        const todayRecord = enrichedHistory.find(r => r.date === today);
 
         // Calculate summary stats
-        const totalDays = history.length;
-        const presentDays = history.filter(r => r.status === 'present').length;
-        const absentDays = history.filter(r => r.status === 'absent').length;
-        const lateDays = 0; // Logic for late? Maybe if checkIn > 9:30
+        const totalDays = enrichedHistory.length;
+        const presentDays = enrichedHistory.filter(r => r.status === 'present').length;
+        const absentDays = enrichedHistory.filter(r => r.status === 'absent').length;
+        const leaveDays = enrichedHistory.filter(r => r.status === 'leave').length;
 
         res.json({
             success: true,
             today: todayRecord || null,
-            history,
+            history: enrichedHistory,
             summary: {
                 totalDays,
                 presentDays,
                 absentDays,
-                lateDays
+                leaveDays
             }
         });
     } catch (error) {
@@ -158,9 +215,19 @@ exports.getAllAttendance = async (req, res) => {
 
 exports.downloadReport = async (req, res) => {
     try {
-        const attendance = await Attendance.find({ user: req.user.id }).sort({ date: -1 });
+        const { month, year } = req.query;
+        let query = { user: req.user.id };
 
-        // CSS Header
+        if (month && year) {
+            const monthStr = month.padStart(2, '0');
+            const startDate = `${year}-${monthStr}-01`;
+            const endDate = `${year}-${monthStr}-31`;
+            query.date = { $gte: startDate, $lte: endDate };
+        }
+
+        const attendance = await Attendance.find(query).sort({ date: -1 });
+
+        // CSV Header
         let csv = 'Date,Status,Check In,Check Out,Working Hours\n';
 
         attendance.forEach(record => {
@@ -170,8 +237,12 @@ exports.downloadReport = async (req, res) => {
             csv += `${record.date},${record.status},${checkInTime},${checkOutTime},${record.workingHours || 0}\n`;
         });
 
+        const filename = month && year
+            ? `attendance_report_${year}_${month}_${req.user.name}.csv`
+            : `attendance_report_${req.user.name}.csv`;
+
         res.header('Content-Type', 'text/csv');
-        res.attachment(`attendance_report_${req.user.name}.csv`);
+        res.attachment(filename);
         res.send(csv);
 
     } catch (error) {
@@ -179,6 +250,41 @@ exports.downloadReport = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to generate report'
+        });
+    }
+};
+
+exports.hrMarkAttendance = async (req, res) => {
+    try {
+        const { userId, date, status } = req.body;
+
+        if (!userId || !date || !status) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId, date, and status are required'
+            });
+        }
+
+        // Upsert attendance record
+        const attendance = await Attendance.findOneAndUpdate(
+            { user: userId, date },
+            {
+                status,
+                $setOnInsert: { checkIn: status === 'present' ? new Date() : null }
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json({
+            success: true,
+            message: `Attendance marked as ${status} for ${date}`,
+            attendance
+        });
+    } catch (error) {
+        console.error('HR mark attendance error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to mark attendance'
         });
     }
 };
