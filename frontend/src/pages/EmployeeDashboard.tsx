@@ -20,22 +20,21 @@ import {
   ChevronRight,
   Download,
   HelpCircle,
-  Heart,
-  Coffee,
   Brain,
   AlertCircle,
   CheckSquare,
   FileCheck,
   ShieldCheck,
-
   Send,
   Star
 } from 'lucide-react';
+
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import SalarySection from '../components/dashboard/SalarySection';
 import TrainingSection from '../components/dashboard/TrainingSection';
 import SettingsSection from '../components/dashboard/SettingsSection';
 import PoliciesSection from '../components/dashboard/PoliciesSection';
+import MyWorkGrowthSection from '../components/dashboard/MyWorkGrowthSection';
 
 const EmployeeDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -61,7 +60,7 @@ const EmployeeDashboard = () => {
   });
 
   // Dynamic Data State
-  const [tasks, setTasks] = useState<any[]>([]);
+  // tasks removed
   const [goals, setGoals] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -82,6 +81,7 @@ const EmployeeDashboard = () => {
 
   // Projects State
   const [myProjects, setMyProjects] = useState<any[]>([]);
+  const [myTasks, setMyTasks] = useState<any[]>([]);
   const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string }>({
     show: false,
     project: null,
@@ -91,6 +91,11 @@ const EmployeeDashboard = () => {
 
   // Live Timer State
   const [elapsedTime, setElapsedTime] = useState('00:00:00');
+
+  // Calendar navigation state — stays within 2026
+  const _realNow = new Date();
+  const [calViewYear] = useState(2026);
+  const [calViewMonth, setCalViewMonth] = useState(_realNow.getFullYear() === 2026 ? _realNow.getMonth() : 0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -189,28 +194,7 @@ const EmployeeDashboard = () => {
 
 
   // Fetch Functions
-  const fetchTasks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks/my-tasks', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const allTasks = data.tasks || [];
-        setTasks(allTasks);
 
-        // Update Stats
-        const completedCount = allTasks.filter((t: any) => t.status === 'completed').length;
-        setStats(prev => ({
-          ...prev,
-          completedTasks: completedCount
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    }
-  };
 
   const fetchGoals = async () => {
     try {
@@ -243,25 +227,7 @@ const EmployeeDashboard = () => {
     }
   };
 
-  const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
 
-      if (response.ok) {
-        fetchTasks(); // Refresh
-      }
-    } catch (error) {
-      console.error('Error updating task:', error);
-    }
-  };
 
 
 
@@ -450,14 +416,14 @@ const EmployeeDashboard = () => {
       fetchMyProjects();
     }
     if (activeSection === 'overview') {
-      fetchTasks();
+      fetchMyProjects();
+      fetchMyTasks();
       fetchGoals();
       fetchLeaves();
       fetchNotifications();
 
-      // Poll for new tasks and notifications every 15 seconds
+      // Poll for new notifications every 15 seconds
       intervalId = setInterval(() => {
-        fetchTasks();
         fetchNotifications();
       }, 15000);
     }
@@ -466,6 +432,36 @@ const EmployeeDashboard = () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [activeSection]);
+
+  // Update stats when data changes
+  useEffect(() => {
+    // Calculate completed tasks from myTasks
+    // (and optionally myProjects if "Tasks" refers to "Project Tasks")
+    // For now, let's assume it means assigned tasks.
+    if (myTasks.length > 0) {
+      const completed = myTasks.filter(t => t.status === 'Completed').length;
+      setStats(prev => ({ ...prev, completedTasks: completed }));
+    }
+  }, [myTasks]);
+
+
+  const fetchMyTasks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/tasks/my-tasks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Check structure: { success: true, tasks: [...] } or just array
+        if (data.success !== false) {
+          setMyTasks(data.tasks || data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Fetch my tasks error:', error);
+    }
+  };
 
   const handleApplyLeave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -559,6 +555,9 @@ const EmployeeDashboard = () => {
 
   const renderSection = () => {
     switch (activeSection) {
+      case 'workgrowth':
+        return <MyWorkGrowthSection />;
+
       case 'training':
         return <TrainingSection />;
       case 'profile':
@@ -633,41 +632,88 @@ const EmployeeDashboard = () => {
           </div>
         );
 
-      case 'attendance':
+      case 'attendance': {
         const todayRecord = attendanceData?.today;
         const isPresent = !!todayRecord;
         const isCheckedOut = !!todayRecord?.checkOut;
 
-        // Generate calendar days for current month with proper alignment
+        // Helper: get local date string YYYY-MM-DD without UTC conversion
+        const toLocalDateStr = (d: Date) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        };
+
+        // Generate calendar using the viewed month/year (navigable within 2026)
         const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
+        const year = calViewYear;           // always 2026
+        const month = calViewMonth;         // 0-11
+        const todayStr = toLocalDateStr(now);
 
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday...
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
 
-        // Create array of empty slots for days before the 1st
         const emptySlots = Array.from({ length: firstDayOfMonth }, () => null);
+
+        // Demo records keyed per-month so each month has its own persistent data
+        const DEMO_KEY_MONTH = `nova_demo_attendance_${year}_${String(month + 1).padStart(2, '0')}`;
+        const getOrCreateMonthDemoRecords = () => {
+          const stored = localStorage.getItem(DEMO_KEY_MONTH);
+          if (stored) return JSON.parse(stored);
+
+          // For past/current months: weekdays = present, days 10 & 14 = leave (if weekday)
+          // For future months: everything stays empty (will be 'future')
+          const records: Record<string, string> = {};
+          const leaveCandidates = [10, 14];
+          for (let dy = 1; dy <= daysInMonth; dy++) {
+            const d = new Date(year, month, dy);
+            const ds = toLocalDateStr(d);
+            const dow = d.getDay();
+            if (dow === 0 || dow === 6) continue; // skip weekends
+            if (leaveCandidates.includes(dy)) {
+              records[ds] = 'leave';
+            } else {
+              records[ds] = 'present';
+            }
+          }
+          localStorage.setItem(DEMO_KEY_MONTH, JSON.stringify(records));
+          return records;
+        };
+
+        const demoRecords = getOrCreateMonthDemoRecords();
 
         const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
           const d = new Date(year, month, i + 1);
-          const dateStr = d.toISOString().split('T')[0];
-          const record = attendanceData?.history?.find((r: any) => r.date === dateStr);
+          const dateStr = toLocalDateStr(d);
+          const isTodayDate = dateStr === todayStr;
+          const isFuture = d > now && !isTodayDate;
+          const dayOfWeek = d.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-          let status = 'absent';
-          if (record) status = record.status;
-          if (d.getDay() === 0 || d.getDay() === 6) status = 'holiday'; // Simple weekend logic
-          if (d > new Date()) status = 'future';
+          // Check real attendance API record
+          const apiRecord = attendanceData?.history?.find((r: any) => r.date === dateStr);
 
-          // Dynamic update for today if manually checked in
-          if (dateStr === new Date().toISOString().split('T')[0] && isPresent) {
+          let status: string;
+          if (isFuture) {
+            status = 'future';
+          } else if (isTodayDate && isPresent) {
             status = 'present';
+          } else if (isTodayDate && !isPresent) {
+            status = 'absent';
+          } else if (isWeekend) {
+            // Weekend — show as absent/future (no special holiday color) but no dot
+            status = 'weekend';
+          } else if (apiRecord) {
+            status = apiRecord.status;
+          } else {
+            // Fall back to demo data for past weekdays
+            status = demoRecords[dateStr] || 'absent';
           }
 
-          return { date: d, status, record };
+          return { date: d, status, record: apiRecord };
         });
 
-        // Combine empty slots and actual days
         const allCalendarCells = [...emptySlots, ...calendarDays];
 
         const handleCheckIn = async () => {
@@ -675,12 +721,9 @@ const EmployeeDashboard = () => {
             const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5000/api/attendance/checkin', {
               method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
+              headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
-              // alert('Checked in successfully'); // Optional: remove alert for smoother UX
               fetchAttendance();
             } else {
               const data = await response.json();
@@ -692,20 +735,15 @@ const EmployeeDashboard = () => {
           }
         };
 
-        const handleCheckOutLogout = async () => {
-          // Call the existing logout function which handles checkout internally if needed
-          // But here we specifically want to mark checkout then logout
+        const handleCheckOut = async () => {
           try {
             const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5000/api/attendance/checkout', {
               method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
+              headers: { 'Authorization': `Bearer ${token}` }
             });
-
             if (response.ok) {
-              // Redirect to login immediately
+              // Force logout after checkout
               localStorage.removeItem('token');
               localStorage.removeItem('user');
               window.location.href = '/login';
@@ -718,369 +756,586 @@ const EmployeeDashboard = () => {
           }
         };
 
-        // Calculate Summary from Calendar Data (Current Month)
         const presentCount = calendarDays.filter(d => d.status === 'present').length;
-        const absentCount = calendarDays.filter(d => d.status === 'absent' && d.date < new Date()).length;
+        const absentCount = calendarDays.filter(d => d.status === 'absent').length;
         const leaveCount = calendarDays.filter(d => d.status === 'leave').length;
-        // Total work days = passed days excluding weekends? Or just present + absent?
-        // Let's approximate total work days as days passed in month excluding weekends/holidays if we want accuracy,
-        // or just sum of recorded statuses. For now, let's use present + absent.
-        const totalWorkDays = presentCount + absentCount;
+        const totalWorkDays = Math.max(presentCount + absentCount + leaveCount, 1);
+
+        // Leave balance — fixed totals: Sick=5, Casual=5, Total=15
+        const SICK_TOTAL = 5;
+        const CASUAL_TOTAL = 5;
+        const TOTAL_LEAVE = 15;
+        const sickUsed = Math.max(0, SICK_TOTAL - Math.max(0, leaveData.balances?.Sick ?? SICK_TOTAL));
+        const casualUsed = Math.max(0, CASUAL_TOTAL - Math.max(0, leaveData.balances?.Casual ?? CASUAL_TOTAL));
+        const sickLeft = Math.max(0, leaveData.balances?.Sick ?? SICK_TOTAL);
+        const casualLeft = Math.max(0, leaveData.balances?.Casual ?? CASUAL_TOTAL);
+        const totalUsed = sickUsed + casualUsed;
+        const totalLeft = Math.max(0, TOTAL_LEAVE - totalUsed);
+        const sickPct = Math.min((sickUsed / SICK_TOTAL) * 100, 100);
+        const casualPct = Math.min((casualUsed / CASUAL_TOTAL) * 100, 100);
+        const totalPct = Math.min((totalUsed / TOTAL_LEAVE) * 100, 100);
+        const ringR = 20; const ringCirc = 2 * Math.PI * ringR;
 
         return (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Attendance & Leave Management</h2>
+          <>
+            <style>{`
+              @keyframes breathe {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(0,207,127,0.5); transform: scale(1); }
+                50% { box-shadow: 0 0 0 8px rgba(0,207,127,0); transform: scale(1.04); }
+              }
+              @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 8px 2px rgba(0,207,127,0.35); }
+                50% { box-shadow: 0 0 18px 6px rgba(0,207,127,0.15); }
+              }
+              @keyframes fluid-in { from { width: 0%; } }
+              @keyframes fadeSlideUp {
+                from { opacity: 0; transform: translateY(10px); }
+                to   { opacity: 1; transform: translateY(0); }
+              }
+              @keyframes today-ring {
+                0%, 100% { box-shadow: 0 0 0 2px rgba(0,207,127,0.7), 0 0 14px 4px rgba(0,207,127,0.25); }
+                50%       { box-shadow: 0 0 0 4px rgba(0,207,127,0.4), 0 0 22px 8px rgba(0,207,127,0.1); }
+              }
+              .breathe-badge { animation: breathe 2.5s ease-in-out infinite; }
+              .present-glow  { animation: pulse-glow 3s ease-in-out infinite; }
+              .today-cell    { animation: today-ring 2.5s ease-in-out infinite; }
+              .fluid-bar     { animation: fluid-in 1.2s cubic-bezier(.4,0,.2,1) both; }
+              .cal-card-anim { animation: fadeSlideUp 0.45s cubic-bezier(.4,0,.2,1) both; }
+              .glass-card {
+                background: rgba(255,255,255,0.6);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border: 1px solid rgba(255,255,255,0.5);
+                border-radius: 20px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+              }
+              .cal-cell { position: relative; }
+              .cal-tooltip {
+                display: none; position: absolute;
+                bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+                background: #1e1e2e; color: #e2e8f0; font-size: 11px;
+                padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+                z-index: 60; pointer-events: none;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+              }
+              .cal-tooltip::after {
+                content: ''; position: absolute; top: 100%; left: 50%;
+                transform: translateX(-50%); border: 5px solid transparent;
+                border-top-color: #1e1e2e;
+              }
+              .cal-cell:hover .cal-tooltip { display: block; }
+              .cal-day-cell {
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+              }
+              .cal-day-cell:hover {
+                transform: translateY(-3px) scale(1.07);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+                z-index: 20;
+              }
+            `}</style>
 
-            {attendanceLoading || leaveLoading ? (
-              <div className="text-center py-10">Loading data...</div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Today's Status & Action */}
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Today's Attendance</h3>
-                        <p className="opacity-90 mb-4">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900">Attendance & Leave Management</h2>
 
-                        <div className="flex items-center space-x-4">
-                          <div className={`px-4 py-2 rounded-lg backdrop-blur-md bg-white/20 border border-white/30`}>
-                            <span className="font-bold tracking-wide">{isPresent ? 'PRESENT' : 'NOT CHECKED IN'}</span>
-                          </div>
-                          <div className="text-sm space-y-1">
-                            {todayRecord?.checkIn && (
-                              <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
-                                Check-in: {new Date(todayRecord.checkIn).toLocaleTimeString()}
-                              </div>
-                            )}
-                            {todayRecord?.checkIn && !todayRecord?.checkOut && (
-                              <div className="flex items-center font-bold text-lg">
-                                <TrendingUp className="w-4 h-4 mr-1 animate-pulse" />
-                                Elapsed: {elapsedTime}
-                              </div>
-                            )}
-                            {todayRecord?.checkOut && (
-                              <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
-                                Check-out: {new Date(todayRecord.checkOut).toLocaleTimeString()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+              {attendanceLoading || leaveLoading ? (
+                <div className="text-center py-10 text-gray-500">Loading data...</div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* ── LEFT COLUMN ── */}
+                  <div className="lg:col-span-2 space-y-6">
 
-                      <div className="flex flex-col space-y-3">
-                        {!isPresent && (
-                          <button
-                            onClick={handleCheckIn}
-                            className="px-6 py-3 bg-white text-emerald-700 font-bold rounded-lg hover:bg-emerald-50 transition-all shadow-md flex items-center justify-center transform hover:scale-105"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            Check In
-                          </button>
-                        )}
+                    {/* Today's Attendance Hero Card */}
+                    <div className="relative overflow-hidden rounded-2xl p-6 text-white shadow-xl"
+                      style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 50%, #0891b2 100%)' }}>
+                      {/* Decorative blobs */}
+                      <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #fff 0%, transparent 70%)' }} />
+                      <div className="absolute -bottom-10 -left-6 w-32 h-32 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #00cf7f 0%, transparent 70%)' }} />
 
-                        {isPresent && !isCheckedOut && (
-                          <button
-                            onClick={handleCheckOutLogout}
-                            className="px-6 py-3 bg-red-500/90 hover:bg-red-600 text-white font-bold rounded-lg transition-all shadow-md flex items-center justify-center backdrop-blur-sm border border-red-400"
-                          >
-                            <LogOut className="w-5 h-5 mr-2" />
-                            Check Out
-                          </button>
-                        )}
+                      <div className="relative flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold mb-1">Today's Attendance</h3>
+                          <p className="text-white/70 text-sm mb-5">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          </p>
 
-                        {isCheckedOut && (
-                          <div className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg text-center font-medium border border-white/30">
-                            Checked Out
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Leave Balances Row */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-sm text-green-600 font-medium">Sick Leave</p>
-                        <p className="text-2xl font-bold text-green-700">{leaveData.balances?.Sick || 0}</p>
-                      </div>
-                      <Heart className="w-8 h-8 text-green-400 opacity-80" />
-                    </div>
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-sm text-blue-600 font-medium">Casual Leave</p>
-                        <p className="text-2xl font-bold text-blue-700">{leaveData.balances?.Casual || 0}</p>
-                      </div>
-                      <Coffee className="w-8 h-8 text-blue-400 opacity-80" />
-                    </div>
-                    <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-sm text-purple-600 font-medium">Earned Leave</p>
-                        <p className="text-2xl font-bold text-purple-700">{leaveData.balances?.Earned || 0}</p>
-                      </div>
-                      <Award className="w-8 h-8 text-purple-400 opacity-80" />
-                    </div>
-                  </div>
-
-                  {/* Calendar View - Redesigned */}
-                  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                        <CalendarDays className="w-5 h-5 mr-2 text-emerald-600" />
-                        Attendance Calendar
-                      </h3>
-                      <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-3 mb-3">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          {day}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-3">
-                      {allCalendarCells.map((cell, index) => {
-                        if (!cell) return <div key={`empty-${index}`} className="aspect-square bg-gray-50/50 rounded-lg"></div>;
-
-                        const day = cell;
-                        const dateStr = day.date.toLocaleDateString();
-                        const todayStr = new Date().toLocaleDateString();
-                        const isToday = dateStr === todayStr;
-
-                        // Refined Styles
-                        let cellClass = "bg-white border-gray-100 text-gray-400 hover:border-gray-300"; // default
-                        let textClass = "text-gray-500";
-                        let statusDot = null;
-
-                        if (day.status === 'present') {
-                          cellClass = "bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm";
-                          textClass = "text-emerald-700 font-bold";
-                          statusDot = <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mx-auto mt-1"></div>;
-                        } else if (day.status === 'absent' && day.date < new Date(new Date().setHours(0, 0, 0, 0))) {
-                          cellClass = "bg-red-50 border-red-200 text-red-800";
-                          textClass = "text-red-500 font-medium";
-                          statusDot = <div className="w-1.5 h-1.5 bg-red-400 rounded-full mx-auto mt-1"></div>;
-                        } else if (day.status === 'leave') {
-                          cellClass = "bg-amber-50 border-amber-200 text-amber-800";
-                          textClass = "text-amber-600 font-medium";
-                          statusDot = <div className="w-1.5 h-1.5 bg-amber-400 rounded-full mx-auto mt-1"></div>;
-                        } else if (day.status === 'holiday') {
-                          cellClass = "bg-indigo-50 border-indigo-200 text-indigo-800";
-                          textClass = "text-indigo-500 font-medium";
-                        }
-
-                        if (isToday) {
-                          cellClass += " ring-2 ring-emerald-400 ring-offset-2 z-10";
-                        }
-
-                        return (
-                          <div key={index} className={`aspect-square p-1 border rounded-xl flex flex-col items-center justify-center relative transition-all duration-200 ${cellClass}`}>
-                            <span className={`text-sm font-medium ${textClass}`}>{day.date.getDate()}</span>
-                            <div className="mt-1">
-                              {statusDot}
+                          <div className="flex items-center gap-4 flex-wrap">
+                            {/* Breathing badge */}
+                            <div className={`px-5 py-2 rounded-xl font-bold tracking-widest text-sm ${isPresent && !isCheckedOut
+                              ? 'bg-[#00cf7f] text-white breathe-badge'
+                              : 'bg-white/20 backdrop-blur-md border border-white/30 text-white'
+                              }`}>
+                              {isPresent && !isCheckedOut ? '● PRESENT' : isCheckedOut ? '✓ CHECKED OUT' : 'NOT CHECKED IN'}
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-6">
-                  {/* Summary Stats - Calculated from Calendar */}
-                  <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                      <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
-                      Monthly Summary
-                    </h3>
-                    <div className="space-y-5">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 font-medium">Total Work Days</span>
-                        <span className="font-bold text-gray-900 text-lg">{attendanceData?.summary?.totalDays || totalWorkDays}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-gray-800 h-full" style={{ width: '100%' }}></div>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-gray-600 font-medium">Present</span>
-                        <span className="font-bold text-emerald-600 text-lg">{presentCount}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-emerald-500 h-full" style={{ width: `${(presentCount / (totalWorkDays || 1)) * 100}%` }}></div>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-gray-600 font-medium">Absent</span>
-                        <span className="font-bold text-red-500 text-lg">{absentCount}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-red-400 h-full" style={{ width: `${(absentCount / (totalWorkDays || 1)) * 100}%` }}></div>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-gray-600 font-medium">Leaves Taken</span>
-                        <span className="font-bold text-amber-500 text-lg">{leaveCount}</span>
-                      </div>
-                    </div>
-
-                    <button className="w-full mt-8 flex items-center justify-center space-x-2 bg-gray-50 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 font-semibold" onClick={handleDownloadReport}>
-                      <Download className="w-4 h-4" />
-                      <span>Download Report</span>
-                    </button>
-                  </div>
-
-                  {/* Leave Requests */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-semibold text-gray-800">Leave Requests</h3>
-                      <button
-                        onClick={() => setShowApplyModal(true)}
-                        className="text-sm bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md font-medium hover:bg-blue-100 transition-colors"
-                      >
-                        + New Request
-                      </button>
-                    </div>
-
-                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm max-h-[400px] overflow-y-auto">
-                      {leaveData.leaves?.length > 0 ? (
-                        <div className="divide-y divide-gray-100">
-                          {leaveData.leaves.map((leave: any) => (
-                            <div key={leave._id} className="p-4 hover:bg-gray-50 transition-colors">
-                              <div className="flex justify-between items-start mb-1">
-                                <span className="font-medium text-gray-800 text-sm">{leave.type}</span>
-                                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                  leave.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
-                                  }`}>
-                                  {leave.status}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500 mb-2">
-                                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                              </p>
-
-                              {leave.status === 'Pending' && (
-                                <button
-                                  onClick={() => handleCancelLeave(leave._id)}
-                                  className="text-xs text-red-600 hover:text-red-800 hover:underline"
-                                >
-                                  Cancel Request
-                                </button>
+                            <div className="text-sm space-y-1">
+                              {todayRecord?.checkIn && (
+                                <div className="flex items-center gap-1 text-white/90">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>In: {new Date(todayRecord.checkIn).toLocaleTimeString()}</span>
+                                </div>
+                              )}
+                              {todayRecord?.checkIn && !todayRecord?.checkOut && (
+                                <div className="flex items-center gap-1 font-bold text-[#00cf7f]">
+                                  <TrendingUp className="w-3.5 h-3.5 animate-pulse" />
+                                  <span>Elapsed: {elapsedTime}</span>
+                                </div>
+                              )}
+                              {todayRecord?.checkOut && (
+                                <div className="flex items-center gap-1 text-white/90">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Out: {new Date(todayRecord.checkOut).toLocaleTimeString()}</span>
+                                </div>
                               )}
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <div className="flex-shrink-0">
+                          {!isPresent || isCheckedOut ? (
+                            <button onClick={handleCheckIn}
+                              className="px-6 py-3 bg-white text-emerald-700 font-bold rounded-xl hover:bg-emerald-50 transition-all shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95">
+                              <CheckCircle className="w-5 h-5" />
+                              {isCheckedOut ? 'Check In Again' : 'Check In'}
+                            </button>
+                          ) : (
+                            <button onClick={handleCheckOut}
+                              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95 border border-red-400/50">
+                              <LogOut className="w-5 h-5" />
+                              Check Out
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Leave Balance Cards with Progress Rings */}
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* Sick Leave */}
+                      <div className="glass-card p-4 flex items-center gap-4">
+                        <svg width="52" height="52" viewBox="0 0 52 52">
+                          <circle cx="26" cy="26" r={ringR} fill="none" stroke="#d1fae5" strokeWidth="5" />
+                          <circle cx="26" cy="26" r={ringR} fill="none" stroke="#10b981" strokeWidth="5"
+                            strokeDasharray={ringCirc}
+                            strokeDashoffset={ringCirc - (sickPct / 100) * ringCirc}
+                            strokeLinecap="round"
+                            transform="rotate(-90 26 26)" />
+                          <text x="26" y="30" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#065f46">{sickLeft}</text>
+                        </svg>
+                        <div>
+                          <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wide">Sick</p>
+                          <p className="text-lg font-bold text-emerald-800">{sickLeft} left</p>
+                          <p className="text-xs text-gray-400">{sickUsed}/{SICK_TOTAL} used</p>
+                        </div>
+                      </div>
+
+                      {/* Casual Leave */}
+                      <div className="glass-card p-4 flex items-center gap-4">
+                        <svg width="52" height="52" viewBox="0 0 52 52">
+                          <circle cx="26" cy="26" r={ringR} fill="none" stroke="#dbeafe" strokeWidth="5" />
+                          <circle cx="26" cy="26" r={ringR} fill="none" stroke="#3b82f6" strokeWidth="5"
+                            strokeDasharray={ringCirc}
+                            strokeDashoffset={ringCirc - (casualPct / 100) * ringCirc}
+                            strokeLinecap="round"
+                            transform="rotate(-90 26 26)" />
+                          <text x="26" y="30" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#1e40af">{casualLeft}</text>
+                        </svg>
+                        <div>
+                          <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Casual</p>
+                          <p className="text-lg font-bold text-blue-800">{casualLeft} left</p>
+                          <p className="text-xs text-gray-400">{casualUsed}/{CASUAL_TOTAL} used</p>
+                        </div>
+                      </div>
+
+                      {/* Total Leave Balance */}
+                      <div className="glass-card p-4 flex items-center gap-4">
+                        <svg width="52" height="52" viewBox="0 0 52 52">
+                          <circle cx="26" cy="26" r={ringR} fill="none" stroke="#ede9fe" strokeWidth="5" />
+                          <circle cx="26" cy="26" r={ringR} fill="none" stroke="#8b5cf6" strokeWidth="5"
+                            strokeDasharray={ringCirc}
+                            strokeDashoffset={ringCirc - (totalPct / 100) * ringCirc}
+                            strokeLinecap="round"
+                            transform="rotate(-90 26 26)" />
+                          <text x="26" y="30" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#5b21b6">{totalLeft}</text>
+                        </svg>
+                        <div>
+                          <p className="text-xs text-purple-600 font-semibold uppercase tracking-wide">Total</p>
+                          <p className="text-lg font-bold text-purple-800">{totalLeft} left</p>
+                          <p className="text-xs text-gray-400">{totalUsed}/{TOTAL_LEAVE} used</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── MODERN ATTENDANCE CALENDAR ── */}
+                    <div className="cal-card-anim overflow-hidden rounded-2xl shadow-xl" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+
+                      {/* ── Header bar ── */}
+                      <div className="relative px-5 py-4 overflow-hidden"
+                        style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f4c3a 100%)' }}>
+                        {/* decorative circles */}
+                        <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle,rgba(0,207,127,0.18) 0%,transparent 70%)' }} />
+                        <div className="absolute bottom-0 left-20 w-20 h-20 rounded-full" style={{ background: 'radial-gradient(circle,rgba(99,102,241,0.15) 0%,transparent 70%)' }} />
+
+                        {/* Top row: icon + title + nav */}
+                        <div className="relative flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,207,127,0.15)', border: '1px solid rgba(0,207,127,0.3)' }}>
+                              <CalendarDays className="w-4 h-4" style={{ color: '#00cf7f' }} />
+                            </div>
+                            <p className="text-white font-bold text-sm tracking-wide">Attendance Calendar</p>
+                          </div>
+
+                          {/* Month navigator — 2026 only */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setCalViewMonth(prev => Math.max(0, prev - 1))}
+                              disabled={calViewMonth === 0}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all"
+                              style={{ background: calViewMonth === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)', color: calViewMonth === 0 ? '#475569' : '#fff', border: '1px solid rgba(255,255,255,0.1)', cursor: calViewMonth === 0 ? 'not-allowed' : 'pointer' }}>
+                              ‹
+                            </button>
+                            <span className="text-white font-semibold text-sm min-w-[110px] text-center">
+                              {new Date(calViewYear, calViewMonth, 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                              onClick={() => setCalViewMonth(prev => Math.min(11, prev + 1))}
+                              disabled={calViewMonth === 11}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all"
+                              style={{ background: calViewMonth === 11 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)', color: calViewMonth === 11 ? '#475569' : '#fff', border: '1px solid rgba(255,255,255,0.1)', cursor: calViewMonth === 11 ? 'not-allowed' : 'pointer' }}>
+                              ›
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Legend chips row */}
+                        <div className="relative flex items-center gap-2">
+                          {[
+                            { label: 'Present', color: '#00cf7f', bg: 'rgba(0,207,127,0.15)', border: 'rgba(0,207,127,0.35)' },
+                            { label: 'Absent', color: '#f87171', bg: 'rgba(248,113,113,0.15)', border: 'rgba(248,113,113,0.35)' },
+                            { label: 'Leave', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.35)' },
+                            { label: 'Weekend', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.25)' },
+                          ].map(({ label, color, bg, border }) => (
+                            <span key={label} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold"
+                              style={{ background: bg, border: `1px solid ${border}`, color }}>
+                              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: color }} />
+                              {label}
+                            </span>
                           ))}
                         </div>
-                      ) : (
-                        <div className="p-8 text-center text-gray-400 text-sm">
-                          No leave history found.
-                        </div>
-                      )}
+                      </div>
+
+                      {/* ── Day header row ── */}
+                      <div className="grid grid-cols-7 px-4 pt-4 pb-1" style={{ gap: '6px' }}>
+                        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d, i) => (
+                          <div key={i} className="text-center text-[10px] font-bold tracking-widest py-1.5 rounded-lg"
+                            style={{ color: (i === 0 || i === 6) ? '#94a3b8' : '#64748b', background: (i === 0 || i === 6) ? '#f8fafc' : 'transparent' }}>
+                            {d}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* ── Calendar grid ── */}
+                      <div className="grid grid-cols-7 px-4 pb-4" style={{ gap: '6px' }}>
+                        {allCalendarCells.map((cell, index) => {
+                          if (!cell) return <div key={`e-${index}`} style={{ height: '52px' }} />;
+
+                          const day = cell;
+                          const isToday = toLocalDateStr(day.date) === todayStr;
+
+                          let tooltipText = 'Upcoming';
+                          if (day.status === 'leave') tooltipText = day.record?.leaveType ? `Leave: ${day.record.leaveType}` : 'On Leave';
+                          else if (day.status === 'present') tooltipText = day.record?.workingHours ? `Present • ${day.record.workingHours}h` : 'Present';
+                          else if (day.status === 'absent') tooltipText = 'Absent';
+                          else if (day.status === 'weekend') tooltipText = 'Weekend';
+
+                          // Derive visual theme per status
+                          type CellTheme = { bg: string; border: string; numColor: string; dot: string | null; dotGlow: string };
+                          let theme: CellTheme;
+                          if (isToday) {
+                            theme = { bg: 'linear-gradient(145deg,#ecfdf5,#d1fae5)', border: '2px solid #00cf7f', numColor: '#047857', dot: '#00cf7f', dotGlow: '0 0 6px rgba(0,207,127,0.8)' };
+                          } else if (day.status === 'present') {
+                            theme = { bg: 'linear-gradient(145deg,#f0fdf4,#dcfce7)', border: '1.5px solid #86efac', numColor: '#15803d', dot: '#22c55e', dotGlow: '0 0 4px rgba(34,197,94,0.6)' };
+                          } else if (day.status === 'absent') {
+                            theme = { bg: 'linear-gradient(145deg,#fff5f5,#fee2e2)', border: '1.5px solid #fca5a5', numColor: '#dc2626', dot: '#f87171', dotGlow: '' };
+                          } else if (day.status === 'leave') {
+                            theme = { bg: 'linear-gradient(145deg,#faf5ff,#ede9fe)', border: '1.5px solid #c4b5fd', numColor: '#7c3aed', dot: '#a78bfa', dotGlow: '0 0 4px rgba(167,139,250,0.6)' };
+                          } else if (day.status === 'weekend') {
+                            theme = { bg: '#f8fafc', border: '1px solid #e2e8f0', numColor: '#cbd5e1', dot: null, dotGlow: '' };
+                          } else {
+                            theme = { bg: '#fafafa', border: '1px solid #f1f5f9', numColor: '#94a3b8', dot: null, dotGlow: '' };
+                          }
+
+                          const baseClass = `cal-cell cal-day-cell rounded-xl flex flex-col items-center justify-center cursor-default${isToday ? ' today-cell' : day.status === 'present' ? ' present-glow' : ''}`;
+
+                          return (
+                            <div key={index} className={baseClass}
+                              style={{ height: '52px', background: theme.bg, border: theme.border }}>
+                              <span className="text-[13px] font-bold leading-none" style={{ color: theme.numColor }}>
+                                {day.date.getDate()}
+                              </span>
+                              {theme.dot && (
+                                <div className="w-1.5 h-1.5 rounded-full mt-1"
+                                  style={{ background: theme.dot, boxShadow: theme.dotGlow }} />
+                              )}
+                              <div className="cal-tooltip">{tooltipText}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* ── Stats strip ── */}
+                      <div className="grid grid-cols-3 divide-x divide-gray-100" style={{ borderTop: '1px solid #f1f5f9' }}>
+                        {[
+                          { label: 'Present', value: presentCount, color: '#16a34a', bg: '#f0fdf4' },
+                          { label: 'Absent', value: absentCount, color: '#dc2626', bg: '#fff5f5' },
+                          { label: 'On Leave', value: leaveCount, color: '#7c3aed', bg: '#faf5ff' },
+                        ].map(({ label, value, color, bg }) => (
+                          <div key={label} className="flex flex-col items-center py-3" style={{ background: bg }}>
+                            <span className="text-xl font-extrabold" style={{ color }}>{value}</span>
+                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">{label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Upcoming Holidays - Compact */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Upcoming Holidays</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">New Year's Day</span>
-                        <span className="font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-700">Jan 1</span>
+                  {/* ── RIGHT COLUMN ── */}
+                  <div className="space-y-5">
+
+                    {/* Monthly Summary with Gradient Fluid Bars */}
+                    <div className="glass-card p-5">
+                      <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        Monthly Summary
+                      </h3>
+                      <div className="space-y-4">
+                        {[
+                          { label: 'Total Days', value: totalWorkDays, pct: 100, gradient: 'linear-gradient(90deg,#374151,#6b7280)', color: '#374151' },
+                          { label: 'Present', value: presentCount, pct: (presentCount / totalWorkDays) * 100, gradient: 'linear-gradient(90deg,#00cf7f,#0d9488)', color: '#059669' },
+                          { label: 'Absent', value: absentCount, pct: (absentCount / totalWorkDays) * 100, gradient: 'linear-gradient(90deg,#f87171,#ef4444)', color: '#dc2626' },
+                          { label: 'Leaves', value: leaveCount, pct: (leaveCount / totalWorkDays) * 100, gradient: 'linear-gradient(90deg,#a78bfa,#7c3aed)', color: '#7c3aed' },
+                        ].map(({ label, value, pct, gradient, color }) => (
+                          <div key={label}>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-semibold text-gray-500">{label}</span>
+                              <span className="text-sm font-bold" style={{ color }}>{value}</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full overflow-hidden" style={{ height: '8px' }}>
+                              <div className="h-full rounded-full fluid-bar" style={{ width: `${Math.min(pct, 100)}%`, background: gradient }} />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Spring Festival</span>
-                        <span className="font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-700">Feb 10</span>
+
+                      <button onClick={handleDownloadReport}
+                        className="w-full mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-95"
+                        style={{ background: 'linear-gradient(90deg,#00cf7f,#0d9488)', color: '#fff', boxShadow: '0 4px 14px rgba(0,207,127,0.3)' }}>
+                        <Download className="w-4 h-4" />
+                        Download Report
+                      </button>
+                    </div>
+
+                    {/* ── Leave Requests ── */}
+                    <div className="overflow-hidden rounded-2xl shadow-lg" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+                      {/* Header */}
+                      <div className="relative px-5 py-4 overflow-hidden"
+                        style={{ background: 'linear-gradient(135deg,#1e1b4b 0%,#312e81 60%,#1d4ed8 100%)' }}>
+                        <div className="absolute -top-5 -right-5 w-24 h-24 rounded-full" style={{ background: 'radial-gradient(circle,rgba(99,102,241,0.3) 0%,transparent 70%)' }} />
+                        <div className="relative flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                              <CalendarDays className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-white font-bold text-sm">Leave Requests</p>
+                              <p className="text-white/50 text-[10px]">{leaveData.leaves?.length || 0} total requests</p>
+                            </div>
+                          </div>
+                          <button onClick={() => setShowApplyModal(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs transition-all hover:scale-105 active:scale-95"
+                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', backdropFilter: 'blur(8px)' }}>
+                            <span className="text-base leading-none">+</span>
+                            New Request
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Labor Day</span>
-                        <span className="font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-700">May 1</span>
+
+                      {/* List */}
+                      <div className="max-h-[300px] overflow-y-auto divide-y divide-gray-50">
+                        {leaveData.leaves?.length > 0 ? leaveData.leaves.map((leave: any) => {
+                          const isApproved = leave.status === 'Approved';
+                          const isPending = leave.status === 'Pending';
+                          const typeColor = leave.type === 'Sick' ? { dot: '#10b981', bg: '#f0fdf4', text: '#065f46' }
+                            : leave.type === 'Casual' ? { dot: '#3b82f6', bg: '#eff6ff', text: '#1e40af' }
+                              : { dot: '#8b5cf6', bg: '#faf5ff', text: '#5b21b6' };
+                          return (
+                            <div key={leave._id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                              {/* Type badge */}
+                              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: typeColor.bg }}>
+                                <span className="text-xs font-extrabold" style={{ color: typeColor.dot }}>{leave.type.slice(0, 2).toUpperCase()}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-800">{leave.type} Leave</p>
+                                <p className="text-[11px] text-gray-400">
+                                  {new Date(leave.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} → {new Date(leave.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ${isApproved ? 'bg-emerald-100 text-emerald-700'
+                                  : isPending ? 'bg-amber-100 text-amber-700'
+                                    : 'bg-red-100 text-red-600'
+                                  }`}>{leave.status}</span>
+                                {isPending && (
+                                  <button onClick={() => handleCancelLeave(leave._id)}
+                                    className="text-[10px] text-red-400 hover:text-red-600 transition-colors">
+                                    Cancel
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }) : (
+                          <div className="py-10 flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: '#f1f5f9' }}>
+                              <CalendarDays className="w-6 h-6 text-gray-300" />
+                            </div>
+                            <p className="text-sm text-gray-400 font-medium">No leave requests yet</p>
+                            <button onClick={() => setShowApplyModal(true)}
+                              className="text-xs text-indigo-500 hover:text-indigo-700 font-semibold">
+                              Apply for your first leave →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Upcoming Holidays */}
+                    <div className="glass-card p-5">
+                      <h3 className="text-base font-bold text-gray-800 mb-3">Upcoming Holidays</h3>
+                      <div className="space-y-2">
+                        {[['New Year\'s Day', 'Jan 1'], ['Spring Festival', 'Feb 10'], ['Labor Day', 'May 1']].map(([name, date]) => (
+                          <div key={name} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">{name}</span>
+                            <span className="text-xs font-semibold bg-white/70 border border-white/50 px-2 py-0.5 rounded-lg text-gray-700">{date}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Modal remains separate */}
-            {
-              showApplyModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                  <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100">
-                    <div className="flex items-center justify-between mb-6 border-b pb-3">
-                      <h3 className="text-xl font-bold text-gray-900">Apply for Leave</h3>
-                      <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1">
-                        <LogOut className="w-5 h-5 rotate-45" /> {/* Close icon */}
-                      </button>
+              {/* ── Apply Leave Modal ── */}
+              {showApplyModal && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}>
+                  <div className="w-full max-w-md overflow-hidden rounded-2xl shadow-2xl" style={{ background: '#fff' }}>
+
+                    {/* Modal header */}
+                    <div className="relative px-6 py-5 overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#4f46e5 100%)' }}>
+                      <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle,rgba(99,102,241,0.35) 0%,transparent 70%)' }} />
+                      <div className="relative flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                            <CalendarDays className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-white font-bold text-base">Apply for Leave</p>
+                            <p className="text-white/50 text-xs">Submit your leave request</p>
+                          </div>
+                        </div>
+                        <button onClick={() => setShowApplyModal(false)}
+                          className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:bg-white/10"
+                          style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px' }}>✕
+                        </button>
+                      </div>
                     </div>
-                    <form onSubmit={(e) => {
-                      handleApplyLeave(e);
-                      setShowApplyModal(false);
-                    }}>
-                      <div className="space-y-4">
+
+                    {/* Modal body */}
+                    <form onSubmit={(e) => { handleApplyLeave(e); setShowApplyModal(false); }} className="p-6 space-y-5">
+
+                      {/* Leave type pills */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Leave Type</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { val: 'Sick', label: 'Sick Leave', emoji: '🤒', left: `${Math.max(0, leaveData.balances?.Sick ?? 5)} days left` },
+                            { val: 'Casual', label: 'Casual Leave', emoji: '🏖️', left: `${Math.max(0, leaveData.balances?.Casual ?? 5)} days left` },
+                            { val: 'Earned', label: 'Earned Leave', emoji: '⭐', left: 'Accrued' },
+                            { val: 'Unpaid', label: 'Unpaid Leave', emoji: '📋', left: 'Unpaid' },
+                          ].map(({ val, label, emoji, left }) => (
+                            <button type="button" key={val}
+                              onClick={() => setLeaveForm({ ...leaveForm, type: val })}
+                              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all"
+                              style={{
+                                background: leaveForm.type === val ? 'linear-gradient(135deg,#eef2ff,#e0e7ff)' : '#f8fafc',
+                                border: leaveForm.type === val ? '2px solid #6366f1' : '1.5px solid #e2e8f0',
+                                boxShadow: leaveForm.type === val ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none',
+                              }}>
+                              <span className="text-lg">{emoji}</span>
+                              <div>
+                                <p className="text-xs font-bold" style={{ color: leaveForm.type === val ? '#4f46e5' : '#374151' }}>{label}</p>
+                                <p className="text-[10px]" style={{ color: leaveForm.type === val ? '#6366f1' : '#94a3b8' }}>{left}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Date range */}
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
-                          <select
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                            value={leaveForm.type}
-                            onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
-                          >
-                            <option value="Sick">Sick Leave</option>
-                            <option value="Casual">Casual Leave</option>
-                            <option value="Earned">Earned Leave</option>
-                            <option value="Unpaid">Unpaid Leave</option>
-                          </select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                            <input
-                              type="date"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                              value={leaveForm.startDate}
-                              onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
-                              required
-                              min={new Date().toISOString().split('T')[0]}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                            <input
-                              type="date"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                              value={leaveForm.endDate}
-                              onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
-                              required
-                              min={new Date().toISOString().split('T')[0]}
-                            />
-                          </div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">From</label>
+                          <input type="date"
+                            className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all"
+                            style={{ border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#1e293b' }}
+                            value={leaveForm.startDate}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+                            required min={new Date().toISOString().split('T')[0]} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                          <textarea
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            rows={3}
-                            value={leaveForm.reason}
-                            onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-                            required
-                            placeholder="Please explain why you need leave..."
-                          ></textarea>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">To</label>
+                          <input type="date"
+                            className="w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none transition-all"
+                            style={{ border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#1e293b' }}
+                            value={leaveForm.endDate}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+                            required min={new Date().toISOString().split('T')[0]} />
                         </div>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md">
-                          Submit Application
+                      </div>
+
+                      {/* Reason */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Reason</label>
+                        <textarea
+                          className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none transition-all"
+                          style={{ border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#1e293b', minHeight: '80px' }}
+                          value={leaveForm.reason}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                          required placeholder="Briefly describe your reason..." />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-3 pt-1">
+                        <button type="button" onClick={() => setShowApplyModal(false)}
+                          className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all hover:bg-gray-100"
+                          style={{ background: '#f1f5f9', color: '#64748b', border: '1.5px solid #e2e8f0' }}>
+                          Cancel
+                        </button>
+                        <button type="submit"
+                          className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-95"
+                          style={{ background: 'linear-gradient(135deg,#4f46e5,#6366f1)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
+                          Submit Request
                         </button>
                       </div>
                     </form>
                   </div>
                 </div>
-              )
-            }
-          </div>
+              )}
+            </div>
+          </>
         );
+      }
 
       case 'salary':
         return <SalarySection />;
@@ -1362,8 +1617,8 @@ const EmployeeDashboard = () => {
                   </div>
                 </div>
                 <div className="mt-4 flex items-center text-sm text-emerald-600">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  <span>+12% from last week</span>
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  <span>All time</span>
                 </div>
               </div>
 
@@ -1404,52 +1659,69 @@ const EmployeeDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Tasks & AI Insights */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Tasks Section */}
+                {/* My Projects Widget */}
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">Your Tasks</h2>
-                    <button className="text-emerald-600 hover:text-emerald-700 font-medium text-sm">
-                      View All →
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">My Projects</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Recently assigned by HR</p>
+                    </div>
+                    <button
+                      onClick={() => setActiveSection('workgrowth')}
+                      className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-semibold text-sm transition-colors"
+                    >
+                      View All <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="space-y-4">
-                      {tasks.map((task) => (
-                        <div key={task._id || task.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-3 h-3 rounded-full ${task.priority === 'high' ? 'bg-red-500' : task.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'}`}></div>
-                            <div>
-                              <h3 className="font-medium text-gray-900">{task.title}</h3>
-                              <div className="flex items-center space-x-3 text-sm text-gray-500">
-                                <span>Due: {task.due}</span>
-                                <span>•</span>
-                                <span>{task.project}</span>
-                              </div>
+                  <div className="space-y-3">
+                    {myProjects.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-400">
+                        <Briefcase className="w-9 h-9" strokeWidth={1.5} />
+                        <p className="text-sm font-semibold">No projects assigned yet</p>
+                        <p className="text-xs">Your HR will assign projects here soon.</p>
+                      </div>
+                    ) : (
+                      myProjects.slice(0, 3).map((project) => {
+                        const statusMap: Record<string, string> = {
+                          Completed: 'bg-emerald-100 text-emerald-700',
+                          'In Progress': 'bg-blue-100 text-blue-700',
+                          Pending: 'bg-amber-100 text-amber-700',
+                          'On Hold': 'bg-orange-100 text-orange-700',
+                          Delayed: 'bg-rose-100 text-rose-700',
+                        };
+                        const pillColor = statusMap[project.status] ?? 'bg-gray-100 text-gray-500';
+                        return (
+                          <div key={project._id}
+                            className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/20 transition-all">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-black text-base flex items-center justify-center shrink-0">
+                              {project.title?.charAt(0) || 'P'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 text-sm truncate">{project.title}</p>
+                              <p className="text-xs text-indigo-500 font-medium">{project.role || 'Contributor'}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${pillColor}`}>
+                                {project.status}
+                              </span>
+                              {project.deadline && (
+                                <span className="text-[10px] text-gray-400">
+                                  Due {new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-3">
-                            {task.status === 'completed' ? (
-                              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-                                Completed
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() => handleUpdateTaskStatus(task._id || task.id, 'completed')}
-                                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                              >
-                                Mark Complete
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      {tasks.length === 0 && (
-                        <div className="text-center py-6 text-gray-500">
-                          No tasks assigned yet.
-                        </div>
-                      )}
-                    </div>
+                        );
+                      })
+                    )}
+                    {myProjects.length > 3 && (
+                      <button
+                        onClick={() => setActiveSection('workgrowth')}
+                        className="w-full text-center text-xs text-indigo-500 font-bold hover:text-indigo-700 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+                        +{myProjects.length - 3} more projects → View all in Work & Growth
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1702,6 +1974,7 @@ const EmployeeDashboard = () => {
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
     { id: 'projects', label: 'My Projects', icon: CheckSquare },
+    { id: 'workgrowth', label: 'Work & Growth', icon: TrendingUp },
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'attendance', label: 'Attendance & Leave', icon: CalendarDays },
     { id: 'ai-chat', label: 'AI Assistant', icon: MessageCircle, highlight: true },
@@ -1729,20 +2002,37 @@ const EmployeeDashboard = () => {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              const isAttendanceActive = isActive && item.id === 'attendance';
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${activeSection === item.id
+                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${isActive
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : 'text-gray-700 hover:bg-gray-50'
                     } ${item.highlight ? 'bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200' : ''}`}
+                  style={isAttendanceActive ? {
+                    boxShadow: '0 0 0 1.5px #00cf7f, 0 0 12px 2px rgba(0,207,127,0.25)',
+                    background: 'linear-gradient(135deg, rgba(0,207,127,0.08), rgba(13,148,136,0.06))'
+                  } : {}}
                 >
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-5 h-5 ${activeSection === item.id ? 'text-emerald-600' : 'text-gray-500'}`} />
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600' : 'text-gray-500'}`}
+                      style={isAttendanceActive ? { filter: 'drop-shadow(0 0 4px rgba(0,207,127,0.8))' } : {}} />
                     <span className="font-medium">{item.label}</span>
                   </div>
-                  {item.highlight && (
+                  {/* Neon indicator for attendance tab */}
+                  {isAttendanceActive && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full" style={{
+                        background: '#00cf7f',
+                        boxShadow: '0 0 6px 2px rgba(0,207,127,0.7)',
+                        animation: 'breathe 2.5s ease-in-out infinite'
+                      }} />
+                    </div>
+                  )}
+                  {item.highlight && !isAttendanceActive && (
                     <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                   )}
                 </button>

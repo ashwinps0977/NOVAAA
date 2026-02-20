@@ -113,8 +113,8 @@ exports.getMyLeaves = async (req, res) => {
         // We can just return standard balances
         // Monthly Leave Limits
         const balances = {
-            Sick: 2,
-            Casual: 3,
+            Sick: 5,
+            Casual: 5,
             Earned: 0 // Not specified, setting to 0 or keeping as is? User only mentioned Sick and Casual.
         };
 

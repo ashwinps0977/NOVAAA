@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import {
   LogOut, Bell, ChevronRight, Home, Users, UserPlus,
-  Calendar, Target, AlertCircle, Brain, BarChart3,
+  Calendar, Target, Brain, AlertCircle,
   GraduationCap, ShieldCheck, Settings, Zap, Plus,
   Briefcase, FileText, CheckCircle, DollarSign,
-  Send
+  Send, Layers, FolderKanban
 } from 'lucide-react';
 import HRPayrollSection from '../components/dashboard/hr/HRPayrollSection';
 import HRSettingsSection from '../components/dashboard/hr/HRSettingsSection';
-import HRTrainingSection from '../components/dashboard/hr/HRTrainingSection';
 import PoliciesSection from '../components/dashboard/PoliciesSection';
-import HRAnalyticsSection from '../components/dashboard/hr/HRAnalyticsSection';
 import HRPerformanceSection from '../components/dashboard/hr/HRPerformanceSection';
+import HRAnalyticsSection from '../components/dashboard/hr/HRAnalyticsSection';
+import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
+import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -757,21 +758,7 @@ const HRDashboard = () => {
                   <span className="text-sm font-medium text-gray-700">Leave Management</span>
                 </button>
 
-                <button
-                  onClick={() => setActiveSection('analytics')}
-                  className="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg border border-purple-200 hover:border-purple-300 hover:bg-purple-100 transition-colors"
-                >
-                  <BarChart3 className="w-8 h-8 text-purple-600 mb-2" />
-                  <span className="text-sm font-medium text-gray-700">Analytics</span>
-                </button>
 
-                <button
-                  onClick={() => setActiveSection('attendance')}
-                  className="flex flex-col items-center justify-center p-4 bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-300 hover:bg-amber-100 transition-colors"
-                >
-                  <Calendar className="w-8 h-8 text-amber-600 mb-2" />
-                  <span className="text-sm font-medium text-gray-700">Attendance</span>
-                </button>
 
                 <button
                   onClick={() => setActiveSection('payroll')}
@@ -1299,15 +1286,17 @@ const HRDashboard = () => {
           </div>
         );
 
-      case 'analytics':
-      case 'attrition':
-        return <HRAnalyticsSection />;
-
       case 'performance':
         return <HRPerformanceSection />;
 
-      case 'training':
-        return <HRTrainingSection />;
+      case 'attrition':
+        return <HRAnalyticsSection />;
+
+      case 'operations':
+        return <OperationsBoard currentUser={userData} />;
+
+      case 'workforce':
+        return <WorkforceDevelopmentHub />;
 
       case 'settings':
         return <HRSettingsSection />;
@@ -1336,14 +1325,14 @@ const HRDashboard = () => {
   // Sidebar navigation items
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'employees', label: 'Employee Management', icon: Users, highlight: true },
+    { id: 'operations', label: 'Operations Board', icon: FolderKanban, highlight: true },
+    { id: 'employees', label: 'Employee Management', icon: Users },
     { id: 'recruitment', label: 'Recruitment', icon: UserPlus },
     { id: 'attendance', label: 'Leave & Attendance', icon: Calendar },
     { id: 'performance', label: 'Performance', icon: Target },
     { id: 'attrition', label: 'Attrition Analytics', icon: AlertCircle },
     { id: 'ai-assistant', label: 'AI Assistant', icon: Brain },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'training', label: 'Training', icon: GraduationCap },
+    { id: 'workforce', label: 'Workforce Hub', icon: Layers },
     { id: 'policies', label: 'Policies', icon: ShieldCheck },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];

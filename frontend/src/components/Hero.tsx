@@ -1,4 +1,4 @@
-
+import { useNavigate } from 'react-router-dom';
 
 interface HeroProps {
   isImageHovered: boolean;
@@ -6,6 +6,7 @@ interface HeroProps {
 }
 
 const Hero = ({ isImageHovered, setIsImageHovered }: HeroProps) => {
+  const navigate = useNavigate();
 
   return (
     <section className="relative h-[calc(100vh-80px)] flex items-center justify-center overflow-hidden bg-gradient-to-br from-white to-green-50">
@@ -60,10 +61,12 @@ const Hero = ({ isImageHovered, setIsImageHovered }: HeroProps) => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mt-10">
-              <button className={`px-8 py-4 font-semibold rounded-full transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center group ${isImageHovered
-                ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-pink-500/50 hover:shadow-pink-600/60'
-                : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}>
+              <button
+                onClick={() => navigate('/login')}
+                className={`px-8 py-4 font-semibold rounded-full transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center group ${isImageHovered
+                  ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-pink-500/50 hover:shadow-pink-600/60'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}>
                 Get Started
                 <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
               </button>
