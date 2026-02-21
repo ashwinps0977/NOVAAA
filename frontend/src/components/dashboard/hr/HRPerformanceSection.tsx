@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Users,
     Target,
@@ -48,6 +48,8 @@ import {
     AreaChart,
     Area
 } from 'recharts';
+import { performanceService } from '../../../services/performanceService';
+import type { PerformanceStats } from '../../../services/performanceService';
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
 
@@ -55,6 +57,25 @@ const HRPerformanceSection = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+    const [performanceStats, setPerformanceStats] = useState<PerformanceStats | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await performanceService.getOverview();
+                setPerformanceStats(data);
+                if (data.allEmployees && data.allEmployees.length > 0 && !selectedEmployee) {
+                    setSelectedEmployee(data.allEmployees[0]);
+                }
+            } catch (err) {
+                console.error('Error fetching performance stats:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
 
     // Mock Data
     const employees = [
@@ -64,6 +85,9 @@ const HRPerformanceSection = () => {
         { id: '4', name: 'Sarah Wilson', role: 'Sales Lead', dept: 'Sales', score: 95, rating: 'A+', trend: 'up', risk: 'low', skills: ['Negotiation', 'Lead Gen', 'CRM'], completion: 100, onTime: 98 },
         { id: '5', name: 'David Lee', role: 'QA Engineer', dept: 'Engineering', score: 65, rating: 'C', trend: 'down', risk: 'high', skills: ['Selenium', 'Testing', 'Automation'], completion: 70, onTime: 65 },
     ];
+
+    // Data handling: Use real data from backend if available, otherwise fallback to mock
+    const displayEmployees = performanceStats?.allEmployees || employees;
 
     const projectStats = [
         { name: 'Project Alpha', contribution: 85, productivity: 92, time: 120, output: 110, budget: 100 },
@@ -128,72 +152,84 @@ const HRPerformanceSection = () => {
         </div>
     );
 
-    const renderOverview = () => (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {renderCard('Avg KPI Score', '84.2', 'Upper 15% of industry', 'up', Target)}
-                {renderCard('On-Time Delivery', '91.5%', '+2.4% from last period', 'up', Clock)}
-                {renderCard('Goal Completion', '78%', '12 pending reviews', 'stable', CheckCircle2)}
-                {renderCard('Attrition Risk', 'Low', '3 high-risk detected', 'down', HeartPulse)}
-            </div>
+    const renderOverview = () => {
+        if (loading) {
+            return (
+                <div className="h-[400px] flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+            );
+        }
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                        <TrendingUp className="mr-2 text-indigo-600" /> Organizational Performance Trend
-                    </h3>
-                    <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={performanceHistory}>
-                                <defs>
-                                    <linearGradient id="performanceGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.1} />
-                                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                                <Area type="monotone" dataKey="score" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#performanceGradient)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+        if (!performanceStats) return null;
+
+        return (
+            <div className="space-y-6 animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {renderCard('Avg KPI Score', performanceStats.avgKpi.toString(), 'Current period average', 'up', Target)}
+                    {renderCard('On-Time Delivery', `${performanceStats.onTimeDelivery}%`, 'Achievement rate', 'up', Clock)}
+                    {renderCard('Goal Completion', `${performanceStats.goalCompletion}%`, 'Target accomplishment', 'stable', CheckCircle2)}
+                    {renderCard('Attrition Risk', performanceStats.attritionRisk, `${performanceStats.attritionRiskCount} high-risk detected`, performanceStats.attritionRisk === 'Low' ? 'down' : 'up', HeartPulse)}
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                        <Star className="mr-2 text-amber-500" /> Top Performers by Team
-                    </h3>
-                    <div className="space-y-4">
-                        {employees.slice(0, 4).map((emp) => (
-                            <div key={emp.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                                        {emp.name.charAt(0)}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                            <TrendingUp className="mr-2 text-indigo-600" /> Organizational Performance Trend
+                        </h3>
+                        <div className="h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={performanceStats.trends}>
+                                    <defs>
+                                        <linearGradient id="performanceGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                                    <XAxis dataKey="month" axisLine={false} tickLine={false} />
+                                    <YAxis axisLine={false} tickLine={false} />
+                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                    <Area type="monotone" dataKey="score" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#performanceGradient)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                            <Star className="mr-2 text-amber-500" /> Top Performers (Global)
+                        </h3>
+                        <div className="space-y-4">
+                            {performanceStats.topPerformers.map((emp, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                            {emp.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-sm">{emp.name}</h4>
+                                            <p className="text-xs text-gray-500">{emp.role}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-900 text-sm">{emp.name}</h4>
-                                        <p className="text-xs text-gray-500">{emp.role}</p>
+                                    <div className="text-right">
+                                        <span className={`px-2 py-1 rounded-lg text-xs font-bold ${emp.score >= 90 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {emp.score}%
+                                        </span>
+                                        <div className="flex space-x-1 mt-1">
+                                            {[1, 2, 3, 4, 5].map(s => (
+                                                <div key={s} className={`w-1 h-1 rounded-full ${s <= (emp.score / 20) ? 'bg-indigo-500' : 'bg-gray-300'}`}></div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className={`px-2 py-1 rounded-lg text-xs font-bold ${emp.score >= 90 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                                        {emp.score}%
-                                    </span>
-                                    <div className="flex space-x-1 mt-1">
-                                        {[1, 2, 3, 4, 5].map(s => (
-                                            <div key={s} className={`w-1 h-1 rounded-full ${s <= (emp.score / 20) ? 'bg-indigo-500' : 'bg-gray-300'}`}></div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderIndividual = () => (
         <div className="space-y-6">
@@ -216,29 +252,29 @@ const HRPerformanceSection = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-4 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                    {employees
+                    {displayEmployees
                         .filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                        .map(emp => (
+                        .map((emp: any) => (
                             <div
-                                key={emp.id}
+                                key={emp.id || emp.name}
                                 onClick={() => setSelectedEmployee(emp)}
-                                className={`p-4 rounded-2xl border transition-all cursor-pointer ${selectedEmployee?.id === emp.id
+                                className={`p-4 rounded-2xl border transition-all cursor-pointer ${selectedEmployee?.name === emp.name
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20'
                                     : 'bg-white text-gray-900 border-gray-100 hover:border-indigo-200'
                                     }`}
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center space-x-3">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${selectedEmployee?.id === emp.id ? 'bg-white/20' : 'bg-indigo-50 text-indigo-600'}`}>
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${selectedEmployee?.name === emp.name ? 'bg-white/20' : 'bg-indigo-50 text-indigo-600'}`}>
                                             {emp.name.charAt(0)}
                                         </div>
                                         <div>
                                             <h4 className="font-bold">{emp.name}</h4>
-                                            <p className={`text-xs ${selectedEmployee?.id === emp.id ? 'text-indigo-100' : 'text-gray-500'}`}>{emp.role}</p>
+                                            <p className={`text-xs ${selectedEmployee?.name === emp.name ? 'text-indigo-100' : 'text-gray-500'}`}>{emp.role}</p>
                                         </div>
                                     </div>
-                                    <span className={`text-lg font-black ${selectedEmployee?.id === emp.id ? 'text-white' : 'text-indigo-600'}`}>
-                                        {emp.rating}
+                                    <span className={`text-lg font-black ${selectedEmployee?.name === emp.name ? 'text-white' : 'text-indigo-600'}`}>
+                                        {emp.rating || (emp.score >= 90 ? 'A+' : emp.score >= 80 ? 'A' : 'B')}
                                     </span>
                                 </div>
                             </div>
@@ -255,13 +291,13 @@ const HRPerformanceSection = () => {
                                     </div>
                                     <div>
                                         <h2 className="text-3xl font-black text-gray-900 tracking-tight">{selectedEmployee.name}</h2>
-                                        <p className="text-gray-500 font-medium">{selectedEmployee.role} • {selectedEmployee.dept}</p>
+                                        <p className="text-gray-500 font-medium">{selectedEmployee.role} {selectedEmployee.dept ? `• ${selectedEmployee.dept}` : ''}</p>
                                         <div className="flex items-center mt-2 space-x-4">
                                             <span className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                                                 <TrendingUp size={12} className="mr-1" /> Performance Improving
                                             </span>
                                             <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-lg ${selectedEmployee.risk === 'low' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
-                                                Retention: {selectedEmployee.risk.toUpperCase()} RISK
+                                                Retention: {selectedEmployee.risk?.toUpperCase()} RISK
                                             </span>
                                         </div>
                                     </div>
@@ -324,11 +360,14 @@ const HRPerformanceSection = () => {
                                         </ResponsiveContainer>
                                     </div>
                                     <div className="flex flex-wrap gap-2 mt-4">
-                                        {selectedEmployee.skills.map((s: string) => (
+                                        {(selectedEmployee.skills || []).map((s: string) => (
                                             <span key={s} className="px-3 py-1 bg-white border border-gray-100 rounded-lg text-xs font-bold text-gray-600 shadow-sm">
                                                 {s}
                                             </span>
                                         ))}
+                                        {(!selectedEmployee.skills || selectedEmployee.skills.length === 0) && (
+                                            <span className="text-xs text-gray-400 italic">No skills recorded in performance profile</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -456,8 +495,8 @@ const HRPerformanceSection = () => {
                 </div>
 
                 <div className="space-y-8">
-                    {employees.slice(0, 3).map(emp => (
-                        <div key={emp.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    {displayEmployees.slice(0, 3).map((emp: any) => (
+                        <div key={emp.id || emp.name} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                             <div className="md:col-span-3 flex items-center space-x-3">
                                 <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xs">
                                     {emp.name.charAt(0)}
@@ -539,15 +578,15 @@ const HRPerformanceSection = () => {
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Skill Stagnation Alert</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {employees.slice(4, 5).map(emp => (
-                        <div key={emp.id} className="p-4 bg-rose-50 border border-rose-100 rounded-xl">
+                    {displayEmployees.filter((e: any) => e.score < 70).slice(0, 3).map((emp: any) => (
+                        <div key={emp.id || emp.name} className="p-4 bg-rose-50 border border-rose-100 rounded-xl">
                             <div className="flex items-center space-x-3 mb-3">
                                 <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
                                     {emp.name.charAt(0)}
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-sm">{emp.name}</h4>
-                                    <p className="text-[10px] text-rose-600 font-black uppercase">Stagnant for 6 months</p>
+                                    <p className="text-[10px] text-rose-600 font-black uppercase">Low score detected</p>
                                 </div>
                             </div>
                             <button className="w-full py-2 bg-white border border-rose-200 rounded-lg text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors">
@@ -555,6 +594,9 @@ const HRPerformanceSection = () => {
                             </button>
                         </div>
                     ))}
+                    {displayEmployees.filter((e: any) => e.score < 70).length === 0 && (
+                        <p className="text-gray-400 text-sm italic col-span-3">No skill stagnation alerts detected at this time.</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -710,15 +752,15 @@ const HRPerformanceSection = () => {
                         <AlertTriangle className="mr-2 text-rose-500" /> High Attrition Risk Profiles
                     </h3>
                     <div className="space-y-4">
-                        {employees.filter(e => e.risk === 'high').map(emp => (
-                            <div key={emp.id} className="p-4 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-between">
+                        {displayEmployees.filter((e: any) => e.risk === 'high').map((emp: any) => (
+                            <div key={emp.id || emp.name} className="p-4 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
                                     <div className="w-10 h-10 rounded-full bg-white text-rose-600 border border-rose-200 flex items-center justify-center font-bold">
                                         {emp.name.charAt(0)}
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-sm">{emp.name}</h4>
-                                        <p className="text-xs text-gray-500">Reason: High workload + Low growth</p>
+                                        <p className="text-xs text-gray-500">Reason: Detected attrition risk markers</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -726,6 +768,9 @@ const HRPerformanceSection = () => {
                                 </div>
                             </div>
                         ))}
+                        {displayEmployees.filter((e: any) => e.risk === 'high').length === 0 && (
+                            <p className="text-gray-400 text-sm italic">No high attrition risk profiles detected.</p>
+                        )}
                     </div>
                 </div>
 

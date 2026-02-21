@@ -20,16 +20,15 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {
-    Plus, RefreshCw, FolderKanban,
+    RefreshCw, FolderKanban,
     Search, StickyNote, X, Save
 } from 'lucide-react';
 import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
-import TaskCard from './TaskCard';
-import TaskModal from './TaskModal';
+import TaskCard from '../hr/TaskCard';
+import TaskDetailsModal from './TaskDetailsModal';
 
 // --- Types ---
-type BoardTab = 'projects' | 'employee_tasks' | 'personal_tasks';
 const COLUMNS = [
     { id: 'assigned', title: 'Assigned', color: 'indigo' },
     { id: 'in_progress', title: 'In Progress', color: 'blue' },
@@ -37,24 +36,22 @@ const COLUMNS = [
     { id: 'completed', title: 'Completed', color: 'emerald' },
 ] as const;
 
-const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
+const EmployeeWorkBoard = ({ currentUser }: { currentUser: any }) => {
     // Data State
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [employees, setEmployees] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     // UI State
-    const [activeTab, setActiveTab] = useState<BoardTab>('employee_tasks');
     const [searchTerm, setSearchTerm] = useState('');
     const [filterPriority, setFilterPriority] = useState<string>('All');
     const [activeTask, setActiveTask] = useState<Task | null>(null);
-    const [showTaskModal, setShowTaskModal] = useState(false);
-    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
 
     // Notepad State
     const [showNotepad, setShowNotepad] = useState(false);
-    const [notepadContent, setNotepadContent] = useState(localStorage.getItem('hr_ops_notes') || '');
+    const [notepadContent, setNotepadContent] = useState(localStorage.getItem('employee_work_notes') || '');
 
     // DND Sensors
     const sensors = useSensors(
@@ -67,15 +64,12 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
         setLoading(true);
         setError(null);
         try {
-            const [taskRes, empRes] = await Promise.all([
-                taskService.getAllTasks(),
-                fetch('http://localhost:5000/api/hr/employees', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                }).then(res => res.json())
-            ]);
-
-            if (taskRes.success) setTasks(taskRes.tasks);
-            if (empRes.success) setEmployees(empRes.employees);
+            const res = await taskService.getMyTasks();
+            if (res.success) {
+                setTasks(res.tasks);
+            } else {
+                setError(res.message || 'Failed to fetch tasks.');
+            }
         } catch (err) {
             setError('Failed to sync board data.');
         } finally {
@@ -91,16 +85,11 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
     const filteredTasks = useMemo(() => {
         let result = tasks;
 
-        // Tab Filtering
-        if (activeTab === 'personal_tasks' && currentUser) {
-            result = result.filter(t => t.assignedTo?._id === currentUser._id || t.createdBy === currentUser._id);
-        }
-
         // Search
         if (searchTerm) {
             result = result.filter(t =>
                 t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                t.assignedTo?.name.toLowerCase().includes(searchTerm.toLowerCase())
+                t.project.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
@@ -110,7 +99,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
         }
 
         return result;
-    }, [tasks, activeTab, searchTerm, filterPriority, currentUser]);
+    }, [tasks, searchTerm, filterPriority]);
 
     // --- DND Handlers ---
     const handleDragStart = (event: DragStartEvent) => {
@@ -166,34 +155,8 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
         }
     };
 
-    // --- Actions ---
-    const handleCreateOrUpdateTask = async (taskData: any) => {
-        try {
-            if (editingTask) {
-                const res = await taskService.updateTask(editingTask._id, taskData);
-                if (res.success) fetchData();
-            } else {
-                const res = await taskService.createTask(taskData);
-                if (res.success) fetchData();
-            }
-            setShowTaskModal(false);
-            setEditingTask(null);
-        } catch (err) {
-            alert('Operation failed.');
-        }
-    };
-
-    const handleDeleteTask = async (id: string) => {
-        if (!window.confirm('Delete this task?')) return;
-        try {
-            await taskService.deleteTask(id);
-            fetchData();
-        } catch (err) { alert('Delete failed.'); }
-    };
-
     const handleSaveNotes = () => {
-        localStorage.setItem('hr_ops_notes', notepadContent);
-        // show toast?
+        localStorage.setItem('employee_work_notes', notepadContent);
     };
 
     // --- Sub-components ---
@@ -213,16 +176,17 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                 <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                     {items.length === 0 ? (
                         <div className="h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-xl text-gray-300 text-[10px] font-medium uppercase tracking-widest gap-2">
-                            Empty State
+                            No Tasks
                         </div>
                     ) : (
                         items.map(task => (
-                            <TaskCard
-                                key={task._id}
-                                task={task}
-                                onEdit={(t) => { setEditingTask(t); setShowTaskModal(true); }}
-                                onDelete={handleDeleteTask}
-                            />
+                            <div key={task._id} onClick={() => { setSelectedTask(task); setShowDetailsModal(true); }}>
+                                <TaskCard
+                                    task={task}
+                                    onEdit={() => { setSelectedTask(task); setShowDetailsModal(true); }}
+                                    onDelete={() => { }} // Restricted
+                                />
+                            </div>
                         ))
                     )}
                 </div>
@@ -236,9 +200,9 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2 italic">
-                        <FolderKanban className="text-indigo-600 w-8 h-8" /> OPERATIONS BOARD
+                        <FolderKanban className="text-indigo-600 w-8 h-8" /> MY WORK BOARD
                     </h1>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Real-time Task Orchestration</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Manage your professional progress</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 w-full xl:w-auto">
@@ -247,27 +211,13 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                             <X size={14} className="cursor-pointer" onClick={() => setError(null)} /> {error}
                         </div>
                     )}
-                    {/* Tabs */}
-                    <div className="flex bg-gray-50 p-1 rounded-xl">
-                        {(['employee_tasks', 'personal_tasks'] as const).map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${activeTab === tab ? 'bg-white text-indigo-600 shadow-sm translate-y-[-1px]' : 'text-gray-400 hover:text-gray-600'}`}
-                            >
-                                {tab.replace('_', ' ')}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="h-6 w-[1px] bg-gray-100 mx-1 hidden sm:block" />
 
                     {/* Search */}
-                    <div className="relative flex-1 sm:min-w-[200px]">
+                    <div className="relative flex-1 sm:min-w-[250px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                         <input
                             type="text"
-                            placeholder="Find task or teammate..."
+                            placeholder="Find task or project..."
                             className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -293,12 +243,9 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                         <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                     </button>
 
-                    <button
-                        onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/30 font-black text-xs uppercase tracking-widest active:scale-95"
-                    >
-                        <Plus size={16} strokeWidth={3} /> Assign New
-                    </button>
+                    <div className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 italic">
+                        Logged in as: {currentUser?.name}
+                    </div>
                 </div>
             </div>
 
@@ -354,7 +301,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     <div className="w-80 bg-amber-50 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-2 border-amber-200 overflow-hidden transform transition-all animate-slideUp origin-bottom-right">
                         <div className="bg-amber-200 px-6 py-4 flex justify-between items-center">
                             <div className="flex items-center gap-2 font-black text-amber-900 text-sm uppercase tracking-tighter italic">
-                                <StickyNote size={18} /> Quick Ops Notes
+                                <StickyNote size={18} /> Quick Notes
                             </div>
                             <div className="flex items-center gap-2">
                                 <button onClick={() => { handleSaveNotes(); setShowNotepad(false); }} className="p-2 hover:bg-white/40 rounded-xl transition-colors">
@@ -368,26 +315,26 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                         <div className="p-4">
                             <textarea
                                 className="w-full h-64 bg-amber-50 rounded-2xl p-4 text-sm text-amber-900/80 resize-none outline-none font-medium leading-relaxed placeholder:text-amber-700/30"
-                                placeholder="Brainstorm ideas, keep track of dependencies..."
+                                placeholder="Jot down tasks, dependencies..."
                                 value={notepadContent}
                                 onChange={(e) => setNotepadContent(e.target.value)}
                             />
-                        </div>
-                        <div className="px-6 py-3 bg-amber-200/30 text-[10px] text-amber-700 font-black uppercase tracking-widest text-right italic">
-                            Local Memory Persistent
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Modals */}
-            <TaskModal
-                isOpen={showTaskModal}
-                onClose={() => { setShowTaskModal(false); setEditingTask(null); }}
-                onSubmit={handleCreateOrUpdateTask}
-                task={editingTask}
-                employees={employees}
-            />
+            {selectedTask && (
+                <TaskDetailsModal
+                    isOpen={showDetailsModal}
+                    onClose={() => { setShowDetailsModal(false); setSelectedTask(null); }}
+                    task={selectedTask}
+                    onTaskUpdate={(updatedTask: Task) => {
+                        setTasks(prev => prev.map(t => t._id === updatedTask._id ? updatedTask : t));
+                    }}
+                />
+            )}
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -418,4 +365,4 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
     );
 };
 
-export default OperationsBoard;
+export default EmployeeWorkBoard;

@@ -6,33 +6,47 @@ const taskSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    description: {
+        type: String,
+        default: ''
+    },
     project: {
         type: String,
         default: 'General'
     },
     priority: {
         type: String,
-        enum: ['low', 'medium', 'high'],
+        enum: ['low', 'medium', 'high', 'Low', 'Medium', 'High'],
         default: 'medium'
     },
     status: {
         type: String,
-        enum: ['pending', 'in-progress', 'completed'],
-        default: 'pending'
+        enum: ['assigned', 'in_progress', 'review', 'completed'],
+        default: 'assigned'
     },
-    due: {
-        type: String, // Keeping as string to match frontend "Today", "Tomorrow" or date string
+    dueDate: {
+        type: Date,
         required: true
     },
     assignedTo: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Can refer to User or Employee, usually User for auth
+        ref: 'User',
         required: true
     },
     assignedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    comments: [{
+        text: { type: String, required: true },
+        author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        createdAt: { type: Date, default: Date.now }
+    }],
+    attachments: [{ type: String }],
     createdAt: {
         type: Date,
         default: Date.now

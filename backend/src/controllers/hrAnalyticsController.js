@@ -5,6 +5,7 @@ const TrainingAssignment = require('../models/TrainingAssignment');
 const Skill = require('../models/Skill');
 const Attendance = require('../models/Attendance');
 const Leave = require('../models/Leave');
+const EmployeePerformance = require('../models/EmployeePerformance');
 const mongoose = require('mongoose');
 
 // Helper to calculate age from DOB
@@ -371,6 +372,82 @@ exports.getCustomReport = async (req, res) => {
             success: true,
             count: employees.length,
             report: employees
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// 11. Performance Overview for Dashboard
+exports.getPerformanceOverview = async (req, res) => {
+    try {
+        // 1. Get all active employees
+        const allEmployees = await Employee.find({ status: 'active' }, 'name role position department performanceScore');
+
+        // 2. Get latest performance records from the performance collection
+        const latestPerformances = await EmployeePerformance.aggregate([
+            { $sort: { month: -1 } },
+            {
+                $group: {
+                    _id: "$name",
+                    latestRecord: { $first: "$$ROOT" }
+                }
+            }
+        ]);
+
+        // Map latest performances for quick lookup
+        const perfMap = {};
+        latestPerformances.forEach(p => {
+            perfMap[p._id] = p.latestRecord;
+        });
+
+        // 3. Merge data
+        const mergedEmployees = allEmployees.map(emp => {
+            const perf = perfMap[emp.name];
+            return {
+                name: emp.name,
+                role: emp.position || emp.role || "Employee",
+                dept: emp.department,
+                score: perf ? perf.kpiScore : (emp.performanceScore || 70),
+                completion: perf ? perf.goalCompletion : 75,
+                onTime: perf ? perf.onTimeDelivery : 80,
+                risk: (perf ? perf.attritionRisk : 'Low').toLowerCase(),
+                month: perf ? perf.month : '2025-02',
+                id: emp._id
+            };
+        });
+
+        // 4. Calculate Aggregate Stats
+        const totalKpi = mergedEmployees.reduce((sum, e) => sum + e.score, 0);
+        const totalOnTime = mergedEmployees.reduce((sum, e) => sum + e.onTime, 0);
+        const totalGoal = mergedEmployees.reduce((sum, e) => sum + e.completion, 0);
+        const highRiskCount = mergedEmployees.filter(e => e.risk === 'high').length;
+
+        // 5. Get Trends (purely from historical performance records)
+        const trends = await EmployeePerformance.aggregate([
+            {
+                $group: {
+                    _id: "$month",
+                    avgKpi: { $avg: "$kpiScore" }
+                }
+            },
+            { $sort: { _id: 1 } },
+            { $limit: 6 }
+        ]);
+
+        res.json({
+            success: true,
+            stats: {
+                avgKpi: Math.round(totalKpi / mergedEmployees.length) || 0,
+                onTimeDelivery: Math.round(totalOnTime / mergedEmployees.length) || 0,
+                goalCompletion: Math.round(totalGoal / mergedEmployees.length) || 0,
+                attritionRisk: highRiskCount > 0 ? 'High' : (mergedEmployees.some(e => e.risk === 'medium') ? 'Medium' : 'Low'),
+                attritionRiskCount: highRiskCount,
+                topPerformers: [...mergedEmployees].sort((a, b) => b.score - a.score).slice(0, 5),
+                allEmployees: mergedEmployees.sort((a, b) => b.score - a.score),
+                trends: trends.map(t => ({ month: t._id, score: Math.round(t.avgKpi) }))
+            }
         });
     } catch (err) {
         console.error(err);

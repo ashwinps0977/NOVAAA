@@ -35,6 +35,7 @@ import TrainingSection from '../components/dashboard/TrainingSection';
 import SettingsSection from '../components/dashboard/SettingsSection';
 import PoliciesSection from '../components/dashboard/PoliciesSection';
 import MyWorkGrowthSection from '../components/dashboard/MyWorkGrowthSection';
+import EmployeeWorkBoard from '../components/dashboard/employee/EmployeeWorkBoard';
 
 const EmployeeDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -555,6 +556,8 @@ const EmployeeDashboard = () => {
 
   const renderSection = () => {
     switch (activeSection) {
+      case 'mywork':
+        return <EmployeeWorkBoard currentUser={userData} />;
       case 'workgrowth':
         return <MyWorkGrowthSection />;
 
@@ -1973,6 +1976,7 @@ const EmployeeDashboard = () => {
   // Sidebar navigation items
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
+    { id: 'mywork', label: 'My Work Board', icon: Zap, highlight: true },
     { id: 'projects', label: 'My Projects', icon: CheckSquare },
     { id: 'workgrowth', label: 'Work & Growth', icon: TrendingUp },
     { id: 'profile', label: 'Profile', icon: User },
