@@ -28,6 +28,7 @@ import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
+import { useRealTimeSync } from '../../../hooks/useRealTimeSync';
 
 // --- Types ---
 type BoardTab = 'projects' | 'employee_tasks' | 'personal_tasks';
@@ -87,6 +88,9 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    // Real-time Database Synchronization
+    useRealTimeSync(['tasks', 'employees'], fetchData);
 
     // --- Filtering Logic ---
     const filteredTasks = useMemo(() => {

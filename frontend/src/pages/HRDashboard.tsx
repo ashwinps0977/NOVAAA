@@ -17,7 +17,9 @@ import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
 import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
 import SearchDropdown from '../components/common/SearchDropdown';
 import { jobRoles } from '../data/jobRoles';
-import { API_BASE_URL } from '../config';
+import { useRealTimeSync } from '../hooks/useRealTimeSync';
+
+const API_BASE_URL = 'http://localhost:5000/api';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -233,36 +235,26 @@ const HRDashboard = () => {
 
   useEffect(() => {
     checkAuth();
-    fetchDashboardStats();
-    let intervalId: any;
+  }, []);
 
+  useEffect(() => {
     if (activeSection === 'employees') {
       fetchEmployees();
-      // Poll every 30 seconds for real-time attendance updates
-      intervalId = setInterval(fetchEmployees, 30000);
     }
     if (activeSection === 'dashboard') {
       fetchProjects();
+      fetchDashboardStats();
     }
     if (activeSection === 'recruitment') {
       loadPostedJobs();
       loadApplications();
-      // Poll every 30 seconds for recruitment updates
-      intervalId = setInterval(() => {
-        loadPostedJobs();
-        loadApplications();
-      }, 30000);
     }
     if (activeSection === 'attendance') {
       fetchLeaves();
     }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
   }, [activeSection]);
 
-  const fetchDashboardStats = async () => {
+  async function fetchDashboardStats() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/hr-analytics/dashboard-stats`, {
@@ -277,7 +269,7 @@ const HRDashboard = () => {
     } catch (error) {
       console.error('Fetch dashboard stats error:', error);
     }
-  };
+  }
 
   const fetchLeaves = async () => {
     try {
@@ -447,6 +439,14 @@ const HRDashboard = () => {
     }
   };
 
+  // Real-time Database Synchronization
+  useRealTimeSync(['employees'], fetchEmployees);
+  useRealTimeSync(['jobs', 'jobapplications'], () => {
+    loadPostedJobs();
+    loadApplications();
+  });
+  useRealTimeSync(['leaves'], fetchLeaves);
+
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -519,7 +519,7 @@ const HRDashboard = () => {
     setShowScheduleInterviewModal(true);
   };
 
-  const handlePostJob = async (e: React.FormEvent) => {
+  async function handlePostJob(e: React.FormEvent) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
@@ -573,9 +573,9 @@ const HRDashboard = () => {
       alert('Failed to post job. Please try again.');
       return null;
     }
-  };
+  }
 
-  const handleScheduleInterview = async (e: React.FormEvent) => {
+  async function handleScheduleInterview(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedApplication) return;
 
@@ -617,9 +617,9 @@ const HRDashboard = () => {
       alert('Failed to schedule interview. Please try again.');
       return null;
     }
-  };
+  }
 
-  const handleAssignProject = async (e: React.FormEvent) => {
+  async function handleAssignProject(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedEmployeeForProject) return;
 
@@ -656,9 +656,9 @@ const HRDashboard = () => {
       console.error('Error assigning project:', error);
       alert('Failed to assign project. Please try again.');
     }
-  };
+  }
 
-  const handleRejectApplication = async (e: React.FormEvent) => {
+  async function handleRejectApplication(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedApplication) return;
 
@@ -692,9 +692,38 @@ const HRDashboard = () => {
       alert('Failed to reject application. Please try again.');
       return null;
     }
-  };
+  }
 
-  const handleUpdateEmployee = async (e: React.FormEvent) => {
+  async function handleShortlistApplication(application: any) {
+    try {
+      const token = localStorage.getItem('token');
+      const appId = application.id || application._id;
+      const response = await fetch(`http://localhost:5000/api/applications/${appId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'shortlisted',
+          notes: 'Candidate shortlisted via AI Ranking.'
+        })
+      });
+
+      if (response.ok) {
+        alert('Candidate shortlisted!');
+        loadApplications();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to shortlist: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error shortlisting application:', error);
+      alert('Failed to shortlist. Please try again.');
+    }
+  }
+
+  async function handleUpdateEmployee(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedEmployee) return;
 
@@ -722,9 +751,9 @@ const HRDashboard = () => {
       console.error('Update error:', error);
       alert('Failed to update employee');
     }
-  };
+  }
 
-  const handleAssignTask = async (e: React.FormEvent) => {
+  async function handleAssignTask(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedEmployeeForTask) return;
 
@@ -753,8 +782,8 @@ const HRDashboard = () => {
     } catch (error) {
       console.error('Task assignment error:', error);
     }
-  };
-  const logout = async () => {
+  }
+  async function logout() {
     try {
       const token = localStorage.getItem('token');
       // Call backend to mark attendance checkout
@@ -774,13 +803,13 @@ const HRDashboard = () => {
       localStorage.removeItem('refreshToken');
       navigate('/login');
     }
-  };
+  }
 
-  const handleLogout = () => {
+  function handleLogout() {
     if (window.confirm('Are you sure you want to logout?')) {
       logout();
     }
-  };
+  }
 
   const renderSection = () => {
     if (isLoading) {
@@ -1136,7 +1165,6 @@ const HRDashboard = () => {
       case 'recruitment':
         return (
           <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Recruitment</h2>
@@ -1153,7 +1181,6 @@ const HRDashboard = () => {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
@@ -1166,7 +1193,6 @@ const HRDashboard = () => {
                   </div>
                 </div>
               </div>
-
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1178,7 +1204,6 @@ const HRDashboard = () => {
                   </div>
                 </div>
               </div>
-
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1190,7 +1215,6 @@ const HRDashboard = () => {
                   </div>
                 </div>
               </div>
-
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1204,127 +1228,133 @@ const HRDashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Posted Jobs */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Posted Jobs</h3>
-                  <span className="text-sm text-gray-500">{postedJobs.length} total</span>
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <Brain className="w-6 h-6 text-purple-600" />
+                  <h3 className="text-xl font-bold text-gray-900">AI-Ranked Candidates</h3>
                 </div>
-                <div className="space-y-4">
-                  {postedJobs.map((job) => (
-                    <div key={job.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{job.title}</h4>
-                          <div className="flex items-center space-x-3 mt-2 text-sm text-gray-500">
-                            <span>{job.department}</span>
-                            <span>•</span>
-                            <span>{job.location}</span>
-                            <span>•</span>
-                            <span>{job.type}</span>
-                          </div>
-                          <div className="flex items-center space-x-4 mt-3">
-                            <span className="text-sm text-gray-700">Salary: {job.salary}</span>
-                            <span className="text-sm text-gray-700">Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium inline-block">
-                            {job.applicants || 0} applications
-                          </div>
-                          <div className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                            }`}>
-                            {job.status}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center space-x-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-bold text-purple-700">Powered by NOVA AI Intelligence</span>
                 </div>
               </div>
 
-              {/* Job Applications */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Recent Applications</h3>
-                  <span className="text-sm text-gray-500">{jobApplications.length} total</span>
-                </div>
-                <div className="space-y-4">
-                  {jobApplications.map((application) => (
-                    <div key={application.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{application.candidateName}</h4>
-                          <p className="text-sm text-gray-600 mt-1">Applied for: {application.jobTitle}</p>
-                          <div className="flex items-center space-x-3 mt-2 text-sm text-gray-500">
-                            <span>{application.experience} years experience</span>
-                            <span>•</span>
-                            <span>Applied: {application.appliedDate}</span>
-                            {application.matchPercentage !== undefined && (
-                              <>
-                                <span>•</span>
-                                <span className={`flex items-center font-semibold ${application.matchPercentage >= 70 ? 'text-green-600' :
-                                  application.matchPercentage >= 40 ? 'text-yellow-600' : 'text-red-600'
+              <div className="space-y-8">
+                {postedJobs.map(job => {
+                  const jobApps = jobApplications
+                    .filter(app => (app.jobId || app.job?._id || app.job?.id) === (job._id || job.id))
+                    .sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
+
+                  if (jobApps.length === 0) return null;
+
+                  return (
+                    <div key={job.id} className="space-y-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <h4 className="font-black text-gray-700 flex items-center">
+                          <Briefcase className="w-4 h-4 mr-2 text-gray-400" />
+                          {job.title}
+                          <span className="ml-3 px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-500 font-medium">
+                            {jobApps.length} Candidates
+                          </span>
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {jobApps.map((application, index) => (
+                          <div key={application.id || application._id} className={`p-4 border rounded-xl transition-all hover:shadow-md relative overflow-hidden flex flex-col justify-between ${index === 0 && application.matchPercentage >= 80 ? 'border-amber-200 bg-gradient-to-br from-white to-amber-50' : 'border-gray-200 bg-white'}`}>
+                            <div>
+                              {index === 0 && application.matchPercentage >= 80 && (
+                                <div className="absolute top-0 right-0 bg-amber-400 text-white px-2 py-1 text-[10px] font-black uppercase tracking-tighter rounded-bl-lg">
+                                  Top Match
+                                </div>
+                              )}
+
+                              <div className="flex justify-between items-start mb-3">
+                                <div>
+                                  <h5 className="font-bold text-gray-900">{application.candidateName}</h5>
+                                  <p className="text-xs text-gray-500">{application.experience} yrs exp • {application.appliedDate}</p>
+                                </div>
+                                <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl border-2 ${application.matchPercentage >= 70 ? 'bg-green-50 border-green-200 text-green-700' :
+                                  application.matchPercentage >= 40 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'bg-red-50 border-red-200 text-red-700'
                                   }`}>
-                                  <Brain className="w-3 h-3 mr-1" />
-                                  AI Score: {application.matchPercentage}%
+                                  <span className="text-xs font-black leading-none">{application.matchPercentage}%</span>
+                                  <span className="text-[8px] font-bold uppercase mt-0.5 tracking-tighter">Match</span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-1 mb-4 h-6 overflow-hidden">
+                                {application.parsedSkills?.slice(0, 3).map((skill: string, i: number) => (
+                                  <span key={i} className="px-2 py-0.5 bg-gray-100 text-[10px] rounded text-gray-600 font-medium">
+                                    {skill}
+                                  </span>
+                                ))}
+                                {application.parsedSkills?.length > 3 && (
+                                  <span className="text-[10px] text-gray-400 self-center">+{application.parsedSkills.length - 3}</span>
+                                )}
+                              </div>
+                              <div className="mt-3">
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${application.status === 'shortlisted' ? 'bg-yellow-100 text-yellow-700' :
+                                  application.status === 'interview-scheduled' ? 'bg-blue-100 text-blue-700' :
+                                    application.status === 'hired' ? 'bg-green-100 text-green-700' :
+                                      application.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                        'bg-gray-100 text-gray-700'
+                                  }`}>
+                                  {application.status === 'interview-scheduled' ? 'Interview' : application.status}
                                 </span>
-                              </>
-                            )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col space-y-2 mt-4">
+                              <button
+                                onClick={() => {
+                                  setSelectedAIAnalysis(application);
+                                  setShowAIAnalysisModal(true);
+                                }}
+                                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 flex items-center justify-center"
+                              >
+                                <Brain className="w-3 h-3 mr-1" />
+                                View Analysis
+                              </button>
+                              {application.status === 'pending' || application.status === 'under_review' ? (
+                                <button
+                                  onClick={() => handleShortlistApplication(application)}
+                                  className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200"
+                                >
+                                  Shortlist
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleOpenScheduleInterview(application)}
+                                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
+                                  disabled={application.status === 'rejected' || application.status === 'hired'}
+                                >
+                                  Schedule Interview
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setShowRejectModal(true);
+                                }}
+                                className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200"
+                                disabled={application.status === 'rejected' || application.status === 'hired'}
+                              >
+                                Reject
+                              </button>
+                              <a
+                                href={`http://localhost:5000${application.resumeUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 text-center"
+                              >
+                                View Resume
+                              </a>
+                            </div>
                           </div>
-                          <div className="mt-3">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${application.status === 'shortlisted' ? 'bg-yellow-100 text-yellow-700' :
-                              application.status === 'interview-scheduled' ? 'bg-blue-100 text-blue-700' :
-                                application.status === 'hired' ? 'bg-green-100 text-green-700' :
-                                  application.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-700'
-                              }`}>
-                              {application.status === 'interview-scheduled' ? 'Interview' : application.status}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col space-y-2">
-                          <button
-                            onClick={() => {
-                              setSelectedAIAnalysis(application);
-                              setShowAIAnalysisModal(true);
-                            }}
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 flex items-center justify-center"
-                          >
-                            <Brain className="w-3 h-3 mr-1" />
-                            View Analysis
-                          </button>
-                          <button
-                            onClick={() => handleOpenScheduleInterview(application)}
-                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
-                            disabled={application.status === 'rejected' || application.status === 'hired'}
-                          >
-                            Schedule Interview
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedApplication(application);
-                              setShowRejectModal(true);
-                            }}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200"
-                            disabled={application.status === 'rejected' || application.status === 'hired'}
-                          >
-                            Reject
-                          </button>
-                          <a
-                            href={`${API_BASE_URL.replace('/api', '')}${application.resumeUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 text-center"
-                          >
-                            View Resume
-                          </a>
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>
