@@ -15,14 +15,22 @@ module.exports = function (req, res, next) {
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Add user from payload
     req.user = decoded;
     next();
   } catch (err) {
+    let message = 'Token is not valid';
+    if (err.name === 'TokenExpiredError') {
+      message = 'Token has expired';
+    } else if (err.name === 'JsonWebTokenError') {
+      message = 'Token is malformed or invalid';
+    }
+
     res.status(401).json({
       success: false,
-      message: 'Token is not valid'
+      message: message,
+      errorType: err.name
     });
   }
 };

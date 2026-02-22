@@ -6,7 +6,7 @@ import {
   Calendar, Target, Brain, AlertCircle,
   GraduationCap, ShieldCheck, Settings, Zap, Plus,
   Briefcase, FileText, CheckCircle, DollarSign,
-  Send, Layers, FolderKanban, Star
+  Send, Layers, FolderKanban, Star, Award, TrendingUp, X, MapPin, Sparkles
 } from 'lucide-react';
 import HRPayrollSection from '../components/dashboard/hr/HRPayrollSection';
 import HRSettingsSection from '../components/dashboard/hr/HRSettingsSection';
@@ -16,7 +16,7 @@ import HRAnalyticsSection from '../components/dashboard/hr/HRAnalyticsSection';
 import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
 import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
 import SearchDropdown from '../components/common/SearchDropdown';
-
+import { jobRoles } from '../data/jobRoles';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -29,6 +29,8 @@ const HRDashboard = () => {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
+  const [showAIAnalysisModal, setShowAIAnalysisModal] = useState(false);
+  const [selectedAIAnalysis, setSelectedAIAnalysis] = useState<any>(null);
   const [showScheduleInterviewModal, setShowScheduleInterviewModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
@@ -244,6 +246,11 @@ const HRDashboard = () => {
     if (activeSection === 'recruitment') {
       loadPostedJobs();
       loadApplications();
+      // Poll every 30 seconds for recruitment updates
+      intervalId = setInterval(() => {
+        loadPostedJobs();
+        loadApplications();
+      }, 30000);
     }
     if (activeSection === 'attendance') {
       fetchLeaves();
@@ -479,6 +486,38 @@ const HRDashboard = () => {
     }
   };
 
+  const handleOpenScheduleInterview = (application: any) => {
+    setSelectedApplication(application);
+
+    // Generate a unique meeting link
+    const meetingId = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+    const meetingUrl = `https://meet.google.com/${meetingId}`;
+
+    // AI-Driven pre-filling
+    let autoNotes = "Interview objectives: ";
+    if (application.strengths && application.strengths.length > 0) {
+      autoNotes += `\n- Explore strengths: ${application.strengths.slice(0, 2).join(', ')}`;
+    }
+    if (application.gaps && application.gaps.length > 0) {
+      autoNotes += `\n- Probe gaps: ${application.gaps.slice(0, 2).join(', ')}`;
+    }
+    if (application.analysisSummary) {
+      autoNotes += `\n\nContext: ${application.analysisSummary}`;
+    }
+
+    setInterviewData({
+      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      time: '10:00',
+      duration: '60',
+      interviewer: 'HR Panel',
+      mode: 'virtual',
+      meetingLink: meetingUrl,
+      notes: autoNotes.trim()
+    });
+
+    setShowScheduleInterviewModal(true);
+  };
+
   const handlePostJob = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -494,7 +533,6 @@ const HRDashboard = () => {
           jobType: newJob.type,
           experienceLevel: newJob.experience,
           applicationDeadline: newJob.deadline,
-          // Remove old keys to avoid confusion, though backend ignores extra fields usually
         })
       });
 
@@ -517,6 +555,15 @@ const HRDashboard = () => {
         return data.job;
       } else {
         const errorData = await response.json();
+
+        // Handle 401 Unauthorized specifically
+        if (response.status === 401) {
+          alert(`Session Error: ${errorData.message}. Please login again.`);
+          logout();
+          navigate('/login');
+          return null;
+        }
+
         alert(`Failed to post job: ${errorData.message}`);
         return null;
       }
@@ -1178,12 +1225,12 @@ const HRDashboard = () => {
                           </div>
                           <div className="flex items-center space-x-4 mt-3">
                             <span className="text-sm text-gray-700">Salary: {job.salary}</span>
-                            <span className="text-sm text-gray-700">Deadline: {job.deadline}</span>
+                            <span className="text-sm text-gray-700">Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}</span>
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium inline-block">
-                            {job.applications || 0} applications
+                            {job.applicants || 0} applications
                           </div>
                           <div className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                             }`}>
@@ -1239,9 +1286,16 @@ const HRDashboard = () => {
                         <div className="flex flex-col space-y-2">
                           <button
                             onClick={() => {
-                              setSelectedApplication(application);
-                              setShowScheduleInterviewModal(true);
+                              setSelectedAIAnalysis(application);
+                              setShowAIAnalysisModal(true);
                             }}
+                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 flex items-center justify-center"
+                          >
+                            <Brain className="w-3 h-3 mr-1" />
+                            View Analysis
+                          </button>
+                          <button
+                            onClick={() => handleOpenScheduleInterview(application)}
                             className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
                             disabled={application.status === 'rejected' || application.status === 'hired'}
                           >
@@ -1567,849 +1621,1111 @@ const HRDashboard = () => {
       </div>
 
       {/* Add Employee Modal */}
-      {
-        showAddEmployee && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Add New Employee</h3>
-                <button
-                  onClick={() => setShowAddEmployee(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
+      {showAddEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Add New Employee</h3>
+              <button
+                onClick={() => setShowAddEmployee(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddEmployee}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.name}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.email}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.password}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={newEmployee.department}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={newEmployee.position}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.phone}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.salary}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.project}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, project: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newEmployee.joiningDate}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, joiningDate: e.target.value })}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
               </div>
 
-              <form onSubmit={handleAddEmployee}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.name}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                    />
+              <div className="flex items-center space-x-3 mt-6">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Add Employee
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddEmployee(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* AI Analysis Modal */}
+      {showAIAnalysisModal && selectedAIAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold">AI Recruitment Intelligence</h3>
+                  <p className="text-purple-100 flex items-center mt-1">
+                    <Target className="w-4 h-4 mr-1" />
+                    Analyzing fit for: <span className="font-semibold ml-1">{selectedAIAnalysis.jobTitle}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAIAnalysisModal(false)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {/* Score Dashboard */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white border-2 border-purple-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center">
+                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Overall Fit</p>
+                  <div className={`text-5xl font-black ${selectedAIAnalysis.matchPercentage >= 70 ? 'text-green-600' :
+                    selectedAIAnalysis.matchPercentage >= 40 ? 'text-yellow-500' : 'text-red-500'
+                    }`}>
+                    {selectedAIAnalysis.matchPercentage}%
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <input
-                      type="email"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.email}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input
-                      type="password"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.password}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                      <input
-                        type="text"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={newEmployee.department}
-                        onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                      <input
-                        type="text"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={newEmployee.position}
-                        onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.phone}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.salary}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.project}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, project: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
-                    <input
-                      type="date"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.joiningDate}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, joiningDate: e.target.value })}
-                      max={new Date().toISOString().split('T')[0]}
+                  <div className="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden border">
+                    <div
+                      className={`h-full transition-all duration-1000 ${selectedAIAnalysis.matchPercentage >= 70 ? 'bg-green-500' :
+                        selectedAIAnalysis.matchPercentage >= 40 ? 'bg-yellow-400' : 'bg-red-500'
+                        }`}
+                      style={{ width: `${selectedAIAnalysis.matchPercentage}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3 mt-6">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Add Employee
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddEmployee(false)}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
+                <div className="md:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Skills', value: selectedAIAnalysis.scoreBreakdown?.skills || 0, max: 40, icon: <Zap className="w-5 h-5" />, color: 'blue' },
+                    { label: 'Experience', value: selectedAIAnalysis.scoreBreakdown?.experience || 0, max: 35, icon: <Briefcase className="w-5 h-5" />, color: 'emerald' },
+                    { label: 'Education', value: selectedAIAnalysis.scoreBreakdown?.education || 0, max: 25, icon: <GraduationCap className="w-5 h-5" />, color: 'indigo' },
+                    { label: 'Projects', value: selectedAIAnalysis.scoreBreakdown?.projects || 0, max: 10, icon: <Award className="w-5 h-5" />, color: 'purple' },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className={`p-2 bg-${stat.color}-100 text-${stat.color}-600 rounded-lg inline-block mb-2`}>
+                        {stat.icon}
+                      </div>
+                      <p className="text-xs font-bold text-gray-400 uppercase">{stat.label}</p>
+                      <p className="text-xl font-bold text-gray-900">{stat.value}<span className="text-sm text-gray-400 font-medium">/{stat.max}</span></p>
+                    </div>
+                  ))}
                 </div>
-              </form>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Highlights & Details */}
+                <div className="lg:col-span-2 space-y-8">
+                  {/* Summary */}
+                  <section>
+                    <h4 className="flex items-center text-lg font-bold text-gray-900 mb-3">
+                      <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
+                      Executive Summary
+                    </h4>
+                    <div className="bg-purple-50 rounded-xl p-4 text-purple-900 leading-relaxed border border-purple-100">
+                      {selectedAIAnalysis.analysisSummary || "The AI is processing the details. Generally, this candidate shows promise in core areas."}
+                    </div>
+                  </section>
+
+                  {/* Extracts */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <section>
+                      <h4 className="flex items-center text-md font-bold text-gray-900 mb-3 uppercase tracking-tight">
+                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                        Candidate Snapshot
+                      </h4>
+                      <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                        <div className="p-3 border-b border-gray-50 flex justify-between">
+                          <span className="text-sm text-gray-500">Location</span>
+                          <span className="text-sm font-semibold">{selectedAIAnalysis.candidateDetails?.location || 'Not Specified'}</span>
+                        </div>
+                        <div className="p-3 border-b border-gray-50 flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Education</span>
+                          <div className="text-right">
+                            {selectedAIAnalysis.candidateDetails?.education?.map((edu: any, i: number) => (
+                              <div key={i} className="mb-1 last:mb-0">
+                                <span className="text-sm font-semibold truncate block max-w-[150px]">
+                                  {edu.degree}
+                                </span>
+                                <span className="text-[10px] text-gray-400 block truncate max-w-[150px]">
+                                  {edu.institution}
+                                </span>
+                              </div>
+                            )) || <span className="text-sm font-semibold">Unknown</span>}
+                          </div>
+                        </div>
+                        <div className="p-3 flex justify-between">
+                          <span className="text-sm text-gray-500">Certifications</span>
+                          <span className="text-sm font-semibold">
+                            {selectedAIAnalysis.candidateDetails?.certifications?.length || 0} Listed
+                          </span>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section>
+                      <h4 className="flex items-center text-md font-bold text-gray-900 mb-3 uppercase tracking-tight">
+                        <Brain className="w-4 h-4 mr-2 text-gray-400" />
+                        Top Extracted Skills
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedAIAnalysis.parsedSkills?.slice(0, 10).map((skill: string, i: number) => (
+                          <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* Recommendations */}
+                  <section>
+                    <h4 className="flex items-center text-lg font-bold text-gray-900 mb-3">
+                      <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
+                      AI Recommendations
+                    </h4>
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-amber-900 italic font-medium">
+                      "{selectedAIAnalysis.aiRecommendations}"
+                    </div>
+                  </section>
+
+                  {/* Detailed Experience & Projects */}
+                  <section className="space-y-6">
+                    <div>
+                      <h4 className="flex items-center text-lg font-bold text-gray-900 mb-4">
+                        <Briefcase className="w-5 h-5 mr-2 text-blue-600" />
+                        Professional Experience
+                      </h4>
+                      <div className="space-y-4">
+                        {selectedAIAnalysis.candidateDetails?.experience?.map((exp: any, i: number) => (
+                          <div key={i} className="bg-white border rounded-xl p-4 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="font-bold text-gray-900">{exp.title}</h5>
+                                <p className="text-sm text-gray-600">{exp.company}</p>
+                              </div>
+                              <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+                                {exp.duration}
+                              </span>
+                            </div>
+                            {exp.responsibilities && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{exp.responsibilities}</p>
+                            )}
+                          </div>
+                        )) || <p className="text-sm text-gray-500 italic">No detailed experience extracted</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="flex items-center text-lg font-bold text-gray-900 mb-4">
+                        <Award className="w-5 h-5 mr-2 text-purple-600" />
+                        Key Projects
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedAIAnalysis.candidateDetails?.projects?.map((proj: any, i: number) => (
+                          <div key={i} className="bg-white border rounded-xl p-4 shadow-sm border-l-4 border-l-purple-500">
+                            <h5 className="font-bold text-gray-900 text-sm mb-1">{proj.title}</h5>
+                            <p className="text-xs text-gray-500 mb-3">{proj.description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {proj.technologies?.map((tech: string, j: number) => (
+                                <span key={j} className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">
+                                  {tech}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )) || <p className="text-sm text-gray-500 italic">No projects extracted</p>}
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                {/* Pros/Cons Sidebar */}
+                <div className="space-y-6">
+                  <div className="bg-green-50 border border-green-100 rounded-2xl p-5">
+                    <h4 className="text-sm font-black text-green-700 uppercase tracking-widest mb-4 flex items-center">
+                      <ShieldCheck className="w-4 h-4 mr-2" />
+                      Strengths
+                    </h4>
+                    <ul className="space-y-3">
+                      {selectedAIAnalysis.strengths?.map((s: string, i: number) => (
+                        <li key={i} className="flex items-start text-sm text-green-800">
+                          <CheckCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0 text-green-500" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5">
+                    <h4 className="text-sm font-black text-rose-700 uppercase tracking-widest mb-4 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      Identified Gaps
+                    </h4>
+                    <ul className="space-y-3">
+                      {selectedAIAnalysis.gaps?.map((g: string, i: number) => (
+                        <li key={i} className="flex items-start text-sm text-rose-800">
+                          <TrendingUp className="w-4 h-4 mr-2 mt-0.5 shrink-0 text-rose-300 rotate-180" />
+                          {g}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="bg-gray-50 p-6 border-t flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  handleOpenScheduleInterview(selectedAIAnalysis);
+                  setShowAIAnalysisModal(false);
+                }}
+                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-md active:scale-95"
+              >
+                Schedule Interview
+              </button>
+              <button
+                onClick={() => setShowAIAnalysisModal(false)}
+                className="px-6 py-2 bg-white text-gray-700 font-bold border rounded-lg hover:bg-gray-100 transition-all"
+              >
+                Close Insights
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {/* Post Job Modal */}
-      {
-        showPostJobModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Post New Job</h3>
-                <button
-                  onClick={() => setShowPostJobModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
+      {showPostJobModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Post New Job</h3>
+              <button
+                onClick={() => setShowPostJobModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+              <div className="flex items-center space-x-2 mb-3">
+                <Sparkles className="w-5 h-5 text-indigo-600" />
+                <h4 className="font-bold text-indigo-900">AI Job Assistant</h4>
               </div>
+              <p className="text-sm text-indigo-700 mb-4">Select a role to automatically generate a professional job posting.</p>
+              <select
+                className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                onChange={(e) => {
+                  const role = jobRoles[e.target.value];
+                  if (role) {
+                    setNewJob({
+                      ...newJob,
+                      title: role.title,
+                      department: role.department,
+                      experience: role.experienceLevel,
+                      description: role.description,
+                      requirements: role.requirements,
+                      salary: role.salaryRange,
+                      // Deadline is handled by state default (30 days)
+                    });
+                  }
+                }}
+              >
+                <option value="">✨ Choose a role to auto-fill...</option>
+                {Object.keys(jobRoles).map(roleKey => (
+                  <option key={roleKey} value={roleKey}>{roleKey}</option>
+                ))}
+              </select>
+            </div>
 
-              <form onSubmit={handlePostJob}>
-                <div className="space-y-4">
+            <form onSubmit={handlePostJob}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newJob.title}
+                    onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                    placeholder="e.g., Senior Frontend Developer"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
+                    <select
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={newJob.department}
+                      onChange={(e) => setNewJob({ ...newJob, department: e.target.value })}
+                    >
+                      <option value="">Select Department</option>
+                      <option value="Engineering">Engineering</option>
+                      <option value="Design">Design</option>
+                      <option value="Product">Product</option>
+                      <option value="Sales">Sales</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Human Resources">Human Resources</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Operations">Operations</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
                     <input
                       type="text"
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.title}
-                      onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-                      placeholder="e.g., Senior Frontend Developer"
+                      value={newJob.location}
+                      onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
+                      placeholder="e.g., San Francisco, CA"
                     />
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
-                      <select
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={newJob.department}
-                        onChange={(e) => setNewJob({ ...newJob, department: e.target.value })}
-                      >
-                        <option value="">Select Department</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Product">Product</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Human Resources">Human Resources</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Operations">Operations</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                      <input
-                        type="text"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={newJob.location}
-                        onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
-                        placeholder="e.g., San Francisco, CA"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
-                      <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={newJob.type}
-                        onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}
-                      >
-                        <option value="full-time">Full-time</option>
-                        <option value="part-time">Part-time</option>
-                        <option value="contract">Contract</option>
-                        <option value="internship">Internship</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
-                      <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={newJob.experience}
-                        onChange={(e) => setNewJob({ ...newJob, experience: e.target.value })}
-                      >
-                        <option value="entry">Entry-level</option>
-                        <option value="mid">Mid-level</option>
-                        <option value="senior">Senior</option>
-                        <option value="lead">Lead</option>
-                      </select>
-                    </div>
-                  </div>
-
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
-                    <input
-                      type="text"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
+                    <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.salary}
-                      onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
-                      placeholder="e.g., $120,000 - $150,000"
-                    />
+                      value={newJob.type}
+                      onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}
+                    >
+                      <option value="full-time">Full-time</option>
+                      <option value="part-time">Part-time</option>
+                      <option value="contract">Contract</option>
+                      <option value="internship">Internship</option>
+                    </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      value={newJob.experience}
+                      onChange={(e) => setNewJob({ ...newJob, experience: e.target.value })}
+                    >
+                      <option value="entry">Entry-level</option>
+                      <option value="mid">Mid-level</option>
+                      <option value="senior">Senior</option>
+                      <option value="lead">Lead</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newJob.salary}
+                    onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
+                    placeholder="e.g., $120,000 - $150,000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newJob.deadline}
+                    onChange={(e) => setNewJob({ ...newJob, deadline: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Description *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newJob.description}
+                    onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                    placeholder="Describe the role, responsibilities, and what you're looking for..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Requirements *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={newJob.requirements}
+                    onChange={(e) => setNewJob({ ...newJob, requirements: e.target.value })}
+                    placeholder="List the required skills, qualifications, and experience..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 mt-6">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Post Job
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPostJobModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Interview Modal */}
+      {showScheduleInterviewModal && selectedApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Schedule Interview</h3>
+              <button
+                onClick={() => {
+                  setShowScheduleInterviewModal(false);
+                  setSelectedApplication(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
+              <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
+            </div>
+
+            <form onSubmit={handleScheduleInterview}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
                     <input
                       type="date"
+                      required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.deadline}
-                      onChange={(e) => setNewJob({ ...newJob, deadline: e.target.value })}
+                      value={interviewData.date}
+                      onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
                       min={new Date().toISOString().split('T')[0]}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Description *</label>
-                    <textarea
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
+                    <input
+                      type="time"
                       required
-                      rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.description}
-                      onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-                      placeholder="Describe the role, responsibilities, and what you're looking for..."
+                      value={interviewData.time}
+                      onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
                     />
                   </div>
+                </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                  <input
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={interviewData.duration}
+                    onChange={(e) => setInterviewData({ ...interviewData, duration: e.target.value })}
+                    placeholder="60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Interviewer Name *</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={interviewData.interviewer}
+                    onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
+                    placeholder="e.g., Sarah Johnson"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Interview Mode</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={interviewData.mode}
+                    onChange={(e) => setInterviewData({ ...interviewData, mode: e.target.value })}
+                  >
+                    <option value="virtual">Virtual/Online</option>
+                    <option value="in-person">In-person</option>
+                    <option value="phone">Phone</option>
+                  </select>
+                </div>
+
+                {interviewData.mode === 'virtual' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Requirements *</label>
-                    <textarea
-                      required
-                      rows={4}
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
+                    <input
+                      type="url"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.requirements}
-                      onChange={(e) => setNewJob({ ...newJob, requirements: e.target.value })}
-                      placeholder="List the required skills, qualifications, and experience..."
+                      value={interviewData.meetingLink}
+                      onChange={(e) => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
+                      placeholder="https://meet.google.com/abc-defg-hij"
                     />
                   </div>
-                </div>
+                )}
 
-                <div className="flex items-center space-x-3 mt-6">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Post Job
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPostJobModal(false)}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={interviewData.notes}
+                    onChange={(e) => setInterviewData({ ...interviewData, notes: e.target.value })}
+                    placeholder="Any special instructions or topics to cover..."
+                  />
                 </div>
-              </form>
-            </div>
-          </div>
-        )
-      }
+              </div>
 
-      {/* Schedule Interview Modal */}
-      {
-        showScheduleInterviewModal && selectedApplication && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Schedule Interview</h3>
+              <div className="flex items-center space-x-3 mt-6">
                 <button
+                  type="submit"
+                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Schedule Interview
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setShowScheduleInterviewModal(false);
                     setSelectedApplication(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  ✕
+                  Cancel
                 </button>
               </div>
-
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
-                <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
-              </div>
-
-              <form onSubmit={handleScheduleInterview}>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                      <input
-                        type="date"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={interviewData.date}
-                        onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
-                      <input
-                        type="time"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={interviewData.time}
-                        onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                    <input
-                      type="number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.duration}
-                      onChange={(e) => setInterviewData({ ...interviewData, duration: e.target.value })}
-                      placeholder="60"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Interviewer Name *</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.interviewer}
-                      onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
-                      placeholder="e.g., Sarah Johnson"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Interview Mode</label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.mode}
-                      onChange={(e) => setInterviewData({ ...interviewData, mode: e.target.value })}
-                    >
-                      <option value="virtual">Virtual/Online</option>
-                      <option value="in-person">In-person</option>
-                      <option value="phone">Phone</option>
-                    </select>
-                  </div>
-
-                  {interviewData.mode === 'virtual' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
-                      <input
-                        type="url"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        value={interviewData.meetingLink}
-                        onChange={(e) => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
-                        placeholder="https://meet.google.com/abc-defg-hij"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                    <textarea
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.notes}
-                      onChange={(e) => setInterviewData({ ...interviewData, notes: e.target.value })}
-                      placeholder="Any special instructions or topics to cover..."
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 mt-6">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Schedule Interview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowScheduleInterviewModal(false);
-                      setSelectedApplication(null);
-                    }}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Reject Application Modal */}
-      {
-        showRejectModal && selectedApplication && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Reject Application</h3>
+      {showRejectModal && selectedApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Reject Application</h3>
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setSelectedApplication(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-red-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
+              <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
+            </div>
+
+            <form onSubmit={handleRejectApplication}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Please provide a reason for rejecting this application..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 mt-6">
                 <button
+                  type="submit"
+                  className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Reject Application
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setShowRejectModal(false);
                     setSelectedApplication(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  ✕
+                  Cancel
                 </button>
               </div>
-
-              <div className="mb-4 p-3 bg-red-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
-                <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
-              </div>
-
-              <form onSubmit={handleRejectApplication}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason *</label>
-                    <textarea
-                      required
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      placeholder="Please provide a reason for rejecting this application..."
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 mt-6">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    Reject Application
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowRejectModal(false);
-                      setSelectedApplication(null);
-                    }}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Assign Project Modal */}
-      {
-        showAssignProjectModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Assign Project</h3>
-                <button onClick={() => setShowAssignProjectModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-              </div>
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800 font-medium">Assigning to: {selectedEmployeeForProject?.name}</p>
-                <p className="text-xs text-blue-600">{selectedEmployeeForProject?.position}</p>
-              </div>
-              <form onSubmit={handleAssignProject}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={projectData.title}
-                      onChange={(e) => setProjectData({ ...projectData, title: e.target.value })}
-                      required
-                      placeholder="e.g. AI Module Development"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role in Project</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={projectData.role}
-                      onChange={(e) => setProjectData({ ...projectData, role: e.target.value })}
-                      required
-                      placeholder="e.g. Lead Developer"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      rows={3}
-                      value={projectData.description}
-                      onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
-                      required
-                      placeholder="Project details..."
-                    ></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
-                    <input
-                      type="date"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={projectData.deadline}
-                      onChange={(e) => setProjectData({ ...projectData, deadline: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                    Confirm Assignment
-                  </button>
-                </div>
-              </form>
+      {showAssignProjectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Assign Project</h3>
+              <button onClick={() => setShowAssignProjectModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
-          </div>
-        )
-      }
-
-      {/* Edit Employee Modal */}
-      {
-        showEditEmployeeModal && selectedEmployee && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Employee</h3>
-              <form onSubmit={handleUpdateEmployee} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={selectedEmployee.name}
-                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Department</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={selectedEmployee.department}
-                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, department: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Position</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={selectedEmployee.position}
-                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, position: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={selectedEmployee.phone || ''}
-                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, phone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Salary</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={selectedEmployee.salary || ''}
-                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, salary: e.target.value })}
-                  />
-                </div>
-                <div className="flex justify-end space-x-3 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditEmployeeModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium">Assigning to: {selectedEmployeeForProject?.name}</p>
+              <p className="text-xs text-blue-600">{selectedEmployeeForProject?.position}</p>
             </div>
-          </div>
-        )
-      }
-
-      {/* View Employee Detail Modal */}
-      {
-        showViewEmployeeModal && selectedEmployee && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative">
-              <button
-                onClick={() => setShowViewEmployeeModal(false)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold">
-                  {selectedEmployee.name.charAt(0)}
+            <form onSubmit={handleAssignProject}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={projectData.title}
+                    onChange={(e) => setProjectData({ ...projectData, title: e.target.value })}
+                    required
+                    placeholder="e.g. AI Module Development"
+                  />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{selectedEmployee.name}</h3>
-                  <p className="text-gray-500">{selectedEmployee.position} • {selectedEmployee.department}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role in Project</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={projectData.role}
+                    onChange={(e) => setProjectData({ ...projectData, role: e.target.value })}
+                    required
+                    placeholder="e.g. Lead Developer"
+                  />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 border-b pb-2">Contact Information</h4>
-                  <div>
-                    <p className="text-xs text-gray-500">Email</p>
-                    <p className="text-gray-900">{selectedEmployee.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Phone</p>
-                    <p className="text-gray-900">{selectedEmployee.phone || 'N/A'}</p>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    value={projectData.description}
+                    onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
+                    required
+                    placeholder="Project details..."
+                  ></textarea>
                 </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 border-b pb-2">Employment Details</h4>
-                  <div>
-                    <p className="text-xs text-gray-500">Joining Date</p>
-                    <p className="text-gray-900">{selectedEmployee.joiningDate}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Current Salary</p>
-                    <p className="text-gray-900">{selectedEmployee.salary || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Current Project</p>
-                    <p className="text-gray-900">{selectedEmployee.project || 'Unassigned'}</p>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={projectData.deadline}
+                    onChange={(e) => setProjectData({ ...projectData, deadline: e.target.value })}
+                    required
+                  />
                 </div>
-
-                <div className="col-span-2 space-y-4">
-                  <h4 className="font-semibold text-gray-900 border-b pb-2">Attendance & Status</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500">Status</p>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {selectedEmployee.status}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Today's Attendance</p>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.attendanceStatus === 'Present' ? 'bg-green-100 text-green-700' :
-                        selectedEmployee.attendanceStatus === 'Checked Out' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
-                        {selectedEmployee.attendanceStatus || 'Absent'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Last Active</p>
-                      <p className="text-gray-900">{selectedEmployee.lastActive || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-span-2 space-y-4 mt-2">
-                  <h4 className="font-semibold text-gray-900 border-b pb-2 flex justify-between items-center">
-                    Skills & Proficiency Ratings
-                    <Zap size={16} className="text-amber-500" />
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {selectedEmployeeSkills && selectedEmployeeSkills.length > 0 ? (
-                      selectedEmployeeSkills.map((skill: any) => (
-                        <div key={skill._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
-                          <div>
-                            <p className="text-sm font-bold text-gray-800">{skill.name}</p>
-                            <p className="text-[10px] text-gray-500 uppercase font-black">{skill.category}</p>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <div className="flex gap-0.5 text-amber-500">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  size={12}
-                                  fill={i < skill.currentLevel ? "currentColor" : "none"}
-                                  className={i < skill.currentLevel ? "" : "text-gray-300"}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-[10px] font-bold text-gray-400 mt-1">LVL {skill.currentLevel}/5</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-400 italic col-span-2">No skills data available for this employee.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex justify-between items-center border-t pt-6">
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowViewEmployeeModal(false); // Close view modal
-                      setShowEditEmployeeModal(true); // Open edit modal
-                    }}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium flex items-center"
-                  >
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedEmployeeForProject(selectedEmployee);
-                      setShowAssignProjectModal(true);
-                      // Keep view modal open or close? Usually keep open or close depending on preference. 
-                      // Let's close it to focus on the new task.
-                      setShowViewEmployeeModal(false);
-                    }}
-                    className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium flex items-center"
-                  >
-                    Assign Project
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedEmployeeForTask(selectedEmployee);
-                      setShowAssignTaskModal(true);
-                      setShowViewEmployeeModal(false);
-                    }}
-                    className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium flex items-center"
-                  >
-                    Assign Task
-                  </button>
-                </div>
-                <button
-                  onClick={() => setShowViewEmployeeModal(false)}
-                  className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 text-sm font-medium"
-                >
-                  Close
+                <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                  Confirm Assignment
                 </button>
               </div>
-            </div>
+            </form>
           </div>
-        )
-      }
-      {
-        showAssignTaskModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Assign Task</h3>
-                <button onClick={() => setShowAssignTaskModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditEmployeeModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Employee</h3>
+            <form onSubmit={handleUpdateEmployee} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedEmployee.name}
+                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })}
+                />
               </div>
-              <form onSubmit={handleAssignTask}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      value={taskData.title}
-                      onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Today, Tomorrow, or YYYY-MM-DD"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      value={taskData.due}
-                      onChange={(e) => setTaskData({ ...taskData, due: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                    <select
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      value={taskData.priority}
-                      onChange={(e) => setTaskData({ ...taskData, priority: e.target.value })}
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-                  <button type="submit" className="w-full bg-amber-500 text-white py-2 px-4 rounded-lg hover:bg-amber-600 transition-colors">
-                    Assign Task
-                  </button>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Department</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-lg"
+                    value={selectedEmployee.department}
+                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, department: e.target.value })}
+                  />
                 </div>
-              </form>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Position</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-lg"
+                    value={selectedEmployee.position}
+                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, position: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedEmployee.phone || ''}
+                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Salary</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedEmployee.salary || ''}
+                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, salary: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditEmployeeModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Employee Detail Modal */}
+      {showViewEmployeeModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative">
+            <button
+              onClick={() => setShowViewEmployeeModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold">
+                {selectedEmployee.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">{selectedEmployee.name}</h3>
+                <p className="text-gray-500">{selectedEmployee.position} • {selectedEmployee.department}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 border-b pb-2">Contact Information</h4>
+                <div>
+                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="text-gray-900">{selectedEmployee.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Phone</p>
+                  <p className="text-gray-900">{selectedEmployee.phone || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 border-b pb-2">Employment Details</h4>
+                <div>
+                  <p className="text-xs text-gray-500">Joining Date</p>
+                  <p className="text-gray-900">{selectedEmployee.joiningDate}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Current Salary</p>
+                  <p className="text-gray-900">{selectedEmployee.salary || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Current Project</p>
+                  <p className="text-gray-900">{selectedEmployee.project || 'Unassigned'}</p>
+                </div>
+              </div>
+
+              <div className="col-span-2 space-y-4">
+                <h4 className="font-semibold text-gray-900 border-b pb-2">Attendance & Status</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Status</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {selectedEmployee.status}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Today's Attendance</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.attendanceStatus === 'Present' ? 'bg-green-100 text-green-700' :
+                      selectedEmployee.attendanceStatus === 'Checked Out' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                      {selectedEmployee.attendanceStatus || 'Absent'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Last Active</p>
+                    <p className="text-gray-900">{selectedEmployee.lastActive || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-2 space-y-4 mt-2">
+                <h4 className="font-semibold text-gray-900 border-b pb-2 flex justify-between items-center">
+                  Skills & Proficiency Ratings
+                  <Zap size={16} className="text-amber-500" />
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedEmployeeSkills && selectedEmployeeSkills.length > 0 ? (
+                    selectedEmployeeSkills.map((skill: any) => (
+                      <div key={skill._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">{skill.name}</p>
+                          <p className="text-[10px] text-gray-500 uppercase font-black">{skill.category}</p>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="flex gap-0.5 text-amber-500">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={12}
+                                fill={i < skill.currentLevel ? "currentColor" : "none"}
+                                className={i < skill.currentLevel ? "" : "text-gray-300"}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-bold text-gray-400 mt-1">LVL {skill.currentLevel}/5</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-400 italic col-span-2">No skills data available for this employee.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-between items-center border-t pt-6">
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowViewEmployeeModal(false); // Close view modal
+                    setShowEditEmployeeModal(true); // Open edit modal
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium flex items-center"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedEmployeeForProject(selectedEmployee);
+                    setShowAssignProjectModal(true);
+                    // Keep view modal open or close? Usually keep open or close depending on preference. 
+                    // Let's close it to focus on the new task.
+                    setShowViewEmployeeModal(false);
+                  }}
+                  className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium flex items-center"
+                >
+                  Assign Project
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedEmployeeForTask(selectedEmployee);
+                    setShowAssignTaskModal(true);
+                    setShowViewEmployeeModal(false);
+                  }}
+                  className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium flex items-center"
+                >
+                  Assign Task
+                </button>
+              </div>
+              <button
+                onClick={() => setShowViewEmployeeModal(false)}
+                className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 text-sm font-medium"
+              >
+                Close
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
+      {showAssignTaskModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Assign Task</h3>
+              <button onClick={() => setShowAssignTaskModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleAssignTask}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    value={taskData.title}
+                    onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Today, Tomorrow, or YYYY-MM-DD"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    value={taskData.due}
+                    onChange={(e) => setTaskData({ ...taskData, due: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    value={taskData.priority}
+                    onChange={(e) => setTaskData({ ...taskData, priority: e.target.value })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <button type="submit" className="w-full bg-amber-500 text-white py-2 px-4 rounded-lg hover:bg-amber-600 transition-colors">
+                  Assign Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout >
   );
 };

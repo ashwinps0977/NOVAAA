@@ -33,12 +33,43 @@ const jobApplicationSchema = new mongoose.Schema({
   skills: [String],
   resumeUrl: String,
   resumeFileName: String,
-  parsedSkills: [String], // Skills extracted from resume
+  matchedSkills: [String],
+  parsedSkills: [String],
   matchPercentage: {
     type: Number,
     default: 0
   },
-  matchedSkills: [String],
+  // Detailed AI Analysis Fields
+  candidateDetails: {
+    location: String,
+    education: [{
+      degree: String,
+      institution: String,
+      year: String
+    }],
+    experience: [{
+      title: String,
+      company: String,
+      duration: String,
+      responsibilities: String
+    }],
+    projects: [{
+      title: String,
+      description: String,
+      technologies: [String]
+    }],
+    certifications: [String]
+  },
+  scoreBreakdown: {
+    skills: { type: Number, default: 0 },
+    experience: { type: Number, default: 0 },
+    education: { type: Number, default: 0 },
+    projects: { type: Number, default: 0 }
+  },
+  aiRecommendations: String,
+  strengths: [String],
+  gaps: [String],
+  analysisSummary: String,
   status: {
     type: String,
     enum: ['pending', 'shortlisted', 'rejected', 'interview-scheduled', 'hired'],
