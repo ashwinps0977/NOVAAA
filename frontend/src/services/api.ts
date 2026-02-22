@@ -1,5 +1,5 @@
 // api.ts - FINAL CLEAN VERSION FOR MONGODB
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE_URL as API_URL } from '../config';
 
 export interface UserData {
   name: string;
@@ -76,7 +76,7 @@ export const authAPI = {
       // Check if data was saved to MongoDB
       if (result.message && result.message.includes('MongoDB')) {
         console.log('✅ SUCCESS: User saved to MongoDB!');
-        console.log('📊 Check users at: http://localhost:5000/api/users');
+        console.log(`📊 Check users at: ${API_URL}/users`);
       } else if (result.message && result.message.includes('TEST')) {
         console.warn('⚠️  WARNING: Data in MEMORY only (will be lost on restart)');
         console.warn('⚠️  MongoDB is not saving data!');

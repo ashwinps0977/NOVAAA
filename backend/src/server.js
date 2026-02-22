@@ -14,9 +14,9 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - Allow all origins for local network access
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: true, // Dynamically allow the requesting origin
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -634,9 +634,9 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 API Base URL: http://localhost:${PORT}/api`);
+  console.log(`� Accessible on local network at: http://0.0.0.0:${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🗄️  DB Status: http://localhost:${PORT}/api/db-status`);
   console.log(`👥 Users: http://localhost:${PORT}/api/users`);

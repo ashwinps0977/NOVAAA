@@ -17,6 +17,7 @@ import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
 import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
 import SearchDropdown from '../components/common/SearchDropdown';
 import { jobRoles } from '../data/jobRoles';
+import { API_BASE_URL } from '../config';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -122,7 +123,7 @@ const HRDashboard = () => {
         try {
           const token = localStorage.getItem('token');
           const empId = selectedEmployee._id || selectedEmployee.id;
-          const res = await fetch(`http://localhost:5000/api/skills/employee/${empId}`, {
+          const res = await fetch(`${API_BASE_URL}/skills/employee/${empId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await res.json();
@@ -156,7 +157,7 @@ const HRDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/attendance/hr-mark', {
+      const response = await fetch(`${API_BASE_URL}/attendance/hr-mark`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -189,7 +190,7 @@ const HRDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/ai/chat', {
+      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +265,7 @@ const HRDashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/hr-analytics/dashboard-stats', {
+      const response = await fetch(`${API_BASE_URL}/hr-analytics/dashboard-stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -281,7 +282,7 @@ const HRDashboard = () => {
   const fetchLeaves = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/leave/all', {
+      const response = await fetch(`${API_BASE_URL}/leave/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -296,7 +297,7 @@ const HRDashboard = () => {
   const fetchProjects = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_BASE_URL}/projects`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -313,7 +314,7 @@ const HRDashboard = () => {
   const handleUpdateLeaveStatus = async (id: string, status: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/leave/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/leave/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -370,7 +371,7 @@ const HRDashboard = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/hr/employees', {
+      const response = await fetch(`${API_BASE_URL}/hr/employees`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -397,7 +398,7 @@ const HRDashboard = () => {
   const loadPostedJobs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/jobs', {
+      const response = await fetch(`${API_BASE_URL}/jobs`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -420,7 +421,7 @@ const HRDashboard = () => {
   const loadApplications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/applications', {
+      const response = await fetch(`${API_BASE_URL}/applications`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -450,7 +451,7 @@ const HRDashboard = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/hr/employees', {
+      const response = await fetch(`${API_BASE_URL}/hr/employees`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -522,7 +523,7 @@ const HRDashboard = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/jobs', {
+      const response = await fetch(`${API_BASE_URL}/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -581,7 +582,7 @@ const HRDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const appId = selectedApplication.id || selectedApplication._id;
-      const response = await fetch(`http://localhost:5000/api/applications/${appId}/schedule-interview`, {
+      const response = await fetch(`${API_BASE_URL}/applications/${appId}/schedule-interview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -624,7 +625,7 @@ const HRDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_BASE_URL}/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -664,7 +665,7 @@ const HRDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const appId = selectedApplication.id || selectedApplication._id;
-      const response = await fetch(`http://localhost:5000/api/applications/${appId}/reject`, {
+      const response = await fetch(`${API_BASE_URL}/applications/${appId}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -700,7 +701,7 @@ const HRDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const empId = selectedEmployee._id || selectedEmployee.id;
-      const response = await fetch(`http://localhost:5000/api/hr/employees/${empId}`, {
+      const response = await fetch(`${API_BASE_URL}/hr/employees/${empId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -730,7 +731,7 @@ const HRDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const empId = selectedEmployeeForTask._id || selectedEmployeeForTask.id;
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -757,7 +758,7 @@ const HRDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       // Call backend to mark attendance checkout
-      await fetch('http://localhost:5000/api/auth/logout', {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1312,7 +1313,7 @@ const HRDashboard = () => {
                             Reject
                           </button>
                           <a
-                            href={`http://localhost:5000${application.resumeUrl}`}
+                            href={`${API_BASE_URL.replace('/api', '')}${application.resumeUrl}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 text-center"

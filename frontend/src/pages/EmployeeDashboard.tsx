@@ -28,6 +28,7 @@ import {
   Send,
   Star
 } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import SalarySection from '../components/dashboard/SalarySection';
@@ -118,7 +119,7 @@ const EmployeeDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       // Use standard fetch to backend
-      const response = await fetch('http://localhost:5000/api/ai/chat', {
+      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ const EmployeeDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -200,7 +201,7 @@ const EmployeeDashboard = () => {
   const fetchGoals = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/goals/my-goals', {
+      const response = await fetch(`${API_BASE_URL}/goals/my-goals`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -216,7 +217,7 @@ const EmployeeDashboard = () => {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/notifications', {
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -250,7 +251,7 @@ const EmployeeDashboard = () => {
     try {
       setAttendanceLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/attendance/my-history', {
+      const response = await fetch(`${API_BASE_URL}/attendance/my-history`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -305,7 +306,7 @@ const EmployeeDashboard = () => {
   const handleDownloadReport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/attendance/download-report', {
+      const response = await fetch(`${API_BASE_URL}/attendance/download-report`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -336,7 +337,7 @@ const EmployeeDashboard = () => {
     try {
       setLeaveLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/leave/my-leaves', {
+      const response = await fetch(`${API_BASE_URL}/leave/my-leaves`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -365,7 +366,7 @@ const EmployeeDashboard = () => {
   const fetchMyProjects = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/projects/my-projects', {
+      const response = await fetch(`${API_BASE_URL}/projects/my-projects`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -383,7 +384,7 @@ const EmployeeDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${projectUpdateModal.project._id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectUpdateModal.project._id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -449,7 +450,7 @@ const EmployeeDashboard = () => {
   const fetchMyTasks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks/my-tasks', {
+      const response = await fetch(`${API_BASE_URL}/tasks/my-tasks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -483,7 +484,7 @@ const EmployeeDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/leave/apply', {
+      const response = await fetch(`${API_BASE_URL}/leave/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -512,7 +513,7 @@ const EmployeeDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/leave/${id}/cancel`, {
+      const response = await fetch(`${API_BASE_URL}/leave/${id}/cancel`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -537,7 +538,7 @@ const EmployeeDashboard = () => {
     // Attempt to check out before logging out
     try {
       const token = localStorage.getItem('token');
-      await fetch('http://localhost:5000/api/attendance/checkout', {
+      await fetch(`${API_BASE_URL}/attendance/checkout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -722,7 +723,7 @@ const EmployeeDashboard = () => {
         const handleCheckIn = async () => {
           try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/attendance/checkin', {
+            const response = await fetch(`${API_BASE_URL}/attendance/checkin`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -741,7 +742,7 @@ const EmployeeDashboard = () => {
         const handleCheckOut = async () => {
           try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/attendance/checkout', {
+            const response = await fetch(`${API_BASE_URL}/attendance/checkout`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
             });
