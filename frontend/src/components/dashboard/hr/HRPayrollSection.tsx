@@ -8,6 +8,7 @@ import {
 import PayrollAIInsights from './PayrollAIInsights';
 import SalaryComponentsManager from './SalaryComponentsManager';
 import PayslipTemplate from './PayslipTemplate';
+import { API_BASE_URL } from '../../../config';
 
 const HRPayrollSection = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'run-payroll' | 'structures' | 'insights' | 'components'>('overview');
@@ -40,7 +41,7 @@ const HRPayrollSection = () => {
     const fetchStructures = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/salary/structures', {
+            const res = await fetch(`${API_BASE_URL}/salary/structures`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -70,7 +71,7 @@ const HRPayrollSection = () => {
                 }
             };
 
-            const res = await fetch('http://localhost:5000/api/salary/structure', {
+            const res = await fetch(`${API_BASE_URL}/salary/structure`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ const HRPayrollSection = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/salary/generate-payroll', {
+            const res = await fetch(`${API_BASE_URL}/salary/generate-payroll`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ const HRPayrollSection = () => {
         if (!payrollData?.payroll?._id) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/salary/payroll-status', {
+            const res = await fetch(`${API_BASE_URL}/salary/payroll-status`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -20,6 +20,7 @@ import {
     BarElement,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import { API_BASE_URL } from '../../../config';
 
 ChartJS.register(
     CategoryScale,
@@ -46,7 +47,7 @@ const PayrollAIInsights = () => {
     const fetchInsights = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/ai/insights', {
+            const res = await fetch(`${API_BASE_URL}/ai/insights`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -69,7 +70,7 @@ const PayrollAIInsights = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/ai/query', {
+            const res = await fetch(`${API_BASE_URL}/ai/query`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

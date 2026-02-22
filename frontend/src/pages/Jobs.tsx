@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Navbar from "../components/Navbar";
+import { API_BASE_URL } from '../config';
 import {
   Search,
   Filter,
@@ -76,7 +77,7 @@ const Jobs = () => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/jobs');
+        const response = await fetch(`${API_BASE_URL}/jobs`);
         if (response.ok) {
           const data = await response.json();
           setJobs(data.jobs || []);
@@ -185,7 +186,7 @@ const Jobs = () => {
         formData.append('resume', applicationData.resume);
       }
 
-      const response = await fetch('http://localhost:5000/api/applications/apply', {
+      const response = await fetch(`${API_BASE_URL}/applications/apply`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : ''

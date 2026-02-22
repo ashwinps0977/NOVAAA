@@ -6,6 +6,7 @@ import {
     Save, CheckCircle, ChevronRight, Upload, Download,
     Smartphone, History, Lock
 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }) => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -28,7 +29,7 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
     const fetchSettings = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/settings', {
+            const res = await fetch(`${API_BASE_URL}/settings`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -45,7 +46,7 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
         setMessage('');
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5000/api/settings/${category}`, {
+            const res = await fetch(`${API_BASE_URL}/settings/${category}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

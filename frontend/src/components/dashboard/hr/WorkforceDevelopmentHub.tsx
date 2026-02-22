@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, BookOpen, Users, Plus, X, AlertCircle, CheckCircle, RefreshCw, ChevronRight } from 'lucide-react';
+import { API_BASE_URL } from '../../../config';
 import SearchDropdown from '../../common/SearchDropdown';
 
 
@@ -41,7 +42,7 @@ interface TrainingAssignment {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const API = 'http://localhost:5000';
+const API = API_BASE_URL.replace('/api', '');
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',

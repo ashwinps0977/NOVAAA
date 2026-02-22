@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Download, Calendar, Send, Briefcase, Landmark, ShieldCheck, FileText, TrendingUp, Wallet, Receipt, Percent, Scale, CreditCard } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { API_BASE_URL } from '../../config';
 
 const SalarySection = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'payslips' | 'queries'>('overview');
@@ -25,7 +26,7 @@ const SalarySection = () => {
     const fetchLatestSalary = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/salary/latest', {
+            const response = await fetch(`${API_BASE_URL}/salary/latest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -40,7 +41,7 @@ const SalarySection = () => {
     const fetchSalaryHistory = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/salary/history', {
+            const response = await fetch(`${API_BASE_URL}/salary/history`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -55,7 +56,7 @@ const SalarySection = () => {
     const fetchQueries = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/salary/queries', {
+            const response = await fetch(`${API_BASE_URL}/salary/queries`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -149,7 +150,7 @@ const SalarySection = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/salary/query', {
+            const response = await fetch(`${API_BASE_URL}/salary/query`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
