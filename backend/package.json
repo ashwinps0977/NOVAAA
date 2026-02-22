@@ -24,7 +24,8 @@
     "multer": "^2.0.2",
     "node-nlp": "^5.0.0-alpha.5",
     "nodemailer": "^7.0.12",
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^2.4.5",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -8,8 +8,14 @@ const authRoutes = require('./routes/authRoutes');
 const hrRoutes = require('./routes/hrRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
+const socketService = require('./services/socketService');
+const dbWatcherPlugin = require('./services/dbWatcherService');
 
 const app = express();
+const http = require('http').createServer(app);
+
+// Apply Global DB Watcher
+mongoose.plugin(dbWatcherPlugin);
 
 // Security middleware
 app.use(helmet());
@@ -632,9 +638,12 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize WebSockets
+socketService.init(http);
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, '0.0.0.0', () => {
+http.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`� Accessible on local network at: http://0.0.0.0:${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);

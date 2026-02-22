@@ -3,6 +3,8 @@ const Leave = require('../models/Leave');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
 const ragService = require('../services/ragService');
+const dbIntrospectionService = require('../services/dbIntrospectionService');
+
 // Initialize NLP Manager
 const manager = new NlpManager({ languages: ['en'], forceNER: true });
 
@@ -135,154 +137,81 @@ exports.processChat = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Message is required' });
         }
 
-        // 1. Fetch User and Employee Data for Context
-        const user = await User.findById(userId);
-        const employee = await Employee.findOne({ email: user.email });
+        // 1. Core Data Retrieval
+        const [user, employee, dbContext, hrStats, relevantPolicyChunks] = await Promise.all([
+            User.findById(userId),
+            Employee.findOne({ email: (await User.findById(userId)).email }),
+            dbIntrospectionService.getUniversalContext(),
+            dbIntrospectionService.getHRStats(),
+            ragService.retrieveContext(message)
+        ]);
 
-        // 2. Load Organization Models for HR
-        const JobApplication = require('../models/JobApplication');
-
-        // 3. Retrieve Policy Context using RAG
-        const relevantPolicyChunks = await ragService.retrieveContext(message);
-        const policyContext = relevantPolicyChunks.map(c => `[Source: ${c.source}] ${c.text}`).join('\n\n');
-
-        // 4. Process with NLP for Intent-based Actions
+        // 2. Intent Detection
         const nlpResponse = await manager.process('en', message);
-        console.log(`🤖 AI Debug | Intent: ${nlpResponse.intent || 'None'} | Role: ${userRole}`);
+        console.log(`🤖 Manual AI | Intent: ${nlpResponse.intent || 'None'} | Role: ${userRole}`);
 
         let action = null;
-        let data = {};
+        let actionData = {};
+        let reply = "";
         const intent = nlpResponse.intent;
 
-        // 5. Handle Specific Actions (Opening Modals, etc.)
+        // 3. UI Action Handling (Modal triggers)
         if ((intent === 'leave.open_modal' || intent === 'leave.apply') && userRole !== 'hr') {
             action = "OPEN_LEAVE_MODAL";
-            if (intent === 'leave.apply') {
-                // Attempt Entity Extraction
-                let type = 'Sick'; // Default
-                if (message.toLowerCase().includes('casual')) type = 'Casual';
-                if (message.toLowerCase().includes('earned') || message.toLowerCase().includes('vacation')) type = 'Earned';
-                if (message.toLowerCase().includes('unpaid')) type = 'Unpaid';
+        }
 
-                // Extract Dates
-                const dateRangeRegex = /from\s+(\d{1,2}(?:st|nd|rd|th)?)\s+(?:to|-)\s+(\d{1,2}(?:st|nd|rd|th)?)\s+([a-zA-Z]+)\s+(\d{4})/i;
-                const singleDateRegex = /(?:on|for)\s+(\d{1,2}(?:st|nd|rd|th)?)\s+([a-zA-Z]+)\s+(\d{4})/i;
+        // 4. MANUAL RESPONSE GENERATION (Rule-based)
+        if (intent === 'hr.employee_count') {
+            reply = `The organization currently has **${hrStats.employeeCount}** employees across all departments.`;
+        } else if (intent === 'hr.recruitment_stat') {
+            reply = `We have **${hrStats.activeJobs}** active job postings and **${hrStats.pendingApplications}** applications under review.`;
+        } else if (intent === 'hr.payroll_total') {
+            reply = `The total annual payroll liability is **$${hrStats.totalPayroll.toLocaleString()}**.`;
+        } else if (intent === 'leave.balance' && userRole !== 'hr') {
+            const sick = employee?.leaveBalances?.Sick || 12;
+            const casual = employee?.leaveBalances?.Casual || 12;
+            const earned = employee?.leaveBalances?.Earned || 10;
+            reply = `Your current leave balances are:\n- **Sick Leave**: ${sick} days\n- **Casual Leave**: ${casual} days\n- **Earned Leave**: ${earned} days.`;
+        } else if (message.toLowerCase().includes('total summary') || message.toLowerCase().includes('database overview')) {
+            const overview = Object.entries(dbContext)
+                .map(([name, info]) => `- **${name}**: ${info.count} documents (${info.fields.slice(0, 3).join(', ')}...)`)
+                .join('\n');
+            reply = `### Global Database Overview\n\nI have access to **${Object.keys(dbContext).length}** collections:\n\n${overview}`;
+        } else if (relevantPolicyChunks.length > 0) {
+            // Priority to RAG for policy questions
+            const topChunk = relevantPolicyChunks[0];
+            reply = `**Policy Information (${topChunk.source})**:\n\n${topChunk.text}\n\n*(Sourced from local policy records)*`;
+        }
 
-                const rangeMatch = message.match(dateRangeRegex);
-                const singleMatch = message.match(singleDateRegex);
+        // 5. Dynamic Collection Summarization (Fallback)
+        if (!reply) {
+            const modelNames = Object.keys(dbContext);
+            const matchedModel = modelNames.find(name => message.toLowerCase().includes(name.toLowerCase()));
 
-                if (rangeMatch) {
-                    const startDay = rangeMatch[1];
-                    const endDay = rangeMatch[2];
-                    const month = rangeMatch[3];
-                    const year = rangeMatch[4];
-
-                    data.startDate = parseDateString(startDay, month, year);
-                    data.endDate = parseDateString(endDay, month, year);
-                } else if (singleMatch) {
-                    const day = singleMatch[1];
-                    const month = singleMatch[2];
-                    const year = singleMatch[3];
-
-                    const date = parseDateString(day, month, year);
-                    data.startDate = date;
-                    data.endDate = date;
-                } else {
-                    // Try relative dates
-                    const msgLower = message.toLowerCase();
-                    if (msgLower.includes('tomorrow')) {
-                        const d = new Date(); d.setDate(d.getDate() + 1);
-                        data.startDate = d.toISOString().split('T')[0];
-                        data.endDate = d.toISOString().split('T')[0];
-                    } else if (msgLower.includes('today')) {
-                        const d = new Date();
-                        data.startDate = d.toISOString().split('T')[0];
-                        data.endDate = d.toISOString().split('T')[0];
-                    }
-                }
-
-                // Reason Extraction (Simple heuristic)
-                let reason = '';
-                if (message.toLowerCase().includes('due to')) reason = message.split(/due to/i)[1].trim();
-                else if (message.toLowerCase().includes('for')) {
-                    const parts = message.split(/for/i);
-                    if (parts.length > 1 && !['sick', 'casual', 'earned', 'leave'].some(k => parts[1].trim().startsWith(k))) {
-                        reason = parts[parts.length - 1].trim();
-                    }
-                }
-
-                data.type = type;
-                data.reason = reason;
+            if (matchedModel) {
+                reply = await dbIntrospectionService.summarizeCollection(matchedModel);
+                reply = `### ${matchedModel} Summary\n\n` + reply;
             }
         }
 
-        // 6. Generate Local Response (Synthesize Context + Intent + Data)
-        let reply = "";
-
-        // Strategy A: If NLP has a direct answer, use it
-        if (nlpResponse.answer) {
-            reply = nlpResponse.answer;
-        }
-
-        // Strategy B: Role-based Logic
-        if (userRole === 'hr') {
-            if (intent === 'hr.employee_count') {
-                const count = await Employee.countDocuments();
-                reply = `The organization currently has **${count}** employees across all departments.`;
-            } else if (intent === 'hr.on_leave') {
-                const today = new Date().toISOString().split('T')[0];
-                const activeLeaves = await Leave.find({
-                    startDate: { $lte: today },
-                    endDate: { $gte: today },
-                    status: 'Approved'
-                }).populate('employeeId');
-
-                if (activeLeaves.length > 0) {
-                    const names = activeLeaves.map(l => l.employeeId?.name || 'Unknown').join(', ');
-                    reply = `Today, **${activeLeaves.length}** employees are on leave: ${names}.`;
-                } else {
-                    reply = "There are no employees on leave today.";
-                }
-            } else if (intent === 'hr.payroll_total') {
-                const employees = await Employee.find();
-                const total = employees.reduce((sum, emp) => sum + (parseFloat(emp.salary) || 0), 0);
-                reply = `The total annual payroll liability is **$${total.toLocaleString()}**.`;
-            } else if (intent === 'hr.recruitment_stat') {
-                const appsCount = await JobApplication.countDocuments();
-                const pendingCount = await JobApplication.countDocuments({ status: 'under_review' });
-                reply = `We have received a total of **${appsCount}** job applications, with **${pendingCount}** currently under review.`;
-            }
-        } else {
-            // Employee specific Info
-            if (intent === 'leave.balance') {
-                const sick = employee?.leaveBalances?.Sick || 12;
-                const casual = employee?.leaveBalances?.Casual || 12;
-                const earned = employee?.leaveBalances?.Earned || 10;
-                reply = `Your current leave balances are:\n- **Sick Leave**: ${sick} days\n- **Casual Leave**: ${casual} days\n- **Earned Leave**: ${earned} days.`;
-            } else if (intent === 'employee.role') {
-                reply = `You are currently working as a **${employee?.position || 'Employee'}** in the **${employee?.department || 'General'}** department.`;
-            } else if (intent === 'employee.salary') {
-                reply = `Your current annual salary is **${employee?.salary || 'not visible here'}**. You can view more details in the Salary section.`;
-            } else if (intent === 'employee.project') {
-                reply = `You are currently assigned to the project: **${employee?.project || 'Bench'}**.`;
-            } else if (intent === 'employee.info') {
-                reply = `Your profile name is **${user.name}**. You joined the company on **${employee?.joiningDate ? new Date(employee.joiningDate).toLocaleDateString() : 'joining date not recorded'}**.`;
+        // 6. Entity Search (Deep Search) fallback
+        if (!reply) {
+            const entities = await dbIntrospectionService.findEntityByName(message);
+            if (entities.length > 0) {
+                const entity = entities[0];
+                const identifier = entity.data.name || entity.data.title || entity.data.fullName;
+                reply = `I found a matching **${entity.type}** record: **${identifier}**.\n\n`;
+                reply += "```json\n" + JSON.stringify(entity.data, (k, v) => k === 'password' ? '***' : v, 2).slice(0, 1000) + "\n```";
             }
         }
 
-        // Strategy C: Context-based Policy Matching (If no specific reply yet)
-        if (!reply || reply.toLowerCase().includes("i cannot find") || intent === 'None') {
-            if (relevantPolicyChunks.length > 0) {
-                const topChunk = relevantPolicyChunks[0];
-                reply = `According to our **${topChunk.source}**:\n\n${topChunk.text}\n\n*(Information based on company records)*`;
-            } else {
-                reply = "I'm sorry, I couldn't find specific information regarding that in our current policies. Would you like to check the 'Policies' section or contact HR?";
-            }
+        // 7. Final Response Polishing
+        if (!reply) {
+            reply = "I'm sorry, I couldn't find specific information regarding that. I have access to all system data including Employees, Jobs, Payroll, and Policies. Try asking for a 'database overview'.";
         }
 
-        // Adjust for "Open Modal" actions
         if (action === "OPEN_LEAVE_MODAL") {
-            reply = `I have opened the leave application form for you. ${reply}`;
+            reply = `I've opened the leave application form for you. ${reply}`;
         }
 
         res.json({
@@ -290,12 +219,11 @@ exports.processChat = async (req, res) => {
             reply,
             intent: intent,
             action,
-            data
+            data: actionData
         });
 
     } catch (error) {
-        console.error('AI Processing Error:', error);
-        res.status(500).json({ success: false, message: 'AI processing failed' });
+        console.error('Manual AI Processing Error:', error);
+        res.status(500).json({ success: false, message: 'Local AI processing failed' });
     }
 };
-
