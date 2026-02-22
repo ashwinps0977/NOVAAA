@@ -36,38 +36,37 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
+// Global Mongoose Configuration - DISABLE BUFFERING EARLY
+mongoose.set('bufferCommands', false);
+
 // Improved Database connection
 const connectDB = async () => {
-  try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/NOVAHR1';
+  const atlasURI = process.env.MONGODB_URI;
+  const localURI = 'mongodb://127.0.0.1:27017/NOVAHR1';
 
-    console.log(`📡 Connecting to MongoDB at: ${mongoURI}`);
-
-    await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s
-    });
-
-    console.log('✅ MongoDB connected successfully to NOVAHR1');
-
-    // Verify users collection
-    const collections = await mongoose.connection.db.listCollections().toArray();
-    const collectionNames = collections.map(c => c.name);
-
-    if (!collectionNames.includes('users')) {
-      console.log('📁 Creating users collection...');
-      await mongoose.connection.db.createCollection('users');
-      console.log('✅ Users collection created');
+  // 1. Try Atlas
+  if (atlasURI) {
+    try {
+      console.log('📡 Attempting MongoDB Atlas connection...');
+      await mongoose.connect(atlasURI, { serverSelectionTimeoutMS: 5000 });
+      console.log('✅ Connected to MongoDB Atlas');
+      return;
+    } catch (err) {
+      console.warn('⚠️ Atlas connection failed. Trying local...');
     }
+  }
 
-    console.log(`📊 Collections in NOVAHR1: ${collectionNames.join(', ')}`);
-
+  // 2. Try Local
+  try {
+    console.log('📡 Attempting Local MongoDB connection...');
+    await mongoose.connect(localURI, { serverSelectionTimeoutMS: 2000 });
+    console.log('✅ Connected to Local MongoDB');
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
+    console.error('❌ Database connection failed:', err.message);
     console.log('\n🔧 Troubleshooting:');
-    console.log('1. Make sure MongoDB is running');
-    console.log('2. Run: mongod --dbpath="C:\\data\\db"');
-    console.log('3. Or: net start MongoDB (as Administrator)');
-    console.log('\n⚠️  Starting without database - using test mode');
+    console.log('1. Make sure local MongoDB is running (net start MongoDB)');
+    console.log('2. Whitelist your IP in Atlas Cluster');
+    console.log('\n🧪 MODE: Test/Memory Mode Active');
   }
 };
 

@@ -190,5 +190,53 @@ export const authAPI = {
     } catch (error) {
       console.error('❌ Connection test failed:', error);
     }
+  },
+
+  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    const url = `${API_URL}/auth/forgot-password`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Request failed');
+      return result;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  },
+
+  resetPassword: async (token: string, password: string): Promise<{ success: boolean; message: string }> => {
+    const url = `${API_URL}/auth/reset-password`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Reset failed');
+      return result;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  },
+
+  socialLogin: async (data: { email: string; name: string; provider: string; id: string }): Promise<AuthResponse> => {
+    const url = `${API_URL}/auth/social-login`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Social login failed');
+      return result;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   }
 };

@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, ChevronDown, ChevronUp, MoreVertical, X } from 'lucide-react';
+import { Clock, ChevronDown, ChevronUp, MoreVertical, X, FileText, Download, CheckCircle2, Paperclip } from 'lucide-react';
 import type { Task } from '../../../services/taskService';
+import { API_BASE_URL } from '../../../config';
 
 interface TaskCardProps {
     task: Task;
     onEdit: (task: Task) => void;
     onDelete: (id: string) => void;
+    onStatusUpdate?: (id: string, status: string) => void;
 }
 
-const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
+const TaskCard = ({ task, onEdit, onDelete, onStatusUpdate }: TaskCardProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const {
@@ -60,6 +62,18 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
+    const getFileName = (url: string) => {
+        const parts = url.split('/');
+        const fullName = parts[parts.length - 1];
+        return fullName.split('-').slice(2).join('-') || fullName;
+    };
+
+    const handleDownload = (e: React.MouseEvent, url: string) => {
+        e.stopPropagation();
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}/${url.startsWith('/') ? url.slice(1) : url}`;
+        window.open(fullUrl, '_blank');
+    };
+
     return (
         <div
             ref={setNodeRef}
@@ -101,6 +115,12 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
                         <div className="h-full bg-amber-400 rounded-full animate-pulse" style={{ width: '45%' }}></div>
                     </div>
                 )}
+                {task.attachments && task.attachments.length > 0 && (
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full ml-auto">
+                        <Paperclip size={10} />
+                        {task.attachments.length}
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center justify-between mt-auto">
@@ -129,9 +149,44 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
                     </button>
 
                     {isExpanded && (
-                        <p className="mt-2 text-xs text-gray-600 leading-relaxed animate-fadeIn">
-                            {task.description}
-                        </p>
+                        <div className="mt-3 space-y-3 animate-fadeIn">
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                                {task.description}
+                            </p>
+
+                            {task.attachments && task.attachments.length > 0 && (
+                                <div className="space-y-2">
+                                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Attachments</h5>
+                                    <div className="space-y-1">
+                                        {task.attachments.map((url, i) => (
+                                            <div key={i} className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-100 group/file">
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    <FileText size={12} className="text-indigo-500" />
+                                                    <span className="text-[10px] font-bold text-gray-600 truncate max-w-[120px]" title={getFileName(url)}>
+                                                        {getFileName(url)}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => handleDownload(e, url)}
+                                                    className="p-1 hover:bg-indigo-50 rounded text-gray-400 hover:text-indigo-600 transition-colors"
+                                                >
+                                                    <Download size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {task.status === 'review' && onStatusUpdate && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onStatusUpdate(task._id, 'completed'); }}
+                                    className="w-full mt-2 py-2 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={12} /> Mark as Completed
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
             )}

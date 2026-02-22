@@ -29,6 +29,7 @@ import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
+import TaskDetailsModal from '../employee/TaskDetailsModal';
 import { useRealTimeSync } from '../../../hooks/useRealTimeSync';
 
 // --- Types ---
@@ -54,6 +55,8 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<Task | null>(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
 
     // Notepad State
     const [showNotepad, setShowNotepad] = useState(false);
@@ -199,7 +202,17 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
 
     const handleSaveNotes = () => {
         localStorage.setItem('hr_ops_notes', notepadContent);
-        // show toast?
+    };
+
+    const handleStatusUpdate = async (id: string, status: string) => {
+        try {
+            const res = await taskService.updateTaskStatus(id, status);
+            if (res.success) {
+                setTasks(prev => prev.map(t => t._id === id ? { ...t, status: status as any } : t));
+            }
+        } catch (err) {
+            setError('Failed to update status.');
+        }
     };
 
     // --- Sub-components ---
@@ -223,12 +236,14 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                         </div>
                     ) : (
                         items.map(task => (
-                            <TaskCard
-                                key={task._id}
-                                task={task}
-                                onEdit={(t) => { setEditingTask(t); setShowTaskModal(true); }}
-                                onDelete={handleDeleteTask}
-                            />
+                            <div key={task._id} onClick={() => { setSelectedTaskForDetails(task); setShowDetailsModal(true); }}>
+                                <TaskCard
+                                    task={task}
+                                    onEdit={(t) => { setEditingTask(t); setShowTaskModal(true); }}
+                                    onDelete={handleDeleteTask}
+                                    onStatusUpdate={handleStatusUpdate}
+                                />
+                            </div>
                         ))
                     )}
                 </div>
@@ -398,6 +413,18 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                 task={editingTask}
                 employees={employees}
             />
+
+            {selectedTaskForDetails && (
+                <TaskDetailsModal
+                    isOpen={showDetailsModal}
+                    onClose={() => { setShowDetailsModal(false); setSelectedTaskForDetails(null); }}
+                    task={selectedTaskForDetails}
+                    onTaskUpdate={(updatedTask: Task) => {
+                        setTasks(prev => prev.map(t => t._id === updatedTask._id ? updatedTask : t));
+                        setSelectedTaskForDetails(updatedTask);
+                    }}
+                />
+            )}
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }

@@ -178,7 +178,15 @@ exports.addComment = async (req, res) => {
 exports.uploadAttachment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { url } = req.body; // In a real app, this would handle file uploads
+        let url = req.body.url;
+
+        if (req.file) {
+            url = `/uploads/tasks/${req.file.filename}`;
+        }
+
+        if (!url) {
+            return res.status(400).json({ success: false, message: 'No file or URL provided' });
+        }
 
         const task = await Task.findByIdAndUpdate(
             id,

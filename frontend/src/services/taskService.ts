@@ -92,12 +92,26 @@ export const taskService = {
         });
         return response.json();
     },
-    uploadAttachment: async (id: string, url: string) => {
-        const response = await fetch(`${API_BASE}/tasks/${id}/upload`, {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify({ url }),
-        });
-        return response.json();
+    uploadAttachment: async (id: string, fileOrUrl: File | string) => {
+        if (typeof fileOrUrl === 'string') {
+            const response = await fetch(`${API_BASE}/tasks/${id}/upload`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ url: fileOrUrl }),
+            });
+            return response.json();
+        } else {
+            const formData = new FormData();
+            formData.append('file', fileOrUrl);
+
+            const response = await fetch(`${API_BASE}/tasks/${id}/upload`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: formData,
+            });
+            return response.json();
+        }
     }
 };

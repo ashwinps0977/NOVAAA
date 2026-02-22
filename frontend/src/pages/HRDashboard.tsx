@@ -1495,7 +1495,7 @@ const HRDashboard = () => {
         );
 
       case 'performance':
-        return <HRPerformanceSection />;
+        return <HRPerformanceSection onNavigate={setActiveSection} />;
 
       case 'attrition':
         return <HRAnalyticsSection />;

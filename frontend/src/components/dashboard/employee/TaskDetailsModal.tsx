@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
     X, Send, Paperclip, MessageSquare,
-    Calendar, CheckCircle2, FileText, Download
+    Calendar, CheckCircle2, FileText, Download, Loader2
 } from 'lucide-react';
 import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
+import { API_BASE_URL as API_BASE } from '../../../config';
 
 interface TaskDetailsModalProps {
     isOpen: boolean;
@@ -16,7 +17,9 @@ interface TaskDetailsModalProps {
 const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdate }: TaskDetailsModalProps) => {
     const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'attachments'>('details');
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     if (!isOpen) return null;
 
@@ -38,17 +41,33 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdate }: TaskDetailsMo
         }
     };
 
-    const handleUploadDummy = async () => {
-        // Simulating a file upload for dummy demo
-        const dummyUrl = `https://nova-docs.s3.amazonaws.com/proof_${Math.floor(Math.random() * 1000)}.pdf`;
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
         try {
-            console.log('Uploading and attaching:', dummyUrl);
-            const res = await taskService.uploadAttachment(task._id, dummyUrl);
+            const res = await taskService.uploadAttachment(task._id, file);
             if (res.success) {
-                onTaskUpdate(res.task);
+                let updatedTask = res.task;
+                // Automatically transition to 'review' if not already in review or completed
+                if (task.status === 'assigned' || task.status === 'in_progress') {
+                    const statusRes = await taskService.updateTaskStatus(task._id, 'review');
+                    if (statusRes.success) {
+                        updatedTask = statusRes.task;
+                    }
+                }
+                onTaskUpdate(updatedTask);
             }
         } catch (error) {
             console.error('Upload failed', error);
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -56,6 +75,19 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdate }: TaskDetailsMo
         return new Date(dateStr).toLocaleString('en-US', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
+    };
+
+    const getFileName = (url: string) => {
+        const parts = url.split('/');
+        const fullName = parts[parts.length - 1];
+        // Remove the unique suffix (timestamp-random-) if we want to show original name
+        // But for now just returning the full name after the last slash
+        return fullName.split('-').slice(2).join('-') || fullName;
+    };
+
+    const handleDownload = (url: string) => {
+        const fullUrl = url.startsWith('http') ? url : `${API_BASE}/${url.startsWith('/') ? url.slice(1) : url}`;
+        window.open(fullUrl, '_blank');
     };
 
     return (
@@ -124,6 +156,24 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdate }: TaskDetailsMo
                                     <p className="text-sm font-black text-gray-800 uppercase tracking-tighter">{task.status.replace('_', ' ')}</p>
                                 </div>
                             </div>
+
+                            {task.status === 'review' && (
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const res = await taskService.updateTaskStatus(task._id, 'completed');
+                                            if (res.success) {
+                                                onTaskUpdate(res.task);
+                                            }
+                                        } catch (error) {
+                                            console.error('Failed to complete task', error);
+                                        }
+                                    }}
+                                    className="w-full py-4 bg-emerald-600 text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <CheckCircle2 size={20} /> Mark as Completed
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -181,11 +231,27 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdate }: TaskDetailsMo
                                     <h4 className="text-sm font-black italic uppercase tracking-tight">Proof of Work</h4>
                                     <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest mt-1">Upload reports, files, or deliverables</p>
                                 </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                />
                                 <button
-                                    onClick={handleUploadDummy}
-                                    className="px-6 py-3 bg-white text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-white/20 transition-all active:scale-95 flex items-center gap-2"
+                                    onClick={handleUploadClick}
+                                    disabled={isUploading}
+                                    className="px-6 py-3 bg-white text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-white/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                                 >
-                                    <Paperclip size={14} /> Upload File
+                                    {isUploading ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" /> Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Paperclip size={14} /> Upload File
+                                        </>
+                                    )}
                                 </button>
                             </div>
 
@@ -196,24 +262,47 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdate }: TaskDetailsMo
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Repository Empty</p>
                                     </div>
                                 ) : (
-                                    task.attachments?.map((_url, i) => (
+                                    task.attachments?.map((url, i) => (
                                         <div key={i} className="p-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between hover:shadow-md transition-all group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
                                                     <FileText size={18} />
                                                 </div>
                                                 <div className="overflow-hidden">
-                                                    <p className="text-xs font-black truncate w-40 text-gray-800 italic">proof_submission_{i + 1}.pdf</p>
-                                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">PDF Document • 2.4 MB</p>
+                                                    <p className="text-xs font-black truncate w-40 text-gray-800 italic" title={getFileName(url)}>
+                                                        {getFileName(url)}
+                                                    </p>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Document • Local Storage</p>
                                                 </div>
                                             </div>
-                                            <button className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors">
+                                            <button
+                                                onClick={() => handleDownload(url)}
+                                                className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-indigo-600 transition-colors"
+                                            >
                                                 <Download size={16} />
                                             </button>
                                         </div>
                                     ))
                                 )}
                             </div>
+
+                            {task.status === 'review' && (
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const res = await taskService.updateTaskStatus(task._id, 'completed');
+                                            if (res.success) {
+                                                onTaskUpdate(res.task);
+                                            }
+                                        } catch (error) {
+                                            console.error('Failed to complete task', error);
+                                        }
+                                    }}
+                                    className="w-full mt-6 py-4 bg-emerald-600 text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <CheckCircle2 size={20} /> Mark as Completed
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

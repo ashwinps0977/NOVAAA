@@ -239,7 +239,7 @@ exports.updateLeaveStatus = async (req, res) => {
                     <p>We wish you a pleasant time off. Please feel free to reach out if any assistance is required.</p>
                     <br>
                     <p>Regards,</p>
-                    <p>Ashwin P S</p>
+                    <p>Rohit Iyer</p>
                     <p>HR Department</p>
                     <p>${companyName}</p>
                 `;
@@ -254,7 +254,7 @@ exports.updateLeaveStatus = async (req, res) => {
                     <p>Thank you for your understanding.</p>
                     <br>
                     <p>Regards,</p>
-                    <p>Ashwin P S</p>
+                    <p>Rohit Iyer</p>
                     <p>HR Department</p>
                     <p>${companyName}</p>
                 `;

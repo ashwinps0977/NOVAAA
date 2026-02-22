@@ -3,7 +3,6 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  Award,
   Calendar,
   Zap,
   User,
@@ -1597,10 +1596,6 @@ const EmployeeDashboard = () => {
                   <p className="text-emerald-100">Here's what's happening with your work today.</p>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                    <Award className="w-5 h-5" />
-                    <span className="font-semibold">Productivity: {stats.productivityScore}%</span>
-                  </div>
                   <div className={`px-4 py-2 rounded-lg ${attendanceStatus === 'present' ? 'bg-green-500/80' : attendanceStatus === 'absent' ? 'bg-red-500/80' : 'bg-yellow-500/80'}`}>
                     <span className="font-semibold">{attendanceStatus.toUpperCase()}</span>
                   </div>
@@ -1774,37 +1769,6 @@ const EmployeeDashboard = () => {
                   </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-6 border border-emerald-100">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => setActiveSection('ai-chat')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <MessageCircle className="w-6 h-6 text-gray-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">AI Assistant</span>
-                    </button>
-
-                    <button onClick={() => setActiveSection('attendance')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <Calendar className="w-6 h-6 text-gray-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">Attendance</span>
-                    </button>
-
-                    <button onClick={() => setActiveSection('training')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <GraduationCap className="w-6 h-6 text-gray-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">Training</span>
-                    </button>
-
-                    <button onClick={() => setActiveSection('policies')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <ShieldCheck className="w-6 h-6 text-gray-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">Policies</span>
-                    </button>
-
-                    <button onClick={() => setActiveSection('salary')} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-                      <DollarSign className="w-6 h-6 text-gray-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">Salary</span>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </>
@@ -1851,7 +1815,7 @@ const EmployeeDashboard = () => {
                 <h3 className="text-3xl font-bold text-white mb-1">
                   {myProjects.filter(p => p.status === 'In Progress' || p.status === 'Pending').length}
                 </h3>
-                <p className="text-purple-100 text-sm">Ongoing Tasks</p>
+                <p className="text-purple-100 text-sm">Active Projects</p>
               </div>
             </div>
 
@@ -1986,13 +1950,13 @@ const EmployeeDashboard = () => {
     { id: 'mywork', label: 'My Work Board', icon: Zap, highlight: true },
     { id: 'projects', label: 'My Projects', icon: CheckSquare },
     { id: 'workgrowth', label: 'Work & Growth', icon: TrendingUp },
-    { id: 'profile', label: 'Profile', icon: User },
     { id: 'attendance', label: 'Attendance & Leave', icon: CalendarDays },
     { id: 'ai-chat', label: 'AI Assistant', icon: MessageCircle, highlight: true },
     { id: 'performance', label: 'Performance', icon: Target },
     { id: 'training', label: 'Training', icon: GraduationCap },
     { id: 'salary', label: 'Salary & Payslip', icon: DollarSign },
     { id: 'policies', label: 'Policies', icon: ShieldCheck },
+    { id: 'profile', label: 'Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

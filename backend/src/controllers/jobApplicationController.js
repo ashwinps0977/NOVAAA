@@ -295,7 +295,7 @@ exports.scheduleInterview = async (req, res) => {
             <p><strong>📅 Date:</strong> ${interviewDateTime}<br>
             <strong>⏰ Time:</strong> ${time || 'To be confirmed'}<br>
             <strong>📍 Mode:</strong> ${mode || 'Virtual'}<br>
-            <strong>🏢 Venue / Meeting Link:</strong> ${meetingLink || 'To be shared'}<br>
+            <strong>🏢 Venue / Meeting Link:</strong> ${meetingLink ? (meetingLink.startsWith('http') ? `<a href="${meetingLink}" target="_blank">${meetingLink}</a>` : meetingLink) : 'To be shared'}<br>
             <strong>👤 Interviewer(s):</strong> ${actualInterviewer || 'HR Panel'}</p>
 
             <p>Please ensure that you carry a copy of your resume and any relevant documents (if attending in person). For online interviews, kindly ensure a stable internet connection and join the meeting at least 5 minutes early.</p>
@@ -305,7 +305,7 @@ exports.scheduleInterview = async (req, res) => {
             <p>We look forward to meeting you and wish you the very best.</p>
 
             <p>Warm regards,<br>
-            Ashwin P S<br>
+            Rohit Iyer<br>
             HR Department<br>
             ${companyName}<br>
             9072032209</p>

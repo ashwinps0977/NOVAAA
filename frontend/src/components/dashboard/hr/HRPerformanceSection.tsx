@@ -53,12 +53,24 @@ import type { PerformanceStats } from '../../../services/performanceService';
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
 
-const HRPerformanceSection = () => {
+interface HRPerformanceSectionProps {
+    onNavigate?: (section: string) => void;
+}
+
+const HRPerformanceSection: React.FC<HRPerformanceSectionProps> = ({ onNavigate }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
     const [performanceStats, setPerformanceStats] = useState<PerformanceStats | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Comparison State
+    const [compareBy, setCompareBy] = useState('employee');
+    const [entityA, setEntityA] = useState('');
+    const [entityB, setEntityB] = useState('');
+    const [comparisonData, setComparisonData] = useState<any[]>([]);
+    const [entityAName, setEntityAName] = useState('Entity A');
+    const [entityBName, setEntityBName] = useState('Entity B');
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -89,13 +101,13 @@ const HRPerformanceSection = () => {
     // Data handling: Use real data from backend if available, otherwise fallback to mock
     const displayEmployees = performanceStats?.allEmployees || employees;
 
-    const projectStats = [
+    const projectStats = performanceStats?.projects || [
         { name: 'Project Alpha', contribution: 85, productivity: 92, time: 120, output: 110, budget: 100 },
         { name: 'Project Beta', contribution: 70, productivity: 85, time: 90, output: 88, budget: 95 },
         { name: 'Project Gamma', contribution: 45, productivity: 65, time: 150, output: 70, budget: 110 },
     ];
 
-    const performanceHistory = [
+    const performanceHistory = performanceStats?.trends?.length ? performanceStats.trends : [
         { month: 'Jan', score: 82 },
         { month: 'Feb', score: 85 },
         { month: 'Mar', score: 84 },
@@ -111,6 +123,69 @@ const HRPerformanceSection = () => {
         { subject: 'Teamwork', A: 99, fullMark: 150 },
         { subject: 'Planning', A: 85, fullMark: 150 },
     ];
+
+    const getComparisonOptions = () => {
+        if (!performanceStats?.allEmployees) return [];
+
+        if (compareBy === 'employee') {
+            return performanceStats.allEmployees.map(e => ({ id: e.name, label: e.name }));
+        } else if (compareBy === 'dept') {
+            const depts = Array.from(new Set(performanceStats.allEmployees.map(e => e.dept))).filter(Boolean);
+            return depts.map(d => ({ id: d, label: d }));
+        } else if (compareBy === 'team') {
+            // Role as proxy for team if team is not explicitly available
+            const roles = Array.from(new Set(performanceStats.allEmployees.map(e => e.role))).filter(Boolean);
+            return roles.map(r => ({ id: r, label: r }));
+        }
+        return [];
+    };
+
+    const handleCompare = () => {
+        if (!entityA || !entityB || !performanceStats?.allEmployees) return;
+
+        const getStats = (id: string) => {
+            let matches: any[] = [];
+            if (compareBy === 'employee') {
+                matches = performanceStats.allEmployees.filter(e => e.name === id);
+            } else if (compareBy === 'dept') {
+                matches = performanceStats.allEmployees.filter(e => e.dept === id);
+            } else if (compareBy === 'team') {
+                matches = performanceStats.allEmployees.filter(e => e.role === id);
+            }
+
+            if (matches.length === 0) return { score: 0, completion: 0, onTime: 0 };
+
+            const avg = (key: string) => matches.reduce((sum, e: any) => sum + (e[key] || 0), 0) / matches.length;
+            return {
+                score: avg('score'),
+                completion: avg('completion'),
+                onTime: avg('onTime')
+            };
+        };
+
+        const statsA = getStats(entityA);
+        const statsB = getStats(entityB);
+
+        const data = [
+            { subject: 'KPI Score', A: statsA.score, B: statsB.score, fullMark: 100 },
+            { subject: 'Goal Completion', A: statsA.completion, B: statsB.completion, fullMark: 100 },
+            { subject: 'On-Time Delivery', A: statsA.onTime, B: statsB.onTime, fullMark: 100 },
+            { subject: 'Efficiency', A: (statsA.score + statsA.onTime) / 2, B: (statsB.score + statsB.onTime) / 2, fullMark: 100 },
+            { subject: 'Reliability', A: (statsA.completion + statsA.onTime) / 2, B: (statsB.completion + statsB.onTime) / 2, fullMark: 100 },
+        ];
+
+        setComparisonData(data);
+        setEntityAName(entityA);
+        setEntityBName(entityB);
+    };
+
+    // Set initial defaults when data loads
+    useEffect(() => {
+        if (performanceStats?.allEmployees && performanceStats.allEmployees.length >= 2 && !entityA) {
+            setEntityA(performanceStats.allEmployees[0].name);
+            setEntityB(performanceStats.allEmployees[1].name);
+        }
+    }, [performanceStats]);
 
     const feedbackData = [
         { name: 'Positive', value: 75 },
@@ -477,8 +552,8 @@ const HRPerformanceSection = () => {
     const renderAttendance = () => (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {renderCard('Attendence %', '94.2%', 'Monthly avg', 'up', Calendar)}
-                {renderCard('Late Login Index', 'Low', '2.1 incidents / week', 'down', Clock)}
+                {renderCard('Attendence %', `${performanceStats?.attendance?.rate || '94.2'}%`, 'Monthly avg', 'up', Calendar)}
+                {renderCard('Late Login Index', performanceStats?.attendance?.lateIndex || 'Low', `${performanceStats?.attendance?.lateCount || '2.1'} incidents / week`, 'down', Clock)}
                 {renderCard('Absenteeism Index', '0.4', 'Healthy range (<1.0)', 'stable', Activity)}
                 {renderCard('WFH Ratio', '40%', 'Hybrid workplace', 'stable', UserPlus)}
             </div>
@@ -551,24 +626,24 @@ const HRPerformanceSection = () => {
                         <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-indigo-900 text-sm">Training Completion %</h4>
-                                <span className="text-lg font-black text-indigo-600">88%</span>
+                                <span className="text-lg font-black text-indigo-600">{performanceStats?.learning?.completionRate || '88'}%</span>
                             </div>
                             <div className="h-2 bg-indigo-200 rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-600 rounded-full" style={{ width: '88%' }}></div>
+                                <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${performanceStats?.learning?.completionRate || 88}%` }}></div>
                             </div>
-                            <p className="text-[10px] text-indigo-500 mt-2 font-bold uppercase">12 employees pending Cybersecurity training</p>
+                            <p className="text-[10px] text-indigo-500 mt-2 font-bold uppercase">Training progress across all departments</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm text-center">
                                 <Award className="mx-auto text-amber-500 mb-2" size={24} />
                                 <p className="text-xs text-gray-400 font-black uppercase mb-1">Certs Earned</p>
-                                <p className="text-2xl font-black text-gray-900">42</p>
+                                <p className="text-2xl font-black text-gray-900">{performanceStats?.learning?.certsEarned || '42'}</p>
                             </div>
                             <div className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm text-center">
                                 <Brain className="mx-auto text-blue-500 mb-2" size={24} />
-                                <p className="text-xs text-gray-400 font-black uppercase mb-1">Avg Upskill Time</p>
-                                <p className="text-2xl font-black text-gray-900">14d</p>
+                                <p className="text-xs text-gray-400 font-black uppercase mb-1">Total Skills</p>
+                                <p className="text-2xl font-black text-gray-900">{performanceStats?.learning?.totalSkills || '14'}</p>
                             </div>
                         </div>
                     </div>
@@ -797,27 +872,50 @@ const HRPerformanceSection = () => {
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center mb-8">
                 <div className="flex-grow min-w-[200px]">
                     <label className="block text-xs font-black text-gray-400 uppercase mb-2">Compare By</label>
-                    <select className="w-full bg-gray-50 border-none rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500">
-                        <option>Employee vs Employee</option>
-                        <option>Team vs Team</option>
-                        <option>Dept vs Dept</option>
+                    <select
+                        value={compareBy}
+                        onChange={(e) => {
+                            setCompareBy(e.target.value);
+                            setEntityA('');
+                            setEntityB('');
+                        }}
+                        className="w-full bg-gray-50 border-none rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="employee">Employee vs Employee</option>
+                        <option value="team">Team vs Team</option>
+                        <option value="dept">Dept vs Dept</option>
                     </select>
                 </div>
                 <div className="flex-grow min-w-[200px]">
                     <label className="block text-xs font-black text-gray-400 uppercase mb-2">Entity A</label>
-                    <select className="w-full bg-gray-50 border-none rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500">
-                        <option>John Doe</option>
-                        <option>Engineering Team</option>
+                    <select
+                        value={entityA}
+                        onChange={(e) => setEntityA(e.target.value)}
+                        className="w-full bg-gray-50 border-none rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="">Select Target...</option>
+                        {getComparisonOptions().map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                        ))}
                     </select>
                 </div>
                 <div className="flex-grow min-w-[200px]">
                     <label className="block text-xs font-black text-gray-400 uppercase mb-2">Entity B</label>
-                    <select className="w-full bg-gray-50 border-none rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500">
-                        <option>Sarah Wilson</option>
-                        <option>Sales Team</option>
+                    <select
+                        value={entityB}
+                        onChange={(e) => setEntityB(e.target.value)}
+                        className="w-full bg-gray-50 border-none rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="">Select Comparison...</option>
+                        {getComparisonOptions().map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                        ))}
                     </select>
                 </div>
-                <button className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 mt-6">
+                <button
+                    onClick={handleCompare}
+                    className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 mt-6"
+                >
                     Compare Entities
                 </button>
             </div>
@@ -826,15 +924,12 @@ const HRPerformanceSection = () => {
                 <h3 className="text-xl font-black text-gray-900 mb-10 text-center">Head-to-Head Comparison</h3>
                 <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillGrowth.map((s) => ({
-                            ...s,
-                            B: Math.random() * 50 + 80
-                        }))}>
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={comparisonData.length > 0 ? comparisonData : skillGrowth}>
                             <PolarGrid />
                             <PolarAngleAxis dataKey="subject" />
-                            <PolarRadiusAxis angle={30} domain={[0, 150]} />
-                            <Radar name="John Doe" dataKey="A" stroke="#4F46E5" fill="#4F46E5" fillOpacity={0.5} />
-                            <Radar name="Sarah Wilson" dataKey="B" stroke="#10B981" fill="#10B981" fillOpacity={0.5} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                            <Radar name={entityAName} dataKey="A" stroke="#4F46E5" fill="#4F46E5" fillOpacity={0.5} />
+                            <Radar name={entityBName} dataKey="B" stroke="#10B981" fill="#10B981" fillOpacity={0.5} />
                             <Legend />
                             <Tooltip />
                         </RadarChart>
@@ -853,8 +948,11 @@ const HRPerformanceSection = () => {
                     </div>
                     <div>
                         <h4 className="font-bold text-gray-900 mb-1">Monthly Review PDF</h4>
-                        <p className="text-xs text-gray-500 mb-4">Complete performance audit for Feb 2026</p>
-                        <button className="flex items-center text-indigo-600 text-xs font-black uppercase tracking-widest">
+                        <p className="text-xs text-gray-500 mb-4">Complete performance audit for {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                        <button
+                            onClick={() => performanceStats && performanceService.downloadPDF(performanceStats)}
+                            className="flex items-center text-indigo-600 text-xs font-black uppercase tracking-widest"
+                        >
                             Download Report <ChevronRight size={14} className="ml-1" />
                         </button>
                     </div>
@@ -867,7 +965,10 @@ const HRPerformanceSection = () => {
                     <div>
                         <h4 className="font-bold text-gray-900 mb-1">KPI Scorecard CSV</h4>
                         <p className="text-xs text-gray-500 mb-4">Export raw KPI scores and achievement data</p>
-                        <button className="flex items-center text-emerald-600 text-xs font-black uppercase tracking-widest">
+                        <button
+                            onClick={() => performanceService.exportReport()}
+                            className="flex items-center text-emerald-600 text-xs font-black uppercase tracking-widest"
+                        >
                             Export Data <ChevronRight size={14} className="ml-1" />
                         </button>
                     </div>
@@ -880,7 +981,10 @@ const HRPerformanceSection = () => {
                     <div>
                         <h4 className="font-bold text-gray-900 mb-1">Compliance & Audit Notes</h4>
                         <p className="text-xs text-gray-500 mb-4">Security and policy adherence documentation</p>
-                        <button className="flex items-center text-amber-600 text-xs font-black uppercase tracking-widest">
+                        <button
+                            onClick={() => onNavigate && onNavigate('policies')}
+                            className="flex items-center text-amber-600 text-xs font-black uppercase tracking-widest"
+                        >
                             View Documents <ChevronRight size={14} className="ml-1" />
                         </button>
                     </div>
@@ -916,19 +1020,19 @@ const HRPerformanceSection = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-white/20">
                         <h4 className="text-lg font-bold mb-4 flex items-center">
-                            <Brain size={18} className="mr-2" /> "Why is John's performance low?"
+                            <Brain size={18} className="mr-2" /> "Critical Bottleneck Analysis"
                         </h4>
                         <div className="space-y-4">
                             <div className="flex items-start space-x-2">
                                 <div className="w-1 h-1 rounded-full bg-white mt-2"></div>
-                                <p className="text-sm">Technical bottlenecks in <strong>Project Gamma</strong> caused a 15% delay in deliverables.</p>
+                                <p className="text-sm">Technical bottlenecks in <strong>{projectStats[0]?.name || 'Current Projects'}</strong> causing resource contention.</p>
                             </div>
                             <div className="flex items-start space-x-2">
                                 <div className="w-1 h-1 rounded-full bg-white mt-2"></div>
-                                <p className="text-sm">Burnout risk detected: High workload (Avg 12h/day) for 3 consecutive weeks.</p>
+                                <p className="text-sm">Detected {performanceStats?.attritionRiskCount || '0'} high-risk markers in recent sentiment trends.</p>
                             </div>
                             <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30 text-emerald-200 text-xs font-bold mt-4">
-                                💡 AI Suggestion: Clear upcoming schedule and provide 2 days R&R.
+                                💡 AI Suggestion: Review workload distribution for <strong>{projectStats[0]?.name}</strong>.
                             </div>
                         </div>
                     </div>

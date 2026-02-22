@@ -64,7 +64,9 @@ const userSchema = new mongoose.Schema({
     hideContactInfo: { type: Boolean, default: false },
     profileVisibility: { type: String, enum: ['public', 'private', 'team'], default: 'team' },
     dataSharingConsent: { type: Boolean, default: true }
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
 });
 
 // No pre-save hooks - handle hashing in controller

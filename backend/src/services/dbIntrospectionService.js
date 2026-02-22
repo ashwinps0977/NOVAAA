@@ -129,16 +129,33 @@ class DBIntrospectionService {
     async findEntityByName(name) {
         const results = [];
         const searchableModels = ['Employee', 'Job', 'Project', 'User', 'JobApplication'];
+        const cleanName = name.replace(/tell me about|who is|show me|details for/gi, '').trim();
+
+        if (cleanName.length < 2) return [];
 
         for (const modelName of searchableModels) {
             const model = this.models[modelName];
             if (!model) continue;
 
             const field = modelName === 'JobApplication' ? 'fullName' : (modelName === 'Job' || modelName === 'Project' ? 'title' : 'name');
-            const match = await model.findOne({ [field]: new RegExp(name, 'i') }).lean();
+            // Try exact match first
+            let match = await model.findOne({ [field]: new RegExp(`^${cleanName}$`, 'i') }).lean();
+            if (!match) {
+                // Try partial match
+                match = await model.findOne({ [field]: new RegExp(cleanName, 'i') }).lean();
+            }
 
             if (match) {
-                results.push({ type: modelName, data: match });
+                // Populate common fields if it's a model with refs
+                if (modelName === 'Employee') {
+                    const populated = await model.findById(match._id).populate('salaryStructure').lean();
+                    results.push({ type: modelName, data: populated });
+                } else if (modelName === 'Project') {
+                    const populated = await model.findById(match._id).populate('assignedTo assignedBy').lean();
+                    results.push({ type: modelName, data: populated });
+                } else {
+                    results.push({ type: modelName, data: match });
+                }
             }
         }
         return results;

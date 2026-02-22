@@ -27,6 +27,7 @@ import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
 import TaskCard from '../hr/TaskCard';
 import TaskDetailsModal from './TaskDetailsModal';
+import { useRealTimeSync } from '../../../hooks/useRealTimeSync';
 
 // --- Types ---
 const COLUMNS = [
@@ -80,6 +81,9 @@ const EmployeeWorkBoard = ({ currentUser }: { currentUser: any }) => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    // Real-time Database Synchronization
+    useRealTimeSync(['tasks'], fetchData);
 
     // --- Filtering Logic ---
     const filteredTasks = useMemo(() => {
