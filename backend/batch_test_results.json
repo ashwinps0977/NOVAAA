@@ -1,0 +1,308 @@
+[
+  {
+    "filename": "1767824526657-398134258-test_resume.txt",
+    "score": 100,
+    "summary": "Candidate has approximately 5 years of experience with 5 identified core skills.",
+    "skillsFound": [
+      "python",
+      "react",
+      "node.js",
+      "express",
+      "mongodb"
+    ],
+    "recommendation": "Highly recommended for technical interview.",
+    "status": "success"
+  },
+  {
+    "filename": "1767825637849-422512736-debug_resume.pdf",
+    "status": "error",
+    "error": "Invalid PDF structure."
+  },
+  {
+    "filename": "1767826166963-837669261-resume_01.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1767826810613-696369582-resume_01.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1767827239288-288271697-resume_01.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1767868352163-617223963-resume_01.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1767868497374-363355015-Mark Johnson Resume (1).PDF",
+    "score": 10,
+    "summary": "Candidate has approximately 0 years of experience with 0 identified core skills.",
+    "skillsFound": [],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1767880731934-554620443-resume_01.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1767882036658-468069895-Donald Resume (2).pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 10 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1768336037075-964980208-Donald Resume (2).pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 10 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1771656122547-735240877-Res_ash.pdf",
+    "score": 50,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "react",
+      "node.js",
+      "sql",
+      "html",
+      "css",
+      "git",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "1771658579170-308221299-Sijo Resume Jai Bharth College.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 9 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "sql",
+      "aws",
+      "docker",
+      "git",
+      "design",
+      "testing"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "ALEN_resume-1.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 11 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "java",
+      "react",
+      "node.js",
+      "sql",
+      "html",
+      "css",
+      "git",
+      "ui/ux",
+      "design",
+      "firebase"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "Elton Dannies Sabu.pdf",
+    "score": 50,
+    "summary": "Candidate has approximately 0 years of experience with 12 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "react",
+      "mongodb",
+      "sql",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "full stack",
+      "agile"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "John Joseph-3.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 8 identified core skills.",
+    "skillsFound": [
+      "python",
+      "java",
+      "mongodb",
+      "sql",
+      "git",
+      "backend",
+      "full stack",
+      "design"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "Joseph cv.pdf",
+    "score": 25,
+    "summary": "Candidate has approximately 0 years of experience with 10 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "java",
+      "node.js",
+      "mongodb",
+      "html",
+      "css",
+      "git",
+      "frontend",
+      "backend",
+      "full stack"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "MARK JOHNSON.pdf",
+    "score": 10,
+    "summary": "Candidate has approximately 0 years of experience with 0 identified core skills.",
+    "skillsFound": [],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  },
+  {
+    "filename": "Sijo Resume Jai Bharth College.pdf",
+    "score": 30,
+    "summary": "Candidate has approximately 0 years of experience with 9 identified core skills.",
+    "skillsFound": [
+      "javascript",
+      "python",
+      "java",
+      "sql",
+      "aws",
+      "docker",
+      "git",
+      "design",
+      "testing"
+    ],
+    "recommendation": "Potential candidate, review manually.",
+    "status": "success"
+  }
+]

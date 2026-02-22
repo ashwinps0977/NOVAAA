@@ -6,7 +6,8 @@ import {
   Calendar, Target, Brain, AlertCircle,
   GraduationCap, ShieldCheck, Settings, Zap, Plus,
   Briefcase, FileText, CheckCircle, DollarSign,
-  Send, Layers, FolderKanban
+  Send, Layers, FolderKanban, Award, TrendingUp,
+  X, MapPin
 } from 'lucide-react';
 import HRPayrollSection from '../components/dashboard/hr/HRPayrollSection';
 import HRSettingsSection from '../components/dashboard/hr/HRSettingsSection';
@@ -15,6 +16,8 @@ import HRPerformanceSection from '../components/dashboard/hr/HRPerformanceSectio
 import HRAnalyticsSection from '../components/dashboard/hr/HRAnalyticsSection';
 import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
 import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
+import { jobRoles } from '../data/jobRoles';
+import { Sparkles } from 'lucide-react';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -26,6 +29,8 @@ const HRDashboard = () => {
   const [jobApplications, setJobApplications] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
+  const [showAIAnalysisModal, setShowAIAnalysisModal] = useState(false);
+  const [selectedAIAnalysis, setSelectedAIAnalysis] = useState<any>(null);
   const [showScheduleInterviewModal, setShowScheduleInterviewModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
@@ -204,6 +209,11 @@ const HRDashboard = () => {
     if (activeSection === 'recruitment') {
       loadPostedJobs();
       loadApplications();
+      // Poll every 30 seconds for recruitment updates
+      intervalId = setInterval(() => {
+        loadPostedJobs();
+        loadApplications();
+      }, 30000);
     }
     if (activeSection === 'attendance') {
       fetchLeaves();
@@ -405,6 +415,38 @@ const HRDashboard = () => {
     }
   };
 
+  const handleOpenScheduleInterview = (application: any) => {
+    setSelectedApplication(application);
+
+    // Generate a unique meeting link
+    const meetingId = `${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+    const meetingUrl = `https://meet.google.com/${meetingId}`;
+
+    // AI-Driven pre-filling
+    let autoNotes = "Interview objectives: ";
+    if (application.strengths && application.strengths.length > 0) {
+      autoNotes += `\n- Explore strengths: ${application.strengths.slice(0, 2).join(', ')}`;
+    }
+    if (application.gaps && application.gaps.length > 0) {
+      autoNotes += `\n- Probe gaps: ${application.gaps.slice(0, 2).join(', ')}`;
+    }
+    if (application.analysisSummary) {
+      autoNotes += `\n\nContext: ${application.analysisSummary}`;
+    }
+
+    setInterviewData({
+      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      time: '10:00',
+      duration: '60',
+      interviewer: 'HR Panel',
+      mode: 'virtual',
+      meetingLink: meetingUrl,
+      notes: autoNotes.trim()
+    });
+
+    setShowScheduleInterviewModal(true);
+  };
+
   const handlePostJob = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -420,7 +462,6 @@ const HRDashboard = () => {
           jobType: newJob.type,
           experienceLevel: newJob.experience,
           applicationDeadline: newJob.deadline,
-          // Remove old keys to avoid confusion, though backend ignores extra fields usually
         })
       });
 
@@ -443,6 +484,15 @@ const HRDashboard = () => {
         return data.job;
       } else {
         const errorData = await response.json();
+
+        // Handle 401 Unauthorized specifically
+        if (response.status === 401) {
+          alert(`Session Error: ${errorData.message}. Please login again.`);
+          logout();
+          navigate('/login');
+          return null;
+        }
+
         alert(`Failed to post job: ${errorData.message}`);
         return null;
       }
@@ -1055,12 +1105,12 @@ const HRDashboard = () => {
                           </div>
                           <div className="flex items-center space-x-4 mt-3">
                             <span className="text-sm text-gray-700">Salary: {job.salary}</span>
-                            <span className="text-sm text-gray-700">Deadline: {job.deadline}</span>
+                            <span className="text-sm text-gray-700">Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}</span>
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium inline-block">
-                            {job.applications || 0} applications
+                            {job.applicants || 0} applications
                           </div>
                           <div className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                             }`}>
@@ -1116,9 +1166,16 @@ const HRDashboard = () => {
                         <div className="flex flex-col space-y-2">
                           <button
                             onClick={() => {
-                              setSelectedApplication(application);
-                              setShowScheduleInterviewModal(true);
+                              setSelectedAIAnalysis(application);
+                              setShowAIAnalysisModal(true);
                             }}
+                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 flex items-center justify-center"
+                          >
+                            <Brain className="w-3 h-3 mr-1" />
+                            View Analysis
+                          </button>
+                          <button
+                            onClick={() => handleOpenScheduleInterview(application)}
                             className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
                             disabled={application.status === 'rejected' || application.status === 'hired'}
                           >
@@ -1574,6 +1631,254 @@ const HRDashboard = () => {
       )}
 
       {/* Post Job Modal */}
+      {/* AI Analysis Modal */}
+      {showAIAnalysisModal && selectedAIAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold">AI Recruitment Intelligence</h3>
+                  <p className="text-purple-100 flex items-center mt-1">
+                    <Target className="w-4 h-4 mr-1" />
+                    Analyzing fit for: <span className="font-semibold ml-1">{selectedAIAnalysis.jobTitle}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAIAnalysisModal(false)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {/* Score Dashboard */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white border-2 border-purple-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center">
+                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Overall Fit</p>
+                  <div className={`text-5xl font-black ${selectedAIAnalysis.matchPercentage >= 70 ? 'text-green-600' :
+                    selectedAIAnalysis.matchPercentage >= 40 ? 'text-yellow-500' : 'text-red-500'
+                    }`}>
+                    {selectedAIAnalysis.matchPercentage}%
+                  </div>
+                  <div className="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden border">
+                    <div
+                      className={`h-full transition-all duration-1000 ${selectedAIAnalysis.matchPercentage >= 70 ? 'bg-green-500' :
+                        selectedAIAnalysis.matchPercentage >= 40 ? 'bg-yellow-400' : 'bg-red-500'
+                        }`}
+                      style={{ width: `${selectedAIAnalysis.matchPercentage}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Skills', value: selectedAIAnalysis.scoreBreakdown?.skills || 0, max: 40, icon: <Zap className="w-5 h-5" />, color: 'blue' },
+                    { label: 'Experience', value: selectedAIAnalysis.scoreBreakdown?.experience || 0, max: 35, icon: <Briefcase className="w-5 h-5" />, color: 'emerald' },
+                    { label: 'Education', value: selectedAIAnalysis.scoreBreakdown?.education || 0, max: 25, icon: <GraduationCap className="w-5 h-5" />, color: 'indigo' },
+                    { label: 'Projects', value: selectedAIAnalysis.scoreBreakdown?.projects || 0, max: 10, icon: <Award className="w-5 h-5" />, color: 'purple' },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className={`p-2 bg-${stat.color}-100 text-${stat.color}-600 rounded-lg inline-block mb-2`}>
+                        {stat.icon}
+                      </div>
+                      <p className="text-xs font-bold text-gray-400 uppercase">{stat.label}</p>
+                      <p className="text-xl font-bold text-gray-900">{stat.value}<span className="text-sm text-gray-400 font-medium">/{stat.max}</span></p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Highlights & Details */}
+                <div className="lg:col-span-2 space-y-8">
+                  {/* Summary */}
+                  <section>
+                    <h4 className="flex items-center text-lg font-bold text-gray-900 mb-3">
+                      <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
+                      Executive Summary
+                    </h4>
+                    <div className="bg-purple-50 rounded-xl p-4 text-purple-900 leading-relaxed border border-purple-100">
+                      {selectedAIAnalysis.analysisSummary || "The AI is processing the details. Generally, this candidate shows promise in core areas."}
+                    </div>
+                  </section>
+
+                  {/* Extracts */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <section>
+                      <h4 className="flex items-center text-md font-bold text-gray-900 mb-3 uppercase tracking-tight">
+                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                        Candidate Snapshot
+                      </h4>
+                      <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                        <div className="p-3 border-b border-gray-50 flex justify-between">
+                          <span className="text-sm text-gray-500">Location</span>
+                          <span className="text-sm font-semibold">{selectedAIAnalysis.candidateDetails?.location || 'Not Specified'}</span>
+                        </div>
+                        <div className="p-3 border-b border-gray-50 flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Education</span>
+                          <div className="text-right">
+                            {selectedAIAnalysis.candidateDetails?.education?.map((edu: any, i: number) => (
+                              <div key={i} className="mb-1 last:mb-0">
+                                <span className="text-sm font-semibold truncate block max-w-[150px]">
+                                  {edu.degree}
+                                </span>
+                                <span className="text-[10px] text-gray-400 block truncate max-w-[150px]">
+                                  {edu.institution}
+                                </span>
+                              </div>
+                            )) || <span className="text-sm font-semibold">Unknown</span>}
+                          </div>
+                        </div>
+                        <div className="p-3 flex justify-between">
+                          <span className="text-sm text-gray-500">Certifications</span>
+                          <span className="text-sm font-semibold">
+                            {selectedAIAnalysis.candidateDetails?.certifications?.length || 0} Listed
+                          </span>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section>
+                      <h4 className="flex items-center text-md font-bold text-gray-900 mb-3 uppercase tracking-tight">
+                        <Brain className="w-4 h-4 mr-2 text-gray-400" />
+                        Top Extracted Skills
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedAIAnalysis.parsedSkills?.slice(0, 10).map((skill: string, i: number) => (
+                          <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* Recommendations */}
+                  <section>
+                    <h4 className="flex items-center text-lg font-bold text-gray-900 mb-3">
+                      <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
+                      AI Recommendations
+                    </h4>
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-amber-900 italic font-medium">
+                      "{selectedAIAnalysis.aiRecommendations}"
+                    </div>
+                  </section>
+
+                  {/* Detailed Experience & Projects */}
+                  <section className="space-y-6">
+                    <div>
+                      <h4 className="flex items-center text-lg font-bold text-gray-900 mb-4">
+                        <Briefcase className="w-5 h-5 mr-2 text-blue-600" />
+                        Professional Experience
+                      </h4>
+                      <div className="space-y-4">
+                        {selectedAIAnalysis.candidateDetails?.experience?.map((exp: any, i: number) => (
+                          <div key={i} className="bg-white border rounded-xl p-4 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="font-bold text-gray-900">{exp.title}</h5>
+                                <p className="text-sm text-gray-600">{exp.company}</p>
+                              </div>
+                              <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+                                {exp.duration}
+                              </span>
+                            </div>
+                            {exp.responsibilities && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{exp.responsibilities}</p>
+                            )}
+                          </div>
+                        )) || <p className="text-sm text-gray-500 italic">No detailed experience extracted</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="flex items-center text-lg font-bold text-gray-900 mb-4">
+                        <Award className="w-5 h-5 mr-2 text-purple-600" />
+                        Key Projects
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedAIAnalysis.candidateDetails?.projects?.map((proj: any, i: number) => (
+                          <div key={i} className="bg-white border rounded-xl p-4 shadow-sm border-l-4 border-l-purple-500">
+                            <h5 className="font-bold text-gray-900 text-sm mb-1">{proj.title}</h5>
+                            <p className="text-xs text-gray-500 mb-3">{proj.description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {proj.technologies?.map((tech: string, j: number) => (
+                                <span key={j} className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">
+                                  {tech}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )) || <p className="text-sm text-gray-500 italic">No projects extracted</p>}
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                {/* Pros/Cons Sidebar */}
+                <div className="space-y-6">
+                  <div className="bg-green-50 border border-green-100 rounded-2xl p-5">
+                    <h4 className="text-sm font-black text-green-700 uppercase tracking-widest mb-4 flex items-center">
+                      <ShieldCheck className="w-4 h-4 mr-2" />
+                      Strengths
+                    </h4>
+                    <ul className="space-y-3">
+                      {selectedAIAnalysis.strengths?.map((s: string, i: number) => (
+                        <li key={i} className="flex items-start text-sm text-green-800">
+                          <CheckCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0 text-green-500" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5">
+                    <h4 className="text-sm font-black text-rose-700 uppercase tracking-widest mb-4 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      Identified Gaps
+                    </h4>
+                    <ul className="space-y-3">
+                      {selectedAIAnalysis.gaps?.map((g: string, i: number) => (
+                        <li key={i} className="flex items-start text-sm text-rose-800">
+                          <TrendingUp className="w-4 h-4 mr-2 mt-0.5 shrink-0 text-rose-300 rotate-180" />
+                          {g}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="bg-gray-50 p-6 border-t flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  handleOpenScheduleInterview(selectedAIAnalysis);
+                  setShowAIAnalysisModal(false);
+                }}
+                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-md active:scale-95"
+              >
+                Schedule Interview
+              </button>
+              <button
+                onClick={() => setShowAIAnalysisModal(false)}
+                className="px-6 py-2 bg-white text-gray-700 font-bold border rounded-lg hover:bg-gray-100 transition-all"
+              >
+                Close Insights
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPostJobModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1585,6 +1890,37 @@ const HRDashboard = () => {
               >
                 ✕
               </button>
+            </div>
+
+            <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+              <div className="flex items-center space-x-2 mb-3">
+                <Sparkles className="w-5 h-5 text-indigo-600" />
+                <h4 className="font-bold text-indigo-900">AI Job Assistant</h4>
+              </div>
+              <p className="text-sm text-indigo-700 mb-4">Select a role to automatically generate a professional job posting.</p>
+              <select
+                className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                onChange={(e) => {
+                  const role = jobRoles[e.target.value];
+                  if (role) {
+                    setNewJob({
+                      ...newJob,
+                      title: role.title,
+                      department: role.department,
+                      experience: role.experienceLevel,
+                      description: role.description,
+                      requirements: role.requirements,
+                      salary: role.salaryRange,
+                      // Deadline is handled by state default (30 days)
+                    });
+                  }
+                }}
+              >
+                <option value="">✨ Choose a role to auto-fill...</option>
+                {Object.keys(jobRoles).map(roleKey => (
+                  <option key={roleKey} value={roleKey}>{roleKey}</option>
+                ))}
+              </select>
             </div>
 
             <form onSubmit={handlePostJob}>

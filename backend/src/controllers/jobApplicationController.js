@@ -43,69 +43,36 @@ exports.submitApplication = async (req, res) => {
       });
     }
 
-    // Prepare data for Python script
-    const jobData = {
-      required_skills: job.skills || [],
-      job_requirements: (job.requirements || []).join(' '),
-      experience_needed: job.minExperience || 0
-    };
-
-    // Call Python script for parsing
-    const pythonScriptPath = path.join(__dirname, '../../ai_resume_parser.py');
+    // AI Analysis using Gemini
+    const aiService = require('../services/aiService');
     const resumePath = req.file.path;
 
-    // Promise wrapper for python script execution
-    const parseResume = () => {
-      return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', [
-          pythonScriptPath,
-          resumePath,
-          JSON.stringify(jobData)
-        ]);
-
-        let dataString = '';
-        let errorString = '';
-
-        pythonProcess.stdout.on('data', (data) => {
-          dataString += data.toString();
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-          errorString += data.toString();
-        });
-
-        pythonProcess.on('close', (code) => {
-          if (code !== 0) {
-            console.error(`Python script exited with code ${code}`);
-            console.error(`Error output: ${errorString}`);
-            // Fallback to basic parsing if Python script fails
-            resolve({
-              success: false,
-              skills: [],
-              overall_score: 0,
-              skill_match_ratio: 0,
-              matched_skills_count: 0
-            });
-          } else {
-            try {
-              const result = JSON.parse(dataString);
-              resolve(result);
-            } catch (err) {
-              console.error('Error parsing Python output:', err);
-              resolve({
-                success: false,
-                skills: [],
-                overall_score: 0
-              });
-            }
-          }
-        });
-      });
+    console.log('🚀 Starting Gemini-powered AI resume analysis...');
+    let aiResult = {
+      overallScore: 0,
+      candidateDetails: {},
+      scoreBreakdown: {},
+      parsedSkills: [],
+      strengths: [],
+      gaps: [],
+      aiRecommendations: 'Error during AI analysis',
+      analysisSummary: ''
     };
 
-    console.log('Starting AI resume parsing...');
-    const aiResult = await parseResume();
-    console.log('AI Parsing result:', aiResult);
+    try {
+      const resumeText = await aiService.extractText(resumePath);
+      aiResult = await aiService.analyzeResume(resumeText, {
+        title: job.title,
+        department: job.department,
+        skills: job.skills,
+        requirements: job.requirements,
+        experienceLevel: job.experienceLevel
+      });
+      console.log('✅ AI Parsing successful - Score:', aiResult.overallScore);
+    } catch (aiError) {
+      console.error('❌ AI Parsing failed:', aiError.message);
+      // We still proceed with the application, just with 0 score
+    }
 
     // Prepare application object
     const application = new JobApplication({
@@ -115,10 +82,18 @@ exports.submitApplication = async (req, res) => {
       skills: applicationData.skills ? JSON.parse(applicationData.skills) : [],
       resumeUrl: `/uploads/resumes/${req.file.filename}`,
       resumeFileName: req.file.originalname,
-      // AI Results
-      parsedSkills: aiResult.skills || [],
-      matchPercentage: aiResult.overall_score || 0,
-      matchedSkills: aiResult.skills ? aiResult.skills.filter(skill =>
+
+      // AI Results Mapping
+      matchPercentage: aiResult.overallScore || 0,
+      candidateDetails: aiResult.candidateDetails || {},
+      scoreBreakdown: aiResult.scoreBreakdown || {},
+      parsedSkills: aiResult.parsedSkills || [],
+      strengths: aiResult.strengths || [],
+      gaps: aiResult.gaps || [],
+      aiRecommendations: aiResult.aiRecommendations || '',
+      analysisSummary: aiResult.analysisSummary || '',
+
+      matchedSkills: aiResult.parsedSkills ? aiResult.parsedSkills.filter(skill =>
         job.skills.some(jobSkill =>
           jobSkill.toLowerCase().includes(skill.toLowerCase()) ||
           skill.toLowerCase().includes(jobSkill.toLowerCase())
@@ -134,11 +109,11 @@ exports.submitApplication = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Application submitted successfully',
+      message: 'Application submitted with AI analysis',
       application,
       aiAnalysis: {
-        score: aiResult.overall_score,
-        matchedSkills: aiResult.matched_skills_count
+        score: aiResult.overallScore,
+        summary: aiResult.analysisSummary
       }
     });
   } catch (error) {
@@ -261,11 +236,18 @@ const sendEmail = require('../utils/mailer');
 // Schedule interview
 exports.scheduleInterview = async (req, res) => {
   try {
-    const { interviewDate, time, mode, meetingLink, notes, interviewers } = req.body;
+    const {
+      interviewDate, date, // Handle both names
+      time, mode, meetingLink, notes,
+      interviewers, interviewer // Handle both names
+    } = req.body;
+
+    const actualDate = interviewDate || date;
+    const actualInterviewer = interviewers || interviewer;
 
     const updateData = {
       status: 'interview-scheduled',
-      interviewScheduled: interviewDate
+      interviewScheduled: actualDate
     };
 
     if (notes) {
@@ -293,15 +275,18 @@ exports.scheduleInterview = async (req, res) => {
     }
 
     // Send interview email to candidate
-    if (application.candidate && application.candidate.email) {
-      const interviewDateTime = new Date(interviewDate).toLocaleDateString();
+    const candidateEmail = application.candidate?.email || application.email;
+    const candidateName = application.candidate?.name || application.fullName;
+
+    if (candidateEmail) {
+      const interviewDateTime = new Date(actualDate).toLocaleDateString();
       const jobTitle = application.job ? application.job.title : 'Position';
       const companyName = 'NOVA Workforce';
 
       const emailSubject = `Interview Scheduled – ${jobTitle} Position`;
 
       const emailContent = `
-            <p>Dear ${application.candidate.name},</p>
+            <p>Dear ${candidateName},</p>
 
             <p>We are pleased to inform you that you have been <strong>shortlisted</strong> for the next stage of the selection process for the position of <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.</p>
 
@@ -311,7 +296,7 @@ exports.scheduleInterview = async (req, res) => {
             <strong>⏰ Time:</strong> ${time || 'To be confirmed'}<br>
             <strong>📍 Mode:</strong> ${mode || 'Virtual'}<br>
             <strong>🏢 Venue / Meeting Link:</strong> ${meetingLink || 'To be shared'}<br>
-            <strong>👤 Interviewer(s):</strong> ${interviewers || 'HR Panel'}</p>
+            <strong>👤 Interviewer(s):</strong> ${actualInterviewer || 'HR Panel'}</p>
 
             <p>Please ensure that you carry a copy of your resume and any relevant documents (if attending in person). For online interviews, kindly ensure a stable internet connection and join the meeting at least 5 minutes early.</p>
 
@@ -325,7 +310,7 @@ exports.scheduleInterview = async (req, res) => {
             ${companyName}<br>
             9072032209</p>
         `;
-      await sendEmail(application.candidate.email, emailSubject, emailContent);
+      await sendEmail(candidateEmail, emailSubject, emailContent);
     }
 
     res.json({
@@ -377,10 +362,13 @@ exports.rejectApplication = async (req, res) => {
     }
 
     // Send rejection email to candidate
-    if (application.candidate && application.candidate.email) {
+    const candidateEmail = application.candidate?.email || application.email;
+    const candidateName = application.candidate?.name || application.fullName;
+
+    if (candidateEmail) {
       const emailSubject = `Update on your application for ${application.job ? application.job.title : 'Position'}`;
       const emailContent = `
-            <h3>Dear ${application.candidate.name},</h3>
+            <h3>Dear ${candidateName},</h3>
             <p>Thank you for giving us the opportunity to consider your application for the <strong>${application.job ? application.job.title : 'position'}</strong>.</p>
             <p>After careful consideration, we regret to inform you that we have decided not to pursue your application at this time.</p>
             ${reason ? `<p><strong>Feedback:</strong> ${reason}</p>` : ''}
@@ -389,7 +377,7 @@ exports.rejectApplication = async (req, res) => {
             <br>
             <p>Best regards,<br>The HR Team</p>
         `;
-      await sendEmail(application.candidate.email, emailSubject, emailContent);
+      await sendEmail(candidateEmail, emailSubject, emailContent);
     }
 
     res.json({
