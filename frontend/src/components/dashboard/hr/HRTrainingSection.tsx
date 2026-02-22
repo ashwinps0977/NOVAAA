@@ -22,6 +22,7 @@ import {
     ShieldCheck,
     Star
 } from 'lucide-react';
+import { API_BASE_URL } from '../../../config';
 
 const HRTrainingSection = () => {
     const [activeTab, setActiveTab] = useState<'analytics' | 'library' | 'assignments' | 'skills'>('analytics');
@@ -64,10 +65,10 @@ const HRTrainingSection = () => {
         try {
             const token = localStorage.getItem('token');
             const [statsRes, modulesRes, empRes, gapsRes] = await Promise.all([
-                fetch('http://localhost:5000/api/trainings/stats', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:5000/api/trainings/modules', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:5000/api/hr/employees', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:5000/api/skills/org-gaps', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${API_BASE_URL}/trainings/stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/trainings/modules`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/hr/employees`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/skills/org-gaps`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             if (statsRes.ok) {
@@ -97,7 +98,7 @@ const HRTrainingSection = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/trainings/modules', {
+            const response = await fetch(`${API_BASE_URL}/trainings/modules`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ const HRTrainingSection = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/trainings/assign', {
+            const response = await fetch(`${API_BASE_URL}/trainings/assign`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

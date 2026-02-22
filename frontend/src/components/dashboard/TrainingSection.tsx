@@ -15,6 +15,7 @@ import {
     Plus,
     AlertCircle
 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 interface Training {
     _id: string;
@@ -52,8 +53,8 @@ const TrainingSection = () => {
         try {
             const token = localStorage.getItem('token');
             const [tRes, sRes] = await Promise.all([
-                fetch('http://localhost:5000/api/trainings/my-trainings', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:5000/api/skills/my-skills', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${API_BASE_URL}/trainings/my-trainings`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/skills/my-skills`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             if (tRes.ok) {

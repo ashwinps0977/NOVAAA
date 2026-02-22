@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, BookOpen, Zap, CheckCircle, Clock, AlertCircle, RefreshCw, ChevronRight, Star } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ interface Skill {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const API = 'http://localhost:5000';
+const API = API_BASE_URL.replace('/api', '');
 
 const getHeaders = (json = false) => {
     const h: Record<string, string> = { Authorization: `Bearer ${localStorage.getItem('token')}` };

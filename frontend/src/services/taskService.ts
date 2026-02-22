@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api';
+import { API_BASE_URL as API_BASE } from '../config';
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',

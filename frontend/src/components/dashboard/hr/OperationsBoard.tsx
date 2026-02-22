@@ -23,6 +23,7 @@ import {
     Plus, RefreshCw, FolderKanban,
     StickyNote, X, Save
 } from 'lucide-react';
+import { API_BASE_URL } from '../../../config';
 import SearchDropdown from '../../common/SearchDropdown';
 import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
@@ -71,7 +72,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
         try {
             const [taskRes, empRes] = await Promise.all([
                 taskService.getAllTasks(),
-                fetch('http://localhost:5000/api/hr/employees', {
+                fetch(`${API_BASE_URL}/hr/employees`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 }).then(res => res.json())
             ]);

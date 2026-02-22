@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../config';
 import {
     Users,
     UserPlus,
@@ -73,7 +74,7 @@ const HRAnalyticsSection = () => {
         try {
             const token = localStorage.getItem('token');
             const endpoint = activeSection === 'predictive' ? 'ai-insights' : activeSection;
-            const res = await fetch(`http://localhost:5000/api/analytics/${endpoint}`, {
+            const res = await fetch(`${API_BASE_URL}/analytics/${endpoint}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();
@@ -92,7 +93,7 @@ const HRAnalyticsSection = () => {
         try {
             const token = localStorage.getItem('token');
             const queryParams = new URLSearchParams(reportFilters as any).toString();
-            const res = await fetch(`http://localhost:5000/api/analytics/custom-report?${queryParams}`, {
+            const res = await fetch(`${API_BASE_URL}/analytics/custom-report?${queryParams}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     Search, Brain, Eye, Download, CheckCircle, Clock, X, FileText
 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const PoliciesSection = () => {
     const [policies, setPolicies] = useState<any[]>([]);
@@ -21,7 +22,7 @@ const PoliciesSection = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/ai/policies', {
+            const response = await fetch(`${API_BASE_URL}/ai/policies`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -38,7 +39,7 @@ const PoliciesSection = () => {
     const handleViewPolicy = async (filename: string) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/ai/policies/${filename}`, {
+            const response = await fetch(`${API_BASE_URL}/ai/policies/${filename}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -62,7 +63,7 @@ const PoliciesSection = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/ai/query', {
+            const response = await fetch(`${API_BASE_URL}/ai/query`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

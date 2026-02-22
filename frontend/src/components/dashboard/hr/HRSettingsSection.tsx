@@ -5,6 +5,7 @@ import {
     GitBranch, Save, Plus, Trash2,
     ChevronRight, CheckCircle, Lock
 } from 'lucide-react';
+import { API_BASE_URL } from '../../../config';
 
 const categories = [
     { id: 'organization', label: 'Organization', icon: Building2 },
@@ -34,7 +35,7 @@ const HRSettingsSection = () => {
     const fetchSettings = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/hr-settings', {
+            const res = await fetch(`${API_BASE_URL}/hr-settings`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -51,7 +52,7 @@ const HRSettingsSection = () => {
         setMessage('');
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5000/api/hr-settings/${category}`, {
+            const res = await fetch(`${API_BASE_URL}/hr-settings/${category}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
