@@ -145,10 +145,10 @@ const AdminDashboard = () => {
 
   const sendAiMessage = () => {
     if (!aiAssistantMessage.trim()) return;
-    
+
     const newMessage = { id: chatHistory.length + 1, sender: 'user', message: aiAssistantMessage };
     setChatHistory([...chatHistory, newMessage]);
-    
+
     // Simulate AI response based on query
     setTimeout(() => {
       let aiResponse = '';
@@ -163,11 +163,11 @@ const AdminDashboard = () => {
       } else {
         aiResponse = `I understand you're asking about "${aiAssistantMessage}". I can help with: strategic workforce planning, financial analysis, risk prediction, compliance monitoring, and executive reporting. Please specify your area of interest for detailed insights.`;
       }
-      
+
       const aiResponseObj = { id: chatHistory.length + 2, sender: 'ai', message: aiResponse };
       setChatHistory(prev => [...prev, aiResponseObj]);
     }, 1000);
-    
+
     setAiAssistantMessage('');
   };
 
@@ -203,11 +203,10 @@ const AdminDashboard = () => {
                             <Building className="w-5 h-5 text-gray-500" />
                             <span className="font-medium text-gray-900">{dept.department}</span>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            dept.attritionRisk === 'High' ? 'bg-red-100 text-red-700' : 
-                            dept.attritionRisk === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 
-                            'bg-green-100 text-green-700'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${dept.attritionRisk === 'High' ? 'bg-red-100 text-red-700' :
+                              dept.attritionRisk === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-green-100 text-green-700'
+                            }`}>
                             {dept.attritionRisk} Risk
                           </span>
                         </div>
@@ -247,10 +246,9 @@ const AdminDashboard = () => {
                             <p className="font-medium text-gray-900">{skill.skill}</p>
                             <p className="text-sm text-gray-600">{skill.current} current / {skill.needed} needed</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            skill.priority === 'Critical' ? 'bg-red-100 text-red-700' : 
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${skill.priority === 'Critical' ? 'bg-red-100 text-red-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
                             Gap: {skill.gap}
                           </span>
                         </div>
@@ -287,7 +285,7 @@ const AdminDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Attrition Risk & Retention Strategy</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -469,7 +467,7 @@ const AdminDashboard = () => {
                     <p className="text-sm text-gray-600">Projected hires Q1 2025</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center space-x-3 mb-3">
@@ -478,7 +476,7 @@ const AdminDashboard = () => {
                     </div>
                     <p className="text-sm text-gray-600">8-10 Senior Engineers, 3-5 Data Scientists, 2 AI/ML Specialists</p>
                   </div>
-                  
+
                   <div className="bg-white p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center space-x-3 mb-3">
                       <Clock className="w-5 h-5 text-emerald-500" />
@@ -486,7 +484,7 @@ const AdminDashboard = () => {
                     </div>
                     <p className="text-sm text-gray-600">35 days average (Current: 42 days)</p>
                   </div>
-                  
+
                   <div className="bg-white p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center space-x-3 mb-3">
                       <DollarSign className="w-5 h-5 text-purple-500" />
@@ -525,7 +523,7 @@ const AdminDashboard = () => {
                     <span className="font-bold text-purple-600">94%</span>
                   </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
                   <h4 className="font-bold text-gray-900 mb-3">AI Recommendations</h4>
                   <ul className="space-y-2 text-sm text-gray-700">
@@ -552,7 +550,7 @@ const AdminDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Financial & Cost Analytics</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -566,7 +564,7 @@ const AdminDashboard = () => {
                       <DollarSign className="w-8 h-8 opacity-90" />
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div>
@@ -644,7 +642,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-100">
                     <div className="flex items-start space-x-3">
                       <TrendingUp className="w-5 h-5 text-emerald-600 mt-0.5" />
@@ -691,7 +689,7 @@ const AdminDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Training & Future Readiness</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -747,27 +745,25 @@ const AdminDashboard = () => {
                           <td className="py-4 px-4">{skill.current}</td>
                           <td className="py-4 px-4">{skill.needed}</td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              skill.gap > 5 ? 'bg-red-100 text-red-700' : 
-                              skill.gap > 2 ? 'bg-yellow-100 text-yellow-700' : 
-                              'bg-green-100 text-green-700'
-                            }`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${skill.gap > 5 ? 'bg-red-100 text-red-700' :
+                                skill.gap > 2 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-green-100 text-green-700'
+                              }`}>
                               {skill.gap} gap
                             </span>
                           </td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              skill.priority === 'Critical' ? 'bg-red-100 text-red-700' : 
-                              skill.priority === 'High' ? 'bg-yellow-100 text-yellow-700' : 
-                              'bg-blue-100 text-blue-700'
-                            }`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${skill.priority === 'Critical' ? 'bg-red-100 text-red-700' :
+                                skill.priority === 'High' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-blue-100 text-blue-700'
+                              }`}>
                               {skill.priority}
                             </span>
                           </td>
                           <td className="py-4 px-4 text-sm text-gray-600">
                             {skill.priority === 'Critical' ? 'Immediate external hire + upskilling' :
-                             skill.priority === 'High' ? 'Accelerated training program' :
-                             'Internal development program'}
+                              skill.priority === 'High' ? 'Accelerated training program' :
+                                'Internal development program'}
                           </td>
                         </tr>
                       ))}
@@ -858,7 +854,7 @@ const AdminDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Policy Compliance & Risk Management</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -872,7 +868,7 @@ const AdminDashboard = () => {
                       <Shield className="w-8 h-8 opacity-90" />
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div>
@@ -892,11 +888,10 @@ const AdminDashboard = () => {
                     <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            item.status === 'Compliant' ? 'bg-emerald-500' : 
-                            item.status === 'Needs Review' ? 'bg-yellow-500' : 
-                            'bg-red-500'
-                          }`}></div>
+                          <div className={`w-3 h-3 rounded-full ${item.status === 'Compliant' ? 'bg-emerald-500' :
+                              item.status === 'Needs Review' ? 'bg-yellow-500' :
+                                'bg-red-500'
+                            }`}></div>
                           <div>
                             <h4 className="font-medium text-gray-900">{item.area}</h4>
                             <p className="text-sm text-gray-500">Last audit: {item.lastAudit}</p>
@@ -904,23 +899,21 @@ const AdminDashboard = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-gray-900">{item.score}%</p>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            item.status === 'Compliant' ? 'bg-emerald-100 text-emerald-700' : 
-                            item.status === 'Needs Review' ? 'bg-yellow-100 text-yellow-700' : 
-                            'bg-red-100 text-red-700'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.status === 'Compliant' ? 'bg-emerald-100 text-emerald-700' :
+                              item.status === 'Needs Review' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                            }`}>
                             {item.status}
                           </span>
                         </div>
                       </div>
                       <div className="mt-3">
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              item.score >= 90 ? 'bg-emerald-500' : 
-                              item.score >= 80 ? 'bg-yellow-500' : 
-                              'bg-red-500'
-                            }`}
+                          <div
+                            className={`h-2 rounded-full ${item.score >= 90 ? 'bg-emerald-500' :
+                                item.score >= 80 ? 'bg-yellow-500' :
+                                  'bg-red-500'
+                              }`}
                             style={{ width: `${item.score}%` }}
                           ></div>
                         </div>
@@ -944,7 +937,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-4 rounded-lg border border-yellow-100">
                     <div className="flex items-start space-x-3">
                       <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
@@ -995,7 +988,7 @@ const AdminDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Organizational Sentiment & Culture Analytics</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1037,11 +1030,10 @@ const AdminDashboard = () => {
                     <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                       <div className="flex items-center justify-between mb-3">
                         <span className="font-medium text-gray-900">{dept.department}</span>
-                        <div className={`w-3 h-3 rounded-full ${
-                          dept.performance >= 4.5 ? 'bg-emerald-500' : 
-                          dept.performance >= 4.0 ? 'bg-yellow-500' : 
-                          'bg-red-500'
-                        }`}></div>
+                        <div className={`w-3 h-3 rounded-full ${dept.performance >= 4.5 ? 'bg-emerald-500' :
+                            dept.performance >= 4.0 ? 'bg-yellow-500' :
+                              'bg-red-500'
+                          }`}></div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -1168,7 +1160,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 h-[600px]">
               <div className="lg:col-span-2 border-r">
                 <div className="h-[500px] overflow-y-auto p-6 space-y-4">
@@ -1186,7 +1178,7 @@ const AdminDashboard = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="border-t p-4">
                   <div className="flex space-x-2">
                     <input
@@ -1206,7 +1198,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <h3 className="font-semibold text-gray-800 mb-4">Strategic Commands</h3>
                 <div className="space-y-3">
@@ -1220,7 +1212,7 @@ const AdminDashboard = () => {
                     </button>
                   ))}
                 </div>
-                
+
                 <div className="mt-8">
                   <h3 className="font-semibold text-gray-800 mb-4">Agentic Capabilities</h3>
                   <div className="space-y-2">
@@ -1275,7 +1267,7 @@ const AdminDashboard = () => {
         return (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Reports & Board-Ready Outputs</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -1289,7 +1281,7 @@ const AdminDashboard = () => {
                       <FileText className="w-8 h-8 opacity-90" />
                     </div>
                   </div>
-                  
+
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1335,7 +1327,7 @@ const AdminDashboard = () => {
                       <span className="text-sm text-gray-500">Generated 2 hours ago</span>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-3">
@@ -1363,7 +1355,7 @@ const AdminDashboard = () => {
                       <span className="text-sm text-gray-500">Updated today</span>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-3">
@@ -1406,7 +1398,7 @@ const AdminDashboard = () => {
                       Use Template
                     </button>
                   </div>
-                  
+
                   <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-3 mb-3">
                       <Users className="w-5 h-5 text-purple-600" />
@@ -1417,7 +1409,7 @@ const AdminDashboard = () => {
                       Use Template
                     </button>
                   </div>
-                  
+
                   <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-3 mb-3">
                       <DollarSign className="w-5 h-5 text-emerald-600" />
@@ -1573,7 +1565,7 @@ const AdminDashboard = () => {
                       {strategicAlerts.filter(a => a.severity === 'High').length} high priority
                     </span>
                   </div>
-                  
+
                   <div className="space-y-3">
                     {strategicAlerts.map((alert) => (
                       <div key={alert.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
@@ -1603,7 +1595,7 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-bold text-gray-900">AI-Generated Executive Summary</h2>
                     <Brain className="w-6 h-6 text-indigo-600" />
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
@@ -1612,7 +1604,7 @@ const AdminDashboard = () => {
                       </div>
                       <p className="text-sm text-gray-600">Productivity increased to 86/100 (+8%). Training ROI at 184%. Employee satisfaction up 5% to 84/100. Hiring efficiency improved with $4,850 cost per hire.</p>
                     </div>
-                    
+
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
                         <AlertCircle className="w-5 h-5 text-amber-500" />
@@ -1620,7 +1612,7 @@ const AdminDashboard = () => {
                       </div>
                       <p className="text-sm text-gray-600">Sales department shows 82% attrition risk (8 employees). Critical skill gaps in AI/ML (7 gap). Safety compliance at 82% needs review. Burnout risk at 18% in Engineering.</p>
                     </div>
-                    
+
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3 mb-3">
                         <Target className="w-5 h-5 text-blue-500" />
@@ -1640,7 +1632,7 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-bold text-gray-900">Top Performers</h2>
                     <Award className="w-5 h-5 text-yellow-500" />
                   </div>
-                  
+
                   <div className="space-y-4">
                     {topPerformers.map((performer) => (
                       <div key={performer.id} className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
@@ -1668,7 +1660,7 @@ const AdminDashboard = () => {
                 {/* Quick Strategic Insights */}
                 <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100">
                   <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Strategic Insights</h2>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3">
@@ -1751,9 +1743,9 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <DashboardLayout 
-      role="admin" 
-      userName={userData?.name || 'CEO'} 
+    <DashboardLayout
+      role="admin"
+      userName={userData?.name || 'CEO'}
       userEmail={userData?.email || ''}
     >
       <div className="flex">
@@ -1763,7 +1755,7 @@ const AdminDashboard = () => {
             <h2 className="text-lg font-bold text-gray-900 mb-2">Executive Command Center</h2>
             <p className="text-sm text-gray-500">AI-powered strategic leadership</p>
           </div>
-          
+
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -1771,11 +1763,10 @@ const AdminDashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-                    activeSection === item.id 
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${activeSection === item.id
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-gray-700 hover:bg-gray-50'
-                  } ${item.highlight ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200' : ''}`}
+                    } ${item.highlight ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200' : ''}`}
                 >
                   <div className="flex items-center space-x-3">
                     <Icon className={`w-5 h-5 ${activeSection === item.id ? 'text-blue-600' : 'text-gray-500'}`} />
@@ -1787,7 +1778,7 @@ const AdminDashboard = () => {
                 </button>
               );
             })}
-            
+
             <div className="pt-4 mt-4 border-t">
               <button className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                 <LogOut className="w-5 h-5" />
@@ -1795,7 +1786,7 @@ const AdminDashboard = () => {
               </button>
             </div>
           </nav>
-          
+
           <div className="mt-8 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
             <div className="flex items-center space-x-3 mb-2">
               <Brain className="w-5 h-5 text-indigo-600" />
@@ -1826,11 +1817,16 @@ const AdminDashboard = () => {
             {/* Header with Breadcrumb */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span className="font-medium text-gray-700">Executive Dashboard</span>
+                <span
+                  className="font-medium text-gray-700 cursor-pointer hover:text-blue-600 transition-colors"
+                  onClick={() => setActiveSection('overview')}
+                >
+                  Executive Dashboard
+                </span>
                 <ChevronRight className="w-4 h-4" />
                 <span className="capitalize">{activeSection.replace('-', ' ')}</span>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Bell className="w-5 h-5 text-gray-600" />
@@ -1845,7 +1841,7 @@ const AdminDashboard = () => {
 
             {/* Render Active Section */}
             {renderSection()}
-            
+
             {/* Footer Note */}
             <div className="text-center text-sm text-gray-500 pt-4">
               <p>Executive AI-Powered Dashboard • Predictive Analytics • Strategic Decision Support</p>

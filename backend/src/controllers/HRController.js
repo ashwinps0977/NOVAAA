@@ -179,7 +179,10 @@ exports.updateEmployee = async (req, res) => {
     if (department) employee.department = department;
     if (position) employee.position = position;
     if (phone) employee.phone = phone;
-    if (salary) employee.salary = salary;
+    if (salary) {
+      employee.salary = salary;
+      employee.currentSalary = salary;
+    }
     if (project) employee.project = project;
     if (status) employee.status = status;
 

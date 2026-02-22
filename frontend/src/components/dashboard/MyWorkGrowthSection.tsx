@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, BookOpen, Zap, CheckCircle, Clock, AlertCircle, RefreshCw, ChevronRight } from 'lucide-react';
+import { Briefcase, BookOpen, Zap, CheckCircle, Clock, AlertCircle, RefreshCw, ChevronRight, Star } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -329,6 +329,16 @@ const MyWorkGrowthSection = () => {
                                             <div className="flex items-center gap-2">
                                                 <span className="font-bold text-gray-900 text-sm">{s.name}</span>
                                                 <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-lg font-medium">{s.category}</span>
+                                            </div>
+                                            <div className="flex gap-0.5 text-amber-500">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <Star
+                                                        key={i}
+                                                        size={12}
+                                                        fill={i < s.currentLevel ? "currentColor" : "none"}
+                                                        className={i < s.currentLevel ? "" : "text-gray-300"}
+                                                    />
+                                                ))}
                                             </div>
                                             <div className="flex items-center gap-2 text-xs">
                                                 <span className="font-semibold text-gray-600">{s.currentLevel}/5</span>

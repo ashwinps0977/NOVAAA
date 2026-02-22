@@ -1695,24 +1695,30 @@ const EmployeeDashboard = () => {
                         };
                         const pillColor = statusMap[project.status] ?? 'bg-gray-100 text-gray-500';
                         return (
-                          <div key={project._id}
-                            className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/20 transition-all">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-black text-base flex items-center justify-center shrink-0">
-                              {project.title?.charAt(0) || 'P'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-gray-900 text-sm truncate">{project.title}</p>
-                              <p className="text-xs text-indigo-500 font-medium">{project.role || 'Contributor'}</p>
-                            </div>
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${pillColor}`}>
-                                {project.status}
-                              </span>
-                              {project.deadline && (
-                                <span className="text-[10px] text-gray-400">
-                                  Due {new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          <div key={project._id} className="p-4 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-black text-base flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
+                                  {project.title?.charAt(0) || 'P'}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-gray-900 text-sm">{project.title}</p>
+                                  <p className="text-xs text-indigo-500 font-bold uppercase tracking-wider mt-0.5">{project.role || 'Contributor'}</p>
+                                  <p className="text-xs text-gray-500 mt-2 line-clamp-2 italic leading-relaxed">
+                                    {project.description || 'No description provided.'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2 shrink-0">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${pillColor}`}>
+                                  {project.status}
                                 </span>
-                              )}
+                                {project.deadline && (
+                                  <span className="text-[10px] text-gray-400 font-bold">
+                                    DUE {new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -2075,7 +2081,12 @@ const EmployeeDashboard = () => {
             {/* Header with Breadcrumb */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span className="font-medium text-gray-700">Employee Dashboard</span>
+                <span
+                  className="font-medium text-gray-700 cursor-pointer hover:text-emerald-600 transition-colors"
+                  onClick={() => setActiveSection('overview')}
+                >
+                  Employee Dashboard
+                </span>
                 <ChevronRight className="w-4 h-4" />
                 <span className="capitalize">{activeSection.replace('-', ' ')}</span>
               </div>

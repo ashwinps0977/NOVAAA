@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle, Calendar, Tag, User, Layers } from 'lucide-react';
+import SearchDropdown from '../../common/SearchDropdown';
 import type { Task } from '../../../services/taskService';
 
 interface TaskModalProps {
@@ -106,17 +107,12 @@ const TaskModal = ({ isOpen, onClose, onSubmit, task, employees }: TaskModalProp
                             <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
                                 <User size={14} className="text-gray-400" /> Assign To
                             </label>
-                            <select
-                                required
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm appearance-none bg-no-repeat bg-[right_1rem_center]"
-                                value={formData.assignedToEmployeeId}
-                                onChange={e => setFormData({ ...formData, assignedToEmployeeId: e.target.value })}
-                            >
-                                <option value="">Select Employee</option>
-                                {employees.map(emp => (
-                                    <option key={emp._id || emp.id} value={emp._id || emp.id}>{emp.name}</option>
-                                ))}
-                            </select>
+                            <SearchDropdown
+                                items={employees}
+                                onSelect={(e) => setFormData({ ...formData, assignedToEmployeeId: e._id })}
+                                placeholder="Search employees..."
+                                searchKey="name"
+                            />
                         </div>
                     </div>
 

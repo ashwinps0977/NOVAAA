@@ -45,6 +45,10 @@ const employeeSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'SalaryStructure'
   },
+  salary: {
+    type: Number,
+    default: 0
+  },
   currentSalary: {
     type: Number, // Actual base salary amount
     default: 0

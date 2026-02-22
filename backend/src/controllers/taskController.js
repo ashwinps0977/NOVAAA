@@ -42,7 +42,15 @@ exports.getMyTasks = async (req, res) => {
 
 exports.createTask = async (req, res) => {
     try {
-        const { title, description, project, priority, dueDate, assignedToEmployeeId } = req.body;
+        const { title, description, project, priority, dueDate, due, assignedToEmployeeId } = req.body;
+
+        // Handle field name mismatch and fallback
+        const rawDate = dueDate || due;
+        let parsedDate = new Date(rawDate);
+        if (isNaN(parsedDate.getTime()) || !rawDate) {
+            parsedDate = new Date();
+            parsedDate.setDate(parsedDate.getDate() + 7); // Default 1 week
+        }
 
         let targetUserId = assignedToEmployeeId;
         const employee = await Employee.findById(assignedToEmployeeId);
@@ -56,11 +64,11 @@ exports.createTask = async (req, res) => {
 
         const newTask = new Task({
             title,
-            description,
-            project,
-            priority: priority.toLowerCase(),
+            description: description || '',
+            project: project || 'General',
+            priority: (priority || 'medium').toLowerCase(),
             status: 'assigned',
-            dueDate: new Date(dueDate),
+            dueDate: parsedDate,
             assignedTo: targetUserId,
             assignedBy: req.user.id,
             createdBy: req.user.id

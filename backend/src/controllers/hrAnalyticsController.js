@@ -6,7 +6,32 @@ const Skill = require('../models/Skill');
 const Attendance = require('../models/Attendance');
 const Leave = require('../models/Leave');
 const EmployeePerformance = require('../models/EmployeePerformance');
-const mongoose = require('mongoose');
+const Project = require('../models/Project');
+
+// Dashboard Overview Stats
+exports.getDashboardStats = async (req, res) => {
+    try {
+        const totalEmployees = await Employee.countDocuments({ status: { $ne: 'inactive' } });
+        const activeProjects = await Project.countDocuments({ status: { $ne: 'Completed' } });
+        const completedProjects = await Project.countDocuments({ status: 'Completed' });
+
+        const departments = await Employee.distinct('department');
+        const totalDepartments = departments.length;
+
+        res.json({
+            success: true,
+            stats: {
+                totalEmployees,
+                activeProjects,
+                completedProjects,
+                totalDepartments
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
 
 // Helper to calculate age from DOB
 const calculateAge = (dob) => {

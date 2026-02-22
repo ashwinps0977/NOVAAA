@@ -34,6 +34,18 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
         opacity: isDragging ? 0.4 : 1,
     };
 
+    const getStatusStyles = (status: string) => {
+        switch (status) {
+            case 'assigned': return 'bg-rose-50 border-rose-200 text-rose-700';
+            case 'in_progress': return 'bg-amber-50 border-amber-200 text-amber-700';
+            case 'review': return 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700';
+            case 'completed': return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+            default: return 'bg-white border-gray-100 text-gray-700';
+        }
+    };
+
+    const statusStyle = getStatusStyles(task.status);
+
     const getPriorityColor = (p: string) => {
         switch (p?.toLowerCase()) {
             case 'high': return 'bg-rose-100 text-rose-700 border-rose-200';
@@ -54,7 +66,7 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
             style={style}
             {...attributes}
             {...listeners}
-            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group relative cursor-grab active:cursor-grabbing mb-3"
+            className={`p-4 rounded-xl shadow-sm border hover:shadow-md transition-all group relative cursor-grab active:cursor-grabbing mb-3 ${statusStyle}`}
         >
             <div className="flex justify-between items-start mb-2">
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${getPriorityColor(task.priority)}`}>
@@ -84,6 +96,11 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
                 <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
                     {task.project}
                 </span>
+                {task.status === 'in_progress' && (
+                    <div className="flex-1 ml-4 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-400 rounded-full animate-pulse" style={{ width: '45%' }}></div>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center justify-between mt-auto">

@@ -21,8 +21,9 @@ import {
 } from '@dnd-kit/sortable';
 import {
     Plus, RefreshCw, FolderKanban,
-    Search, StickyNote, X, Save
+    StickyNote, X, Save
 } from 'lucide-react';
+import SearchDropdown from '../../common/SearchDropdown';
 import { taskService } from '../../../services/taskService';
 import type { Task } from '../../../services/taskService';
 import TaskCard from './TaskCard';
@@ -31,10 +32,10 @@ import TaskModal from './TaskModal';
 // --- Types ---
 type BoardTab = 'projects' | 'employee_tasks' | 'personal_tasks';
 const COLUMNS = [
-    { id: 'assigned', title: 'Assigned', color: 'indigo' },
-    { id: 'in_progress', title: 'In Progress', color: 'blue' },
-    { id: 'review', title: 'Review', color: 'fuchsia' },
-    { id: 'completed', title: 'Completed', color: 'emerald' },
+    { id: 'assigned', title: 'Assigned', color: 'rose', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { id: 'in_progress', title: 'In Progress', color: 'amber', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { id: 'review', title: 'Review', color: 'fuchsia', bg: 'bg-fuchsia-50', border: 'border-fuchsia-100' },
+    { id: 'completed', title: 'Completed', color: 'emerald', bg: 'bg-emerald-50', border: 'border-emerald-100' },
 ] as const;
 
 const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
@@ -198,12 +199,12 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
 
     // --- Sub-components ---
     const Column = ({ col, items }: { col: typeof COLUMNS[number], items: Task[] }) => (
-        <div className={`flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100 p-4 min-w-[300px]`}>
+        <div className={`flex flex-col h-full ${col.bg} rounded-2xl border ${col.border} p-4 min-w-[300px]`}>
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full bg-${col.color}-500 shadow-sm shadow-${col.color}-200`} />
-                    <h3 className="font-bold text-gray-800 text-sm tracking-tight">{col.title}</h3>
-                    <span className="text-[10px] font-bold bg-white px-2 py-0.5 rounded-full border border-gray-100 text-gray-500 shadow-sm">
+                    <div className={`w-3 h-3 rounded-full bg-${col.color}-500 shadow-sm shadow-${col.color}-200`} />
+                    <h3 className="font-extrabold text-gray-800 text-sm tracking-tight uppercase">{col.title}</h3>
+                    <span className={`text-[10px] font-black bg-white px-2 py-0.5 rounded-full border ${col.border} text-${col.color}-600 shadow-sm`}>
                         {items.length}
                     </span>
                 </div>
@@ -263,14 +264,18 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     <div className="h-6 w-[1px] bg-gray-100 mx-1 hidden sm:block" />
 
                     {/* Search */}
-                    <div className="relative flex-1 sm:min-w-[200px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                        <input
-                            type="text"
+                    <div className="flex-1 sm:min-w-[250px]">
+                        <SearchDropdown
+                            items={tasks}
+                            onSelect={(t) => {
+                                setSearchTerm(t.title);
+                                setEditingTask(t);
+                                setShowTaskModal(true);
+                            }}
                             placeholder="Find task or teammate..."
-                            className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            searchKey="title"
+                            labelKey="title"
+                            iconType="project"
                         />
                     </div>
 

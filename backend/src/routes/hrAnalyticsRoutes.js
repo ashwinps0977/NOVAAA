@@ -7,6 +7,7 @@ const admin = require('../middleware/admin');
 // All routes require authentication and HR/Admin role
 router.use(auth, admin);
 
+router.get('/dashboard-stats', hrAnalyticsController.getDashboardStats);
 router.get('/workforce', hrAnalyticsController.getWorkforceStats);
 router.get('/hiring', hrAnalyticsController.getHiringStats);
 router.get('/attrition', hrAnalyticsController.getAttritionStats);

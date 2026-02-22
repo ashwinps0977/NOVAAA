@@ -136,13 +136,18 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
+    // Find user by email or name
+    const user = await User.findOne({
+      $or: [
+        { email: email },
+        { name: email } // 'email' variable holds the identifier from the form
+      ]
+    });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid email, name or password'
       });
     }
 

@@ -1,6 +1,8 @@
 const Project = require('../models/Project');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const Task = require('../models/Task');
+const Notification = require('../models/Notification');
 
 // Assign a project to an employee
 exports.assignProject = async (req, res) => {
@@ -25,30 +27,76 @@ exports.assignProject = async (req, res) => {
             });
         }
 
+        // Parse deadline safely
+        let parsedDeadline = new Date(deadline);
+        if (isNaN(parsedDeadline.getTime()) && deadline && deadline.includes('-')) {
+            // Try parsing DD-MM-YYYY
+            const parts = deadline.split('-');
+            if (parts.length === 3) {
+                // Check if it's DD-MM-YYYY or YYYY-MM-DD (already tried by new Date)
+                // If parts[0] is 4 digits, it's YYYY-MM-DD
+                if (parts[0].length !== 4) {
+                    parsedDeadline = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                }
+            }
+        }
+
+        // Final fallback if date is still invalid
+        if (isNaN(parsedDeadline.getTime())) {
+            parsedDeadline = new Date();
+            parsedDeadline.setMonth(parsedDeadline.getMonth() + 1); // Default 1 month
+        }
+
         const project = new Project({
             title,
-            description,
+            description: description || `Project: ${title} - Role: ${role}`, // Handle empty description
             role,
             assignedTo: employee._id,
             assignedToUser: user._id,
-            assignedBy: req.user.id, // HR user from token
-            deadline,
+            assignedBy: req.user.id,
+            deadline: parsedDeadline,
             status: 'Pending'
         });
 
         await project.save();
 
+        // Create a corresponding Task for the Operations Board
+        const newTask = new Task({
+            title,
+            description: description || `Project Role: ${role}`,
+            project: title,
+            priority: 'Medium',
+            status: 'assigned',
+            dueDate: parsedDeadline,
+            assignedTo: user._id,
+            assignedBy: req.user.id,
+            createdBy: req.user.id
+        });
+
+        await newTask.save();
+
+        // Create notification
+        await Notification.create({
+            user: user._id,
+            title: 'New Project & Task Assigned',
+            message: `You have been assigned to project "${title}" and a corresponding task has been created.`,
+            type: 'info'
+        });
+
         res.status(201).json({
             success: true,
-            message: 'Project assigned successfully',
-            project
+            message: 'Project and Task assigned successfully',
+            project,
+            task: newTask
         });
 
     } catch (error) {
         console.error('Assign project error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to assign project'
+            message: 'Failed to assign project',
+            error: error.message,
+            stack: error.stack
         });
     }
 };

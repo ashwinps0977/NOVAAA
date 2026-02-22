@@ -39,6 +39,25 @@ exports.seedSkills = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
+// Get skills for a specific employee (HR only)
+exports.getEmployeeSkills = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        // Find user by employeeId (linking matches HR controller logic)
+        const employee = await require('../models/Employee').findById(employeeId);
+        if (!employee) return res.status(404).json({ success: false, message: 'Employee not found' });
+
+        const user = await require('../models/User').findOne({ email: employee.email });
+        if (!user) return res.status(404).json({ success: false, message: 'User account not found' });
+
+        const skills = await Skill.find({ employee: user._id });
+        res.json({ success: true, skills });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 // Get organization-wide skill gaps (HR only)
 exports.getOrgSkillGaps = async (req, res) => {
     try {

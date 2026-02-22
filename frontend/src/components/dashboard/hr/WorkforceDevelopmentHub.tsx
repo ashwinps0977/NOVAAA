@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, BookOpen, Users, Plus, X, AlertCircle, CheckCircle, RefreshCw, ChevronRight } from 'lucide-react';
+import SearchDropdown from '../../common/SearchDropdown';
+
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -150,7 +152,7 @@ const WorkforceDevelopmentHub = () => {
                 fetchAll();
                 setTimeout(() => setSuccessMsg(''), 3000);
             } else {
-                alert(data.message || 'Failed to assign project.');
+                alert(data.message + (data.error ? ': ' + data.error : '') || 'Failed to assign project.');
             }
         } catch {
             alert('Network error.');
@@ -427,13 +429,12 @@ const WorkforceDevelopmentHub = () => {
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Select Employee</label>
-                                <select value={pForm.employeeId} onChange={e => setPForm({ ...pForm, employeeId: e.target.value })}
-                                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <option value="">— Choose Employee —</option>
-                                    {employees.map(e => (
-                                        <option key={e._id} value={e._id}>{e.name} · {e.department}</option>
-                                    ))}
-                                </select>
+                                <SearchDropdown
+                                    items={employees}
+                                    onSelect={(e) => setPForm({ ...pForm, employeeId: e._id })}
+                                    placeholder="Search employees..."
+                                    searchKey="name"
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Title</label>
@@ -489,13 +490,12 @@ const WorkforceDevelopmentHub = () => {
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Select Employee</label>
-                                <select value={tForm.employeeId} onChange={e => setTForm({ ...tForm, employeeId: e.target.value })}
-                                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                    <option value="">— Choose Employee —</option>
-                                    {employees.map(e => (
-                                        <option key={e._id} value={e._id}>{e.name} · {e.department}</option>
-                                    ))}
-                                </select>
+                                <SearchDropdown
+                                    items={employees}
+                                    onSelect={(e) => setTForm({ ...tForm, employeeId: e._id })}
+                                    placeholder="Search employees..."
+                                    searchKey="name"
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Select Course</label>
