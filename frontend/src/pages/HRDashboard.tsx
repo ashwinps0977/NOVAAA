@@ -848,7 +848,7 @@ const HRDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Total Employees</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats.totalEmployees}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats?.totalEmployees ?? 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <Users className="w-6 h-6 text-blue-600" />
@@ -860,7 +860,7 @@ const HRDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Active Projects</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats.activeProjects}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats?.activeProjects ?? 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <Target className="w-6 h-6 text-green-600" />
@@ -872,7 +872,7 @@ const HRDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Departments</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats.totalDepartments}</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats?.totalDepartments ?? 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <GraduationCap className="w-6 h-6 text-purple-600" />
@@ -933,29 +933,31 @@ const HRDashboard = () => {
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projects.filter(p => p.status !== 'Completed').length > 0 ? (
-                  projects.filter(p => p.status !== 'Completed').slice(0, 6).map((project: any) => (
-                    <div key={project._id} className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all group">
+                {(Array.isArray(projects) ? projects : []).filter(p => p && p.status !== 'Completed').length > 0 ? (
+                  (Array.isArray(projects) ? projects : []).filter(p => p && p.status !== 'Completed').slice(0, 6).map((project: any) => (
+                    <div key={project._id || Math.random()} className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all group">
                       <div className="flex items-center justify-between mb-3">
                         <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                          {project.title.charAt(0)}
+                          {project.title?.charAt(0) || 'P'}
                         </div>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${project.status === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                           }`}>
-                          {project.status}
+                          {project.status || 'Active'}
                         </span>
                       </div>
-                      <h4 className="font-bold text-gray-900 mb-1">{project.title}</h4>
-                      <p className="text-xs text-indigo-500 font-bold uppercase tracking-tighter mb-2">{project.role}</p>
-                      <p className="text-xs text-gray-600 line-clamp-2 italic mb-4">{project.description}</p>
+                      <h4 className="font-bold text-gray-900 mb-1">{project.title || 'Untitled Project'}</h4>
+                      <p className="text-xs text-indigo-500 font-bold uppercase tracking-tighter mb-2">{project.role || 'No Role'}</p>
+                      <p className="text-xs text-gray-600 line-clamp-2 italic mb-4">{project.description || 'No description provided.'}</p>
                       <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px]">
                         <div className="flex items-center gap-2">
                           <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500 overflow-hidden">
-                            {project.assignedTo?.name?.charAt(0) || 'E'}
+                            {project.assignedTo?.name?.charAt(0) || project.assignedToName?.charAt(0) || 'E'}
                           </div>
-                          <span className="font-medium text-gray-500">{project.assignedTo?.name || 'Unassigned'}</span>
+                          <span className="font-medium text-gray-500">{project.assignedTo?.name || project.assignedToName || 'Unassigned'}</span>
                         </div>
-                        <span className="font-bold text-gray-400">DUE {new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span className="font-bold text-gray-400">
+                          DUE {project.deadline ? new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -1646,7 +1648,20 @@ const HRDashboard = () => {
             </div>
 
             {/* Render Active Section */}
-            {renderSection()}
+            {(() => {
+              try {
+                console.log('🔍 [DIAGNOSTIC] HRDashboard: Attempting to render section:', activeSection);
+                return renderSection();
+              } catch (e) {
+                console.error('❌ [DIAGNOSTIC] HRDashboard: Error in renderSection:', e);
+                return (
+                  <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                    <h3 className="font-bold">Error Rendering Section</h3>
+                    <p className="text-sm">Something went wrong while displaying this part of the dashboard.</p>
+                  </div>
+                );
+              }
+            })()}
           </div>
         </div>
       </div>

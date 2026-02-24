@@ -147,7 +147,8 @@ app.use('/api/skills', checkDB, skillRoutes);
 
 // Analytics routes
 const hrAnalyticsRoutes = require('./routes/hrAnalyticsRoutes');
-app.use('/api/analytics', checkDB, hrAnalyticsRoutes);
+app.use('/api/hr-analytics', checkDB, hrAnalyticsRoutes);
+app.use('/api/analytics', checkDB, hrAnalyticsRoutes); // Alias for compatibility
 
 // Temporary test endpoints (only used when DB is not connected)
 const tempUsers = [];

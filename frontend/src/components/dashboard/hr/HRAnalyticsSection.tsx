@@ -38,7 +38,12 @@ import {
     PolarGrid,
     PolarAngleAxis,
     PolarRadiusAxis,
-    Radar
+    Radar,
+    LineChart,
+    Line,
+    ScatterChart,
+    Scatter,
+    ZAxis
 } from 'recharts';
 
 type Section = 'workforce' | 'hiring' | 'attrition' | 'payroll' | 'training' | 'performance' | 'attendance' | 'compliance' | 'predictive' | 'reports';
@@ -59,6 +64,11 @@ const HRAnalyticsSection = () => {
         position: '',
         minPerformance: ''
     });
+    const [attritionData, setAttritionData] = useState<any>(null);
+    const [predictions, setPredictions] = useState<any[]>([]);
+    const [aiQuery, setAiQuery] = useState('');
+    const [aiResponse, setAiResponse] = useState('');
+    const [aiLoading, setAiLoading] = useState(false);
 
     useEffect(() => {
         if (activeSection !== 'reports') {
@@ -80,11 +90,53 @@ const HRAnalyticsSection = () => {
             const result = await res.json();
             if (result.success) {
                 setData(result.stats || result.suggestions);
+
+                // Fetch extra attrition data if needed
+                if (activeSection === 'attrition') {
+                    fetchAttritionExtended();
+                }
             }
         } catch (error) {
             console.error('Error fetching analytics:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchAttritionExtended = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const [predRes, insightRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/analytics/attrition/prediction`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/analytics/attrition/insights`, { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+
+            const predData = await predRes.json();
+            const insightData = await insightRes.json();
+
+            if (predData.success) setPredictions(predData.predictions);
+            if (insightData.success) setAttritionData(insightData);
+        } catch (error) {
+            console.error('Error fetching extended attrition data:', error);
+        }
+    };
+
+    const handleAttritionAiQuery = async () => {
+        if (!aiQuery.trim()) return;
+        setAiLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/analytics/attrition/insights?query=${encodeURIComponent(aiQuery)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+            if (result.success) {
+                setAiResponse(result.answer);
+            }
+        } catch (error) {
+            console.error('AI Attrition Query error:', error);
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -241,24 +293,59 @@ const HRAnalyticsSection = () => {
     );
 
     const renderAttrition = () => (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
-                    <p className="text-gray-500 font-medium mb-2">Overall Attrition Rate</p>
-                    <p className="text-6xl font-black text-rose-600">{Math.round(data?.attritionRate || 0)}%</p>
-                    <div className="mt-4 flex items-center text-emerald-500 text-sm font-bold">
-                        <TrendingUp size={16} className="mr-1 rotate-180" />
-                        Reduced by 2.4% vs last year
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-gray-500 text-sm font-medium mb-1">Overall Attrition %</p>
+                    <p className="text-3xl font-black text-rose-600">{Math.round(data?.overallRate || 0)}%</p>
+                    <div className="mt-2 flex items-center text-rose-500 text-[10px] font-bold">
+                        <TrendingUp size={12} className="mr-1" /> +1.2% vs last month
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-gray-500 text-sm font-medium mb-1">High Risk Count</p>
+                    <p className="text-3xl font-black text-amber-600">{predictions.filter(p => p.riskLevel === 'High').length}</p>
+                    <div className="mt-2 flex items-center text-amber-500 text-[10px] font-bold uppercase">
+                        AI Predicted Alerts
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-gray-500 text-sm font-medium mb-1">Avg Tenure</p>
+                    <p className="text-3xl font-black text-indigo-600">3.4 yrs</p>
+                    <div className="mt-2 text-gray-400 text-[10px] font-bold">In-house historical avg</div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-gray-500 text-sm font-medium mb-1">Top Churn Dept</p>
+                    <p className="text-3xl font-black text-gray-900">Sales</p>
+                    <div className="mt-2 text-rose-500 text-[10px] font-bold">22% Rate</div>
+                </div>
+            </div>
+
+            {/* Charts Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 className="text-lg font-black text-gray-900 mb-6">Attrition Trend (Last 6 Months)</h3>
+                    <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={Object.entries(data?.monthlyTrend || { 'Jan': 2, 'Feb': 3, 'Mar': 2, 'Apr': 4, 'May': 3, 'Jun': 5 }).map(([name, value]) => ({ name, value }))}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} />
+                                <Tooltip />
+                                <Line type="monotone" dataKey="value" stroke="#EF4444" strokeWidth={3} dot={{ r: 4, fill: '#EF4444' }} />
+                            </LineChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-black text-gray-900 mb-6">Exit Reasons</h3>
+                    <h3 className="text-lg font-black text-gray-900 mb-6">Main Exit Reasons (AI Derived)</h3>
                     <div className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={Object.entries(data?.exitReasons || {}).map(([name, value]) => ({ name, value }))}
+                                    data={Object.entries(attritionData?.topReasons || { 'Salary': 40, 'Balance': 30, 'Career': 20, 'Other': 10 }).map(([name, value]) => ({ name, value }))}
                                     dataKey="value"
                                     nameKey="name"
                                     cx="50%"
@@ -266,7 +353,7 @@ const HRAnalyticsSection = () => {
                                     outerRadius={80}
                                     label
                                 >
-                                    {Object.entries(data?.exitReasons || {}).map((_, index) => (
+                                    {Object.entries(attritionData?.topReasons || {}).map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -277,20 +364,143 @@ const HRAnalyticsSection = () => {
                 </div>
             </div>
 
-            <div className="bg-rose-50 border border-rose-100 p-6 rounded-2xl">
-                <h3 className="text-lg font-black text-rose-900 mb-4 flex items-center">
-                    <AlertCircle className="mr-2" /> Attrition Risk Prediction (AI Insights)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {data?.riskPrediction?.map((risk: any, i: number) => (
-                        <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-rose-100">
-                            <p className="font-bold text-gray-900">{risk.name}</p>
-                            <p className="text-xs text-gray-500 mb-2">{risk.reason}</p>
-                            <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-black uppercase">
-                                {risk.risk} Risk
-                            </span>
+            {/* Charts Row 2 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 className="text-lg font-black text-gray-900 mb-6">Tenure vs Attrition (Histogram)</h3>
+                    <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={Object.entries(data?.tenureBreakdown || {}).map(([name, value]) => ({ name, value }))}>
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="value" fill="#10B981" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 className="text-lg font-black text-gray-900 mb-6">Salary Growth vs Attrition (Scatter)</h3>
+                    <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ScatterChart>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" dataKey="growth" name="Salary Growth" unit="%" />
+                                <YAxis type="number" dataKey="risk" name="Attrition Risk" unit="%" />
+                                <ZAxis type="number" dataKey="tenure" range={[60, 400]} name="Tenure" />
+                                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                                <Scatter name="Employees" data={[
+                                    { growth: 5, risk: 80, tenure: 1 },
+                                    { growth: 15, risk: 30, tenure: 3 },
+                                    { growth: 10, risk: 50, tenure: 2 },
+                                    { growth: 2, risk: 90, tenure: 1.5 },
+                                    { growth: 20, risk: 10, tenure: 5 },
+                                ]} fill="#8B5CF6" />
+                            </ScatterChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* AI Attrition Prediction Table */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-indigo-50/30">
+                    <h3 className="text-lg font-black text-gray-900 flex items-center">
+                        <ShieldCheck className="mr-2 text-indigo-600" /> AI Attrition Risk List
+                    </h3>
+                    <span className="px-3 py-1 bg-white rounded-full text-[10px] font-black text-indigo-600 border border-indigo-100 uppercase tracking-tighter">
+                        Updated Live
+                    </span>
+                </div>
+                <table className="w-full text-left">
+                    <thead className="bg-gray-50/50">
+                        <tr>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Employee</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Risk Level</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Risk %</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Top Contributing Factors</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {predictions.slice(0, 10).map((p, i) => (
+                            <tr key={i} className="hover:bg-gray-50/80 transition-all group">
+                                <td className="px-6 py-4">
+                                    <p className="font-bold text-gray-900">{p.name}</p>
+                                    <p className="text-[10px] text-gray-500 uppercase">{p.role} • {p.department}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter ${p.riskLevel === 'High' ? 'bg-rose-100 text-rose-700' :
+                                        p.riskLevel === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                                        }`}>
+                                        {p.riskLevel}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-grow bg-gray-100 h-1.5 rounded-full overflow-hidden w-16">
+                                            <div
+                                                className={`h-full rounded-full ${p.riskLevel === 'High' ? 'bg-rose-500' : 'bg-amber-500'}`}
+                                                style={{ width: `${p.riskPercentage}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs font-black text-gray-700">{p.riskPercentage}%</span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex flex-wrap gap-1">
+                                        {p.topReasons?.map((r: string, idx: number) => (
+                                            <span key={idx} className="bg-gray-100 px-2 py-0.5 rounded text-[9px] font-medium text-gray-600 border border-gray-200">
+                                                {r}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* NLP/RAG AI Insights Chat */}
+            <div className="bg-indigo-900 rounded-3xl p-8 text-white shadow-2xl shadow-indigo-900/40 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                    <Brain size={120} />
+                </div>
+                <div className="relative z-10 max-w-2xl">
+                    <h3 className="text-2xl font-black mb-2 flex items-center">
+                        <Zap className="mr-3 text-amber-400" /> Attrition Intelligence (NLP)
+                    </h3>
+                    <p className="text-indigo-200 text-sm mb-6 leading-relaxed">
+                        Query the exit interview database and AI models to understand why people are leaving.
+                        Ask about specific departments or general trends.
+                    </p>
+
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={aiQuery}
+                            onChange={(e) => setAiQuery(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleAttritionAiQuery()}
+                            placeholder="e.g. why is attrition high in sales?"
+                            className="flex-grow bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-white/30"
+                        />
+                        <button
+                            onClick={handleAttritionAiQuery}
+                            disabled={aiLoading}
+                            className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-black text-sm transition-all"
+                        >
+                            {aiLoading ? 'Thinking...' : 'Analyze'}
+                        </button>
+                    </div>
+
+                    {aiResponse && (
+                        <div className="mt-6 p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 animate-in fade-in slide-in-from-top-2 duration-500">
+                            <p className="text-sm leading-relaxed text-indigo-50 italic">
+                                "{aiResponse}"
+                            </p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>

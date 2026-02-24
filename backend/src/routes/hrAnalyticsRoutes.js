@@ -11,6 +11,8 @@ router.get('/dashboard-stats', hrAnalyticsController.getDashboardStats);
 router.get('/workforce', hrAnalyticsController.getWorkforceStats);
 router.get('/hiring', hrAnalyticsController.getHiringStats);
 router.get('/attrition', hrAnalyticsController.getAttritionStats);
+router.get('/attrition/prediction', hrAnalyticsController.getAttritionPrediction);
+router.get('/attrition/insights', hrAnalyticsController.getAttritionInsights);
 router.get('/payroll', hrAnalyticsController.getPayrollStats);
 router.get('/training', hrAnalyticsController.getTrainingStats);
 router.get('/performance', hrAnalyticsController.getPerformanceStats);
