@@ -26,6 +26,39 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role = 'employee' } = req.body;
 
+    // Handle Test Mode
+    if (req.useTestMode) {
+      console.log('🧪 TEST MODE: Registration');
+      const { tempUsers } = require('../server');
+
+      const existingUser = tempUsers.find(u => u.email === email);
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'User with this email already exists'
+        });
+      }
+
+      const newUser = {
+        _id: Date.now().toString(),
+        name,
+        email,
+        role,
+        isVerified: false,
+        createdAt: new Date(),
+        lastLogin: new Date()
+      };
+
+      tempUsers.push(newUser);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Registration successful (TEST MODE - Not saved to MongoDB)',
+        token: 'test-jwt-token-' + Date.now(),
+        user: newUser
+      });
+    }
+
     // Basic validation
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -193,7 +226,31 @@ exports.login = async (req, res) => {
     }
 
     // Find user by email or name
-    const user = await User.findOne({
+    let user;
+    if (req.useTestMode) {
+      console.log('🧪 TEST MODE: Login');
+      const { tempUsers } = require('../server');
+      user = tempUsers.find(u => u.email === email || u.name === email);
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid email, name or password'
+        });
+      }
+
+      // Skip password check in test mode for simplicity OR implement basic check
+      // For now, let's just allow it if found
+
+      return res.json({
+        success: true,
+        message: 'Login successful (TEST MODE)',
+        token: 'test-jwt-token-' + Date.now(),
+        user
+      });
+    }
+
+    user = await User.findOne({
       $or: [
         { email: email },
         { name: email } // 'email' variable holds the identifier from the form

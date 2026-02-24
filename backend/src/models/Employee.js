@@ -155,6 +155,40 @@ const employeeSchema = new mongoose.Schema({
     max: 100,
     default: 0
   },
+  taskCompletionRate: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  onTimeDeliveryRate: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  currentCapacity: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  yearsInCompany: {
+    type: Number,
+    default: 0
+  },
+  totalExperience: {
+    type: Number,
+    default: 0
+  },
+  activeProjects: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project'
+  }],
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team'
+  },
   promotionHistory: [{
     title: String,
     date: { type: Date, default: Date.now }

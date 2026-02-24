@@ -26,14 +26,17 @@ import {
 import { API_BASE_URL } from '../../../config';
 import SearchDropdown from '../../common/SearchDropdown';
 import { taskService } from '../../../services/taskService';
+import { teamService } from '../../../services/teamService';
 import type { Task } from '../../../services/taskService';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
 import TaskDetailsModal from '../employee/TaskDetailsModal';
 import { useRealTimeSync } from '../../../hooks/useRealTimeSync';
+import TeamOperations from './teams/TeamOperations';
+import ProjectAutoSelectionModal from './teams/ProjectAutoSelectionModal';
 
 // --- Types ---
-type BoardTab = 'projects' | 'employee_tasks' | 'personal_tasks';
+type BoardTab = 'projects' | 'employee_tasks' | 'team_operations';
 const COLUMNS = [
     { id: 'assigned', title: 'Assigned', color: 'rose', bg: 'bg-rose-50', border: 'border-rose-100' },
     { id: 'in_progress', title: 'In Progress', color: 'amber', bg: 'bg-amber-50', border: 'border-amber-100' },
@@ -41,10 +44,11 @@ const COLUMNS = [
     { id: 'completed', title: 'Completed', color: 'emerald', bg: 'bg-emerald-50', border: 'border-emerald-100' },
 ] as const;
 
-const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
+const OperationsBoard = ({ currentUser, projects = [] }: { currentUser?: any, projects?: any[] }) => {
     // Data State
     const [tasks, setTasks] = useState<Task[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
+    const [teams, setTeams] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +58,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
     const [filterPriority, setFilterPriority] = useState<string>('All');
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [showTaskModal, setShowTaskModal] = useState(false);
+    const [showAutoSelectModal, setShowAutoSelectModal] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<Task | null>(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -73,15 +78,17 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
         setLoading(true);
         setError(null);
         try {
-            const [taskRes, empRes] = await Promise.all([
+            const [taskRes, empRes, teamRes] = await Promise.all([
                 taskService.getAllTasks(),
                 fetch(`${API_BASE_URL}/hr/employees`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                }).then(res => res.json())
+                }).then(res => res.json()),
+                teamService.getTeamOverview()
             ]);
 
             if (taskRes.success) setTasks(taskRes.tasks);
             if (empRes.success) setEmployees(empRes.employees);
+            if (teamRes.success) setTeams(teamRes.teams);
         } catch (err) {
             setError('Failed to sync board data.');
         } finally {
@@ -101,17 +108,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
         let result = tasks;
 
         // Tab Filtering
-        if (activeTab === 'personal_tasks' && currentUser) {
-            result = result.filter(t => t.assignedTo?._id === currentUser._id || t.createdBy === currentUser._id);
-        }
-
-        // Search
-        if (searchTerm) {
-            result = result.filter(t =>
-                t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                t.assignedTo?.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
+        // Search handled externally for specific logic
 
         // Priority Filter
         if (filterPriority !== 'All') {
@@ -270,7 +267,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     )}
                     {/* Tabs */}
                     <div className="flex bg-gray-50 p-1 rounded-xl">
-                        {(['employee_tasks', 'personal_tasks'] as const).map(tab => (
+                        {(['team_operations', 'employee_tasks'] as const).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -286,15 +283,20 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     {/* Search */}
                     <div className="flex-1 sm:min-w-[250px]">
                         <SearchDropdown
-                            items={tasks}
-                            onSelect={(t) => {
-                                setSearchTerm(t.title);
-                                setEditingTask(t);
-                                setShowTaskModal(true);
+                            items={searchTerm.length === 1 ? projects : (searchTerm.length >= 2 ? teams : [])}
+                            onSelect={(item) => {
+                                if (searchTerm.length === 1) {
+                                    // Handle project select (filter board)
+                                    setSearchTerm(item.projectName || item.title);
+                                } else {
+                                    // Handle team select
+                                    setSearchTerm(item.teamName);
+                                }
                             }}
-                            placeholder="Find task or teammate..."
-                            searchKey="title"
-                            labelKey="title"
+                            onSearch={(term) => setSearchTerm(term)}
+                            placeholder="Find Task only"
+                            searchKey={searchTerm.length === 1 ? "projectName" : "teamName"}
+                            labelKey={searchTerm.length === 1 ? "projectName" : "teamName"}
                             iconType="project"
                         />
                     </div>
@@ -319,16 +321,25 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     </button>
 
                     <button
-                        onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
+                        onClick={() => {
+                            if (activeTab === 'team_operations') {
+                                setShowAutoSelectModal(true);
+                            } else {
+                                setEditingTask(null);
+                                setShowTaskModal(true);
+                            }
+                        }}
                         className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/30 font-black text-xs uppercase tracking-widest active:scale-95"
                     >
-                        <Plus size={16} strokeWidth={3} /> Assign New
+                        <Plus size={16} strokeWidth={3} /> {activeTab === 'team_operations' ? 'New Project' : 'Assign New'}
                     </button>
                 </div>
             </div>
 
             {/* Board Container */}
-            <div className="flex-1 overflow-x-auto pb-4 custom-scrollbar">
+            {activeTab === 'team_operations' ? (
+                <TeamOperations teams={teams} />
+            ) : (
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCorners}
@@ -364,7 +375,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                         ) : null}
                     </DragOverlay>
                 </DndContext>
-            </div>
+            )}
 
             {/* Notepad Widget */}
             <div className="fixed bottom-10 right-10 z-[100]">
@@ -425,6 +436,11 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     }}
                 />
             )}
+            <ProjectAutoSelectionModal
+                isOpen={showAutoSelectModal}
+                onClose={() => setShowAutoSelectModal(false)}
+                onSuccess={fetchData}
+            />
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -451,7 +467,7 @@ const OperationsBoard = ({ currentUser }: { currentUser?: any }) => {
                     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 

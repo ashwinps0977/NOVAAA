@@ -23,6 +23,10 @@ const skillSchema = new mongoose.Schema({
         max: 5,
         default: 3
     },
+    yearsOfExperience: {
+        type: Number,
+        default: 0
+    },
     employee: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

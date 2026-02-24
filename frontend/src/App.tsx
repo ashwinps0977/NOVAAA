@@ -17,22 +17,32 @@ import DashboardRedirect from "./pages/DashboardRedirect";
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
   const userStr = localStorage.getItem('user');
+  console.log('🔍 [DIAGNOSTIC] ProtectedRoute: userStr from localStorage:', userStr);
   const token = localStorage.getItem('token');
 
   if (!token || !userStr) {
     return <Navigate to="/login" />;
   }
 
-  const user = JSON.parse(userStr);
+  let user;
+  try {
+    user = JSON.parse(userStr);
+  } catch (e) {
+    console.error('Failed to parse user from localStorage', e);
+    return <Navigate to="/login" />;
+  }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!user || !user.role || !allowedRoles.includes(user.role)) {
     // Redirect to appropriate dashboard based on role
-    if (user.role === 'admin') {
+    const role = user?.role;
+    if (role === 'admin') {
       return <Navigate to="/admin/dashboard" />;
-    } else if (user.role === 'hr') {
+    } else if (role === 'hr') {
       return <Navigate to="/hr/dashboard" />;
-    } else {
+    } else if (role === 'employee') {
       return <Navigate to="/dashboard" />;
+    } else {
+      return <Navigate to="/login" />;
     }
   }
 

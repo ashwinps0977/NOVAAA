@@ -222,8 +222,8 @@ const HRPayrollSection = () => {
                                         <p className="text-sm text-gray-500">Base: ${s.baseSalary}</p>
                                     </div>
                                     <div className="text-right text-sm text-gray-500">
-                                        <p>HRA: {s.components.hra}%</p>
-                                        <p>PF: {s.deductions.pf}%</p>
+                                        <p>HRA: {s.components?.hra || 0}%</p>
+                                        <p>PF: {s.deductions?.pf || 0}%</p>
                                     </div>
                                 </div>
                             ))}
@@ -272,10 +272,10 @@ const HRPayrollSection = () => {
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-lg">
-                                    Payroll Draft: {payrollData.payroll.month} {payrollData.payroll.year}
-                                    <span className={`ml-3 px-3 py-1 rounded-full text-xs ${payrollData.payroll.status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                    Payroll Draft: {payrollData.payroll?.month} {payrollData.payroll?.year}
+                                    <span className={`ml-3 px-3 py-1 rounded-full text-xs ${payrollData.payroll?.status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                         }`}>
-                                        {payrollData.payroll.status}
+                                        {payrollData.payroll?.status || 'Draft'}
                                     </span>
                                 </h3>
                                 <div className="space-x-3">
@@ -311,16 +311,16 @@ const HRPayrollSection = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {payrollData.salaries.map((rec: any) => (
+                                        {(payrollData.salaries || []).map((rec: any) => (
                                             <tr key={rec._id}>
                                                 <td className="p-3 font-medium">Employee ID: {rec.employee}</td>
-                                                <td className="p-3">${rec.basic}</td>
-                                                <td className="p-3 text-green-600">+${rec.hra + rec.da + rec.bonus}</td>
-                                                <td className="p-3 text-red-600">-${rec.deductions + rec.pf + rec.tax}</td>
-                                                <td className="p-3 font-bold">${rec.netSalary}</td>
+                                                <td className="p-3">${rec.basic || 0}</td>
+                                                <td className="p-3 text-green-600">+${(rec.hra || 0) + (rec.da || 0) + (rec.bonus || 0)}</td>
+                                                <td className="p-3 text-red-600">-${(rec.deductions || 0) + (rec.pf || 0) + (rec.tax || 0)}</td>
+                                                <td className="p-3 font-bold">${rec.netSalary || 0}</td>
                                                 <td className="p-3">
                                                     <span className={`px-2 py-0.5 rounded text-xs ${rec.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                                                        }`}>{rec.status}</span>
+                                                        }`}>{rec.status || 'Pending'}</span>
                                                 </td>
                                                 <td className="p-3">
                                                     <button

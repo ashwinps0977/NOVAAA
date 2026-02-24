@@ -1,62 +1,71 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
+    projectName: {
+        type: String,
+        trim: true
+    },
+    // Compatibility with title used in projectController
     title: {
         type: String,
-        required: true,
         trim: true
     },
     description: {
         type: String,
         required: true
     },
-    role: {
+    priority: {
         type: String,
-        required: true,
-        trim: true
+        enum: ['Low', 'Medium', 'High'],
+        default: 'Medium'
+    },
+    requiredSkills: [{
+        skill: String,
+        level: { type: Number, min: 1, max: 5 }
+    }],
+    minExperience: {
+        type: Number,
+        default: 0
+    },
+    role: {
+        type: String
+    },
+    startDate: {
+        type: Date,
+        default: Date.now
+    },
+    endDate: {
+        type: Date
+    },
+    deadline: {
+        type: Date
+    },
+    teamId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Team'
     },
     assignedTo: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Employee',
-        required: true
+        ref: 'Employee'
     },
     assignedToUser: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    assignedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        ref: 'User'
     },
     status: {
         type: String,
-        enum: ['Pending', 'In Progress', 'Completed', 'On Hold'],
-        default: 'Pending'
+        enum: ['Planning', 'Active', 'Completed', 'Pending'],
+        default: 'Planning'
     },
-    feedback: {
-        type: String,
-        default: ''
+    progressPercentage: {
+        type: Number,
+        default: 0
     },
-    deadline: {
-        type: Date,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
+    // Keep internal tracking
+    assignedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
-});
-
-// Update timestamp on save
-projectSchema.pre('save', function (next) {
-    this.updatedAt = Date.now();
-    next();
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Project', projectSchema);
