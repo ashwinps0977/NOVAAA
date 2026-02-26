@@ -1702,12 +1702,28 @@ const EmployeeDashboard = () => {
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-black text-base flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
                                   {project.title?.charAt(0) || 'P'}
                                 </div>
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <p className="font-bold text-gray-900 text-sm">{project.title}</p>
                                   <p className="text-xs text-indigo-500 font-bold uppercase tracking-wider mt-0.5">{project.role || 'Contributor'}</p>
                                   <p className="text-xs text-gray-500 mt-2 line-clamp-2 italic leading-relaxed">
                                     {project.description || 'No description provided.'}
                                   </p>
+
+                                  {/* Progress bar */}
+                                  <div className="mt-4">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completion</span>
+                                      <span className="text-[10px] font-black text-emerald-600 italic">
+                                        {project.progressPercentage || 0}%
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                                        style={{ width: `${project.progressPercentage || 0}%` }}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2 shrink-0">

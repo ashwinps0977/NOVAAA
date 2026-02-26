@@ -11,6 +11,17 @@ const Project = require('../models/Project');
 // Dashboard Overview Stats
 exports.getDashboardStats = async (req, res) => {
     try {
+        if (req.useTestMode) {
+            return res.json({
+                success: true,
+                stats: {
+                    totalEmployees: 45,
+                    activeProjects: 12,
+                    completedProjects: 85,
+                    totalDepartments: 6
+                }
+            });
+        }
         const totalEmployees = await Employee.countDocuments({ status: { $ne: 'inactive' } });
         const activeProjects = await Project.countDocuments({ status: { $ne: 'Completed' } });
         const completedProjects = await Project.countDocuments({ status: 'Completed' });

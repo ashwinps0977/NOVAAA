@@ -6,6 +6,7 @@ import { Briefcase, BookOpen, Zap, CheckCircle, Clock, AlertCircle, RefreshCw, C
 interface Project {
     _id: string;
     title: string;
+    projectName?: string;
     description?: string;
     role: string;
     status: string;
@@ -202,10 +203,10 @@ const MyWorkGrowthSection = () => {
                             <div key={p._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-indigo-200 transition-colors">
                                 <div className="flex items-start gap-4">
                                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white flex items-center justify-center font-black text-lg shrink-0">
-                                        {p.title.charAt(0)}
+                                        {(p.title || p.projectName || '?').charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="font-black text-gray-900 text-base">{p.title}</p>
+                                        <p className="font-black text-gray-900 text-base">{p.title || p.projectName}</p>
                                         <p className="text-sm text-indigo-600 font-semibold">{p.role}</p>
                                         {p.description && (
                                             <p className="text-xs text-gray-500 mt-1 max-w-md">{p.description}</p>

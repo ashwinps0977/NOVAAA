@@ -10,6 +10,7 @@ const jobRoutes = require('./routes/jobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 
 const app = express();
+mongoose.set('bufferCommands', false);
 
 // Security middleware
 app.use(helmet());
@@ -35,15 +36,20 @@ const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/NOVAHR1';
 
-    console.log(`📡 Connecting to MongoDB at: ${mongoURI}`);
+    console.log(`📡 Attempting connection to MongoDB...`);
+
+    // Set bufferCommands to false to fail fast if no connection
+    mongoose.set('bufferCommands', false);
 
     await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s
+      serverSelectionTimeoutMS: 5000,
+      ssl: true,
+      // Add these to help with TLS issues in some environments
+      tlsAllowInvalidCertificates: true
     });
 
     console.log('✅ MongoDB connected successfully to NOVAHR1');
 
-    // Verify users collection
     const collections = await mongoose.connection.db.listCollections().toArray();
     const collectionNames = collections.map(c => c.name);
 
@@ -56,12 +62,15 @@ const connectDB = async () => {
     console.log(`📊 Collections in NOVAHR1: ${collectionNames.join(', ')}`);
 
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.log('\n🔧 Troubleshooting:');
-    console.log('1. Make sure MongoDB is running');
-    console.log('2. Run: mongod --dbpath="C:\\data\\db"');
-    console.log('3. Or: net start MongoDB (as Administrator)');
-    console.log('\n⚠️  Starting without database - using test mode');
+    console.error('❌ MongoDB connection error details:');
+    console.error(`Message: ${err.message}`);
+    console.error(`Code: ${err.code}`);
+
+    if (err.message.includes('SSL') || err.message.includes('TLS')) {
+      console.log('💡 Tip: This looks like an SSL/TLS error. Check your network/proxy settings.');
+    }
+
+    console.log('\n⚠️  Crucial: Starting in TEST MODE. Database features will be mocked.');
   }
 };
 
@@ -71,11 +80,20 @@ connectDB();
 // Middleware to check DB connection
 const checkDB = (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
-    console.log('⚠️  Database not connected, using test mode');
-    req.useTestMode = true;
-  } else {
-    req.useTestMode = false;
+    // If it's a test endpoint, allow it to proceed
+    if (req.path.includes('/test/') || req.path.includes('/test-')) {
+      req.useTestMode = true;
+      return next();
+    }
+
+    // Otherwise, return a helpful error instead of letting it crash on model calls
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection is currently unavailable. Please try again later or use test endpoints.',
+      testModeActive: true
+    });
   }
+  req.useTestMode = false;
   next();
 };
 
@@ -99,6 +117,9 @@ const settingsRoutes = require('./routes/settingsRoutes');
 app.use('/api/settings', checkDB, settingsRoutes);
 const hrSettingsRoutes = require('./routes/hrSettingsRoutes');
 app.use('/api/hr-settings', checkDB, hrSettingsRoutes);
+
+const teamRoutes = require('./routes/teamRoutes');
+app.use('/api/teams', checkDB, teamRoutes);
 
 // Leave routes
 const leaveRoutes = require('./routes/leaveRoutes');
@@ -137,18 +158,44 @@ const trainingRoutes = require('./routes/trainingRoutes');
 app.use('/api/trainings', checkDB, trainingRoutes);
 
 // Skill routes
+
 const skillRoutes = require('./routes/skillRoutes');
 app.use('/api/skills', checkDB, skillRoutes);
 
 // Analytics routes
 const hrAnalyticsRoutes = require('./routes/hrAnalyticsRoutes');
 app.use('/api/analytics', checkDB, hrAnalyticsRoutes);
+app.use('/api/hr-analytics', checkDB, hrAnalyticsRoutes); // Alias for frontend compatibility
 
 // Temporary test endpoints (only used when DB is not connected)
-const tempUsers = [];
+const tempUsers = [
+  {
+    _id: '6999750ad94f9b3528f91e4d',
+    name: 'Admin User',
+    email: 'mark@gmail.com',
+    role: 'admin',
+    isVerified: true
+  },
+  {
+    _id: '6999668e7dee516c65e40e21',
+    name: 'Employee User',
+    email: 'user@gmail.com',
+    role: 'employee',
+    isVerified: true
+  }
+];
 const tempApplications = [];
 const tempInterviews = [];
 const tempJobs = [];
+
+// Export for use in controllers
+module.exports = {
+  app,
+  tempUsers,
+  tempApplications,
+  tempInterviews,
+  tempJobs
+};
 
 // Test registration endpoint
 app.post('/api/auth/test-register', async (req, res) => {

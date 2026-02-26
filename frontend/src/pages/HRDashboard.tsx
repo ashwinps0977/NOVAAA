@@ -909,14 +909,14 @@ const HRDashboard = () => {
                     <div key={project._id} className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all group">
                       <div className="flex items-center justify-between mb-3">
                         <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                          {project.title.charAt(0)}
+                          {(project.title || project.projectName || '?').charAt(0)}
                         </div>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${project.status === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                           }`}>
                           {project.status}
                         </span>
                       </div>
-                      <h4 className="font-bold text-gray-900 mb-1">{project.title}</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">{project.title || project.projectName}</h4>
                       <p className="text-xs text-indigo-500 font-bold uppercase tracking-tighter mb-2">{project.role}</p>
                       <p className="text-xs text-gray-600 line-clamp-2 italic mb-4">{project.description}</p>
                       <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px]">
@@ -926,7 +926,9 @@ const HRDashboard = () => {
                           </div>
                           <span className="font-medium text-gray-500">{project.assignedTo?.name || 'Unassigned'}</span>
                         </div>
-                        <span className="font-bold text-gray-400">DUE {new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span className="font-bold text-gray-400 uppercase">
+                          {project.deadline ? `DUE ${new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'NO DEADLINE'}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -991,7 +993,7 @@ const HRDashboard = () => {
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-sm group-hover:scale-110 transition-transform">
-                          {employee.name.charAt(0)}
+                          {(employee.name || '?').charAt(0)}
                         </div>
                         <div>
                           <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-lg">{employee.name}</h3>
@@ -1471,7 +1473,7 @@ const HRDashboard = () => {
         return <HRAnalyticsSection />;
 
       case 'operations':
-        return <OperationsBoard currentUser={userData} />;
+        return <OperationsBoard currentUser={userData} projects={projects} />;
 
       case 'workforce':
         return <WorkforceDevelopmentHub />;
@@ -1876,7 +1878,7 @@ const HRDashboard = () => {
                         Top Extracted Skills
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {selectedAIAnalysis.parsedSkills?.slice(0, 10).map((skill: string, i: number) => (
+                        {(selectedAIAnalysis.parsedSkills || []).slice(0, 10).map((skill: string, i: number) => (
                           <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border">
                             {skill}
                           </span>

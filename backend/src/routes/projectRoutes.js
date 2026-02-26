@@ -19,6 +19,7 @@ const authorize = (...roles) => {
 // HR Routes
 router.post('/', protect, authorize('hr', 'admin'), projectController.assignProject);
 router.get('/', protect, authorize('hr', 'admin'), projectController.getAllProjects);
+router.delete('/:id', protect, authorize('hr', 'admin'), projectController.deleteProject);
 
 // Employee Routes
 router.get('/my-projects', protect, projectController.getMyProjects);

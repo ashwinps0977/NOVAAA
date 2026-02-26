@@ -109,11 +109,11 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
                     {formatDate(task.dueDate)}
                 </div>
 
-                {task.assignedTo && task.assignedTo.name && (
+                {(task.assignedTo?.name) && (
                     <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-gray-400 font-medium">{task.assignedTo.name}</span>
                         <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100 overflow-hidden">
-                            {task.assignedTo.name.charAt(0)}
+                            {(task.assignedTo.name || 'U').charAt(0)}
                         </div>
                     </div>
                 )}
