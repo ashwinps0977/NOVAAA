@@ -72,6 +72,14 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // OTP Verification States
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+
+
   useEffect(() => {
     // Load jobs from backend
     const fetchJobs = async () => {
@@ -247,6 +255,66 @@ const Jobs = () => {
     }
   };
 
+  const handleSendOTP = async () => {
+    if (!applicationData.email) {
+      alert('Please enter your email first');
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      const response = await fetch(`${API_BASE_URL}/applications/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient: applicationData.email, type: 'email' })
+      });
+
+      if (response.ok) {
+        setOtpSent(true);
+        alert('Verification code sent to your email!');
+      } else {
+        alert('Failed to send verification code');
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otpCode) {
+      alert('Please enter the verification code');
+      return;
+    }
+
+    try {
+      setVerifying(true);
+      const response = await fetch(`${API_BASE_URL}/applications/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient: applicationData.email,
+          otp: otpCode,
+          type: 'email'
+        })
+      });
+
+      if (response.ok) {
+        setIsEmailVerified(true);
+        setOtpSent(false);
+        alert('Email verified successfully!');
+      } else {
+        alert('Invalid or expired verification code');
+      }
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -289,15 +357,64 @@ const Jobs = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email *
                   </label>
-                  <input
-                    type="email"
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
-                    value={applicationData.email}
-                    onChange={(e) => setApplicationData({ ...applicationData, email: e.target.value })}
-                    disabled={submitting}
-                  />
+                  <div className="flex space-x-2">
+                    <input
+                      type="email"
+                      required
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
+                      value={applicationData.email}
+                      onChange={(e) => {
+                        setApplicationData({ ...applicationData, email: e.target.value });
+                        setIsEmailVerified(false);
+                        setOtpSent(false);
+                      }}
+                      disabled={submitting || isEmailVerified}
+                    />
+                    {!isEmailVerified && !submitting && (
+                      <button
+                        type="button"
+                        onClick={handleSendOTP}
+                        disabled={otpLoading}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 text-sm whitespace-nowrap"
+                      >
+                        {otpLoading ? 'Sending...' : 'Verify'}
+                      </button>
+                    )}
+                    {isEmailVerified && (
+                      <div className="flex items-center text-emerald-600 font-medium text-sm">
+                        <CheckCircle className="w-5 h-5 mr-1" />
+                        Verified
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {otpSent && !isEmailVerified && (
+                  <div className="col-span-1 md:col-span-2 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <label className="block text-sm font-medium text-blue-800 mb-2">
+                      Enter Verification Code sent to {applicationData.email}
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        className="w-32 border border-blue-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 text-center tracking-[0.5em] font-bold"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        placeholder="000000"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyOTP}
+                        disabled={verifying}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                      >
+                        {verifying ? 'Verifying...' : 'Confirm Code'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -456,8 +573,11 @@ const Jobs = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center space-x-2 disabled:bg-emerald-300"
-                  disabled={submitting}
+                  className={`px-6 py-2 text-white rounded-lg flex items-center space-x-2 ${!isEmailVerified || submitting
+                    ? 'bg-emerald-300 cursor-not-allowed'
+                    : 'bg-emerald-500 hover:bg-emerald-600'
+                    }`}
+                  disabled={submitting || !isEmailVerified}
                 >
                   {submitting ? (
                     <>
@@ -471,6 +591,7 @@ const Jobs = () => {
                     </>
                   )}
                 </button>
+
               </div>
             </form>
           </div>

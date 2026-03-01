@@ -3,8 +3,10 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const optionalAuth = require('../middleware/optionalAuth');
 const applicationController = require('../controllers/jobApplicationController');
+const otpController = require('../controllers/otpController');
 
 const multer = require('multer');
+
 const path = require('path');
 const fs = require('fs');
 
@@ -45,6 +47,11 @@ const upload = multer({
 
 // Apply for job (public or authenticated)
 router.post('/apply', optionalAuth, upload.single('resume'), applicationController.submitApplication);
+
+// OTP Verification
+router.post('/send-otp', otpController.sendOTP);
+router.post('/verify-otp', otpController.verifyOTP);
+
 
 // Get my applications
 router.get('/my-applications', auth, async (req, res) => {
