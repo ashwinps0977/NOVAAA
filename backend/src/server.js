@@ -16,6 +16,7 @@ const http = require('http').createServer(app);
 
 // Apply Global DB Watcher
 mongoose.plugin(dbWatcherPlugin);
+mongoose.set('bufferCommands', false);
 
 // Security middleware
 app.use(helmet());
@@ -48,8 +49,21 @@ const connectDB = async () => {
   if (atlasURI) {
     try {
       console.log('📡 Attempting MongoDB Atlas connection...');
-      await mongoose.connect(atlasURI, { serverSelectionTimeoutMS: 5000 });
+      await mongoose.connect(atlasURI, {
+        serverSelectionTimeoutMS: 5000,
+        ssl: true,
+        tlsAllowInvalidCertificates: true
+      });
       console.log('✅ Connected to MongoDB Atlas');
+
+      const collections = await mongoose.connection.db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+
+      if (!collectionNames.includes('users')) {
+        console.log('📁 Creating users collection...');
+        await mongoose.connection.db.createCollection('users');
+        console.log('✅ Users collection created');
+      }
       return;
     } catch (err) {
       console.warn('⚠️ Atlas connection failed. Trying local...');
@@ -66,7 +80,12 @@ const connectDB = async () => {
     console.log('\n🔧 Troubleshooting:');
     console.log('1. Make sure local MongoDB is running (net start MongoDB)');
     console.log('2. Whitelist your IP in Atlas Cluster');
-    console.log('\n🧪 MODE: Test/Memory Mode Active');
+
+    if (err.message.includes('SSL') || err.message.includes('TLS')) {
+      console.log('💡 Tip: This looks like an SSL/TLS error. Check your network/proxy settings.');
+    }
+
+    console.log('\n🧪 MODE: Test/Memory Mode Active (Database features will be mocked)');
   }
 };
 
@@ -76,11 +95,20 @@ connectDB();
 // Middleware to check DB connection
 const checkDB = (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
-    console.log('⚠️  Database not connected, using test mode');
-    req.useTestMode = true;
-  } else {
-    req.useTestMode = false;
+    // If it's a test endpoint, allow it to proceed
+    if (req.path.includes('/test/') || req.path.includes('/test-')) {
+      req.useTestMode = true;
+      return next();
+    }
+
+    // Otherwise, return a helpful error instead of letting it crash on model calls
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection is currently unavailable. Please try again later or use test endpoints.',
+      testModeActive: true
+    });
   }
+  req.useTestMode = false;
   next();
 };
 
@@ -94,7 +122,6 @@ app.use('/api/hr', checkDB, hrRoutes);
 app.use('/api/jobs', checkDB, jobRoutes);
 
 // Application routes
-// Application routes
 app.use('/api/applications', checkDB, applicationRoutes);
 
 // Attendance routes
@@ -104,6 +131,9 @@ const settingsRoutes = require('./routes/settingsRoutes');
 app.use('/api/settings', checkDB, settingsRoutes);
 const hrSettingsRoutes = require('./routes/hrSettingsRoutes');
 app.use('/api/hr-settings', checkDB, hrSettingsRoutes);
+
+const teamRoutes = require('./routes/teamRoutes');
+app.use('/api/teams', checkDB, teamRoutes);
 
 // Leave routes
 const leaveRoutes = require('./routes/leaveRoutes');
@@ -147,14 +177,38 @@ app.use('/api/skills', checkDB, skillRoutes);
 
 // Analytics routes
 const hrAnalyticsRoutes = require('./routes/hrAnalyticsRoutes');
-app.use('/api/hr-analytics', checkDB, hrAnalyticsRoutes);
-app.use('/api/analytics', checkDB, hrAnalyticsRoutes); // Alias for compatibility
+app.use('/api/analytics', checkDB, hrAnalyticsRoutes);
+app.use('/api/hr-analytics', checkDB, hrAnalyticsRoutes); // Alias for compatibility
 
 // Temporary test endpoints (only used when DB is not connected)
-const tempUsers = [];
+const tempUsers = [
+  {
+    _id: '6999750ad94f9b3528f91e4d',
+    name: 'Admin User',
+    email: 'mark@gmail.com',
+    role: 'admin',
+    isVerified: true
+  },
+  {
+    _id: '6999668e7dee516c65e40e21',
+    name: 'Employee User',
+    email: 'user@gmail.com',
+    role: 'employee',
+    isVerified: true
+  }
+];
 const tempApplications = [];
 const tempInterviews = [];
 const tempJobs = [];
+
+// Export for use in controllers
+module.exports = {
+  app,
+  tempUsers,
+  tempApplications,
+  tempInterviews,
+  tempJobs
+};
 
 // Test registration endpoint
 app.post('/api/auth/test-register', async (req, res) => {
@@ -645,7 +699,7 @@ const PORT = process.env.PORT || 5000;
 
 http.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`� Accessible on local network at: http://0.0.0.0:${PORT}`);
+  console.log(` Accessible on local network at: http://0.0.0.0:${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🗄️  DB Status: http://localhost:${PORT}/api/db-status`);
   console.log(`👥 Users: http://localhost:${PORT}/api/users`);

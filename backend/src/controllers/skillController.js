@@ -92,3 +92,13 @@ exports.getOrgSkillGaps = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
+// Get list of all unique skill names in the organization (HR/Admin only)
+exports.getUniqueSkillNames = async (req, res) => {
+    try {
+        const uniqueNames = await Skill.distinct('name');
+        res.json({ success: true, skills: uniqueNames });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};

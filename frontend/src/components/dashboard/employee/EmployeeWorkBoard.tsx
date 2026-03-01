@@ -92,8 +92,8 @@ const EmployeeWorkBoard = ({ currentUser }: { currentUser: any }) => {
         // Search
         if (searchTerm) {
             result = result.filter(t =>
-                t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                t.project.toLowerCase().includes(searchTerm.toLowerCase())
+                (t.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (t.project || '').toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 

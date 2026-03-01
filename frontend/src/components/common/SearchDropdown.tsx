@@ -4,6 +4,7 @@ import { Search, ChevronDown, User, Briefcase, X } from 'lucide-react';
 interface SearchDropdownProps {
     items: any[];
     onSelect: (item: any) => void;
+    onSearch?: (term: string) => void;
     placeholder: string;
     searchKey: string;
     labelKey?: string;
@@ -14,6 +15,7 @@ interface SearchDropdownProps {
 const SearchDropdown: React.FC<SearchDropdownProps> = ({
     items,
     onSelect,
+    onSearch,
     placeholder,
     searchKey,
     labelKey = 'name',
@@ -71,14 +73,16 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     placeholder={placeholder}
                     value={searchTerm}
                     onChange={(e) => {
-                        setSearchTerm(e.target.value);
+                        const val = e.target.value;
+                        setSearchTerm(val);
                         setIsOpen(true);
+                        if (onSearch) onSearch(val);
                     }}
                     onFocus={() => setIsOpen(true)}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     {searchTerm ? (
-                        <button onClick={() => setSearchTerm('')} className="text-gray-400 hover:text-gray-600">
+                        <button onClick={() => { setSearchTerm(''); if (onSearch) onSearch(''); }} className="text-gray-400 hover:text-gray-600">
                             <X className="h-4 w-4" />
                         </button>
                     ) : (

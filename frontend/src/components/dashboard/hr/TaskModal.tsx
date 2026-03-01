@@ -28,7 +28,7 @@ const TaskModal = ({ isOpen, onClose, onSubmit, task, employees }: TaskModalProp
                 description: task.description || '',
                 project: task.project,
                 priority: task.priority,
-                dueDate: new Date(task.dueDate).toISOString().split('T')[0],
+                dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                 assignedToEmployeeId: task.assignedTo?._id || ''
             });
         } else {
