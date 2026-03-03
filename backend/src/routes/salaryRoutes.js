@@ -72,4 +72,9 @@ router.put('/update-component', auth, salaryController.updateSalaryComponent);
 // @access  Private (Admin/HR)
 router.put('/payroll-status', auth, salaryController.processPayrollStatus);
 
+// @route   GET /api/salary/hr/salary-list
+// @desc    Get all employees salary list for HR
+// @access  Private (Admin/HR)
+router.get('/hr/salary-list', auth, salaryController.getHRSalaryList);
+
 module.exports = router;

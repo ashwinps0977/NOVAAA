@@ -58,6 +58,24 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Target End Date Validation
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const targetDate = new Date(formData.endDate);
+
+        if (targetDate <= today) {
+            alert('Attention: Please enter the correct date. The Target End Date must be after the current day.');
+            return;
+        }
+
+        // Additional validation for Skill Matrix
+        const hasEmptySkills = formData.requiredSkills.some(rs => !rs.skill);
+        if (hasEmptySkills) {
+            alert('Please select a skill for all required skill entries.');
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await teamService.autoSelectTeam(formData);
@@ -123,19 +141,22 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
                         <div>
                             <label className="text-[10px] font-black uppercase text-indigo-600 mb-2 block tracking-widest flex items-center gap-1.5"><Target size={12} /> Priority</label>
                             <select
+                                required
                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold"
                                 value={formData.priority}
                                 onChange={e => setFormData({ ...formData, priority: e.target.value })}
                             >
-                                <option>Low</option>
-                                <option>Medium</option>
-                                <option>High</option>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
                             </select>
                         </div>
                         <div>
                             <label className="text-[10px] font-black uppercase text-indigo-600 mb-2 block tracking-widest flex items-center gap-1.5"><Award size={12} /> Min Exp (Yrs)</label>
                             <input
+                                required
                                 type="number"
+                                min="0"
                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold"
                                 value={formData.minExperience}
                                 onChange={e => setFormData({ ...formData, minExperience: parseInt(e.target.value) })}
@@ -144,7 +165,9 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
                         <div>
                             <label className="text-[10px] font-black uppercase text-indigo-600 mb-2 block tracking-widest flex items-center gap-1.5"><Users size={12} /> Team Size</label>
                             <input
+                                required
                                 type="number"
+                                min="1"
                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold"
                                 value={formData.memberCount}
                                 onChange={e => setFormData({ ...formData, memberCount: parseInt(e.target.value) })}
@@ -179,6 +202,7 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
                                         ))}
                                     </select>
                                     <select
+                                        required
                                         className="w-32 bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-sm font-bold"
                                         value={rs.level}
                                         onChange={e => handleSkillChange(idx, 'level', parseInt(e.target.value))}
@@ -205,6 +229,7 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
                         <div>
                             <label className="text-[10px] font-black uppercase text-indigo-600 mb-2 block tracking-widest flex items-center gap-1.5"><Calendar size={12} /> Start Date</label>
                             <input
+                                required
                                 type="date"
                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold"
                                 value={formData.startDate}
@@ -214,7 +239,9 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
                         <div>
                             <label className="text-[10px] font-black uppercase text-indigo-600 mb-2 block tracking-widest flex items-center gap-1.5"><Calendar size={12} /> Target End Date</label>
                             <input
+                                required
                                 type="date"
+                                min={new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]}
                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold"
                                 value={formData.endDate}
                                 onChange={e => setFormData({ ...formData, endDate: e.target.value })}

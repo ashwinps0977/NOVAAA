@@ -28,6 +28,7 @@ import {
   Star
 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
+import { useRealTimeSync } from '../hooks/useRealTimeSync';
 
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import SalarySection from '../components/dashboard/SalarySection';
@@ -406,6 +407,15 @@ const EmployeeDashboard = () => {
       console.error('Update project status error:', error);
     }
   };
+
+  // Real-time Database Synchronization
+  useRealTimeSync(['projects', 'tasks'], () => {
+    fetchMyProjects();
+    fetchMyTasks();
+  });
+  useRealTimeSync(['notifications'], fetchNotifications);
+  useRealTimeSync(['goals'], fetchGoals);
+  useRealTimeSync(['leaves'], fetchLeaves);
 
   useEffect(() => {
     let intervalId: any;
@@ -1341,7 +1351,7 @@ const EmployeeDashboard = () => {
       }
 
       case 'salary':
-        return <SalarySection />;
+        return <SalarySection userData={userData} />;
       case 'ai-chat':
         return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-[600px] grid grid-cols-1 lg:grid-cols-3">
