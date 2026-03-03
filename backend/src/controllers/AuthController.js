@@ -394,8 +394,8 @@ exports.getCurrentUser = async (req, res) => {
     let profileData = { ...user.toObject() };
 
     // If user is an employee, fetch extended profile details
-    if (user.role === 'employee') {
-      const employee = await Employee.findOne({ email: user.email }).select('-password');
+    if (user.role === 'employee' || user.role === 'hr' || user.role === 'admin') {
+      const employee = await Employee.findOne({ email: user.email }).populate('salaryStructure').select('-password');
       if (employee) {
         profileData = {
           ...profileData,
@@ -403,7 +403,8 @@ exports.getCurrentUser = async (req, res) => {
           department: employee.department,
           position: employee.position,
           phone: employee.phone,
-          salary: employee.salary,
+          salary: employee.salary || employee.currentSalary || 0,
+          currentCTC: employee.currentCTC || 0,
           joiningDate: employee.joiningDate,
           project: employee.project,
           status: employee.status

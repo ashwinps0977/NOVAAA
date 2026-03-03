@@ -446,6 +446,10 @@ const HRDashboard = () => {
     loadApplications();
   });
   useRealTimeSync(['leaves'], fetchLeaves);
+  useRealTimeSync(['projects', 'tasks'], () => {
+    fetchProjects();
+    fetchDashboardStats();
+  });
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -3,7 +3,8 @@ import {
     Plus,
     Brain,
     Layers,
-    FileText
+    FileText,
+    DollarSign
 } from 'lucide-react';
 import PayrollAIInsights from './PayrollAIInsights';
 import SalaryComponentsManager from './SalaryComponentsManager';
@@ -11,10 +12,11 @@ import PayslipTemplate from './PayslipTemplate';
 import { API_BASE_URL } from '../../../config';
 
 const HRPayrollSection = () => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'run-payroll' | 'structures' | 'insights' | 'components'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'run-payroll' | 'structures' | 'insights' | 'components' | 'salary-list'>('overview');
     const [loading, setLoading] = useState(false);
     const [salaryStructures, setSalaryStructures] = useState<any[]>([]);
     const [payrollData, setPayrollData] = useState<any>(null);
+    const [employeeSalaries, setEmployeeSalaries] = useState<any[]>([]);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     // Payslip View State
@@ -33,10 +35,28 @@ const HRPayrollSection = () => {
 
     useEffect(() => {
         fetchStructures();
+        if (activeTab === 'salary-list') {
+            fetchEmployeeSalaries();
+        }
         if (activeTab === 'run-payroll') {
             // defined but fetching only on action for payroll
         }
     }, [activeTab]);
+
+    const fetchEmployeeSalaries = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/salary/hr/salary-list`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setEmployeeSalaries(data);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const fetchStructures = async () => {
         try {
@@ -183,6 +203,13 @@ const HRPayrollSection = () => {
                     >
                         <Brain size={18} />
                         <span>AI Insights</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('salary-list')}
+                        className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${activeTab === 'salary-list' ? 'bg-green-100 text-green-700' : 'bg-white text-gray-600'}`}
+                    >
+                        <DollarSign size={18} />
+                        <span>Employee Salaries</span>
                     </button>
                 </div>
             </div>
@@ -426,6 +453,62 @@ const HRPayrollSection = () => {
             )}
             {activeTab === 'components' && <SalaryComponentsManager />}
             {activeTab === 'insights' && <PayrollAIInsights />}
+
+            {activeTab === 'salary-list' && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h3 className="font-bold text-lg">Employee Salary Directory</h3>
+                        <p className="text-sm text-gray-500">Overview of active employee compensation packages</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th className="p-4">Employee</th>
+                                    <th className="p-4">ID & Join Date</th>
+                                    <th className="p-4">Position & Dept</th>
+                                    <th className="p-4">Monthly Salary</th>
+                                    <th className="p-4">Annual CTC</th>
+                                    <th className="p-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {employeeSalaries.map((emp: any) => (
+                                    <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="p-4">
+                                            <div className="font-bold text-gray-900">{emp.name}</div>
+                                            <div className="text-xs text-gray-500">{emp.email}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm font-medium">{emp.employeeId}</div>
+                                            <div className="text-xs text-gray-400">{new Date(emp.joiningDate).toLocaleDateString()}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm">{emp.position}</div>
+                                            <div className="text-xs text-gray-500">{emp.department}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm font-bold text-gray-900">₹{emp.salary?.toLocaleString()}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm font-black text-indigo-600">₹{emp.currentCTC?.toLocaleString()}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                {emp.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {employeeSalaries.length === 0 && (
+                            <div className="p-10 text-center text-gray-500">No employee salary records found.</div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Payslip Modal */}
             {selectedPayslip && (

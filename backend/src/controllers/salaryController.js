@@ -439,3 +439,43 @@ exports.processPayrollStatus = async (req, res) => {
         res.status(500).send('Server Error');
     }
 };
+// 6. Get all employees salary list for HR
+const { calculateEmployeeCTC } = require('../utils/salaryUtils');
+
+exports.getHRSalaryList = async (req, res) => {
+    try {
+        const employees = await Employee.find({ role: 'employee' }).populate('salaryStructure');
+
+        const salaryList = await Promise.all(employees.map(async (emp) => {
+            // If currentCTC is 0, calculate it on the fly
+            let ctc = emp.currentCTC || 0;
+            if (ctc === 0 && (emp.salary || emp.currentSalary)) {
+                const base = emp.salary || emp.currentSalary;
+                const calculated = calculateEmployeeCTC(base, emp.salaryStructure);
+                ctc = calculated.annualCTC;
+
+                // Save it for future use
+                emp.currentCTC = ctc;
+                await emp.save();
+            }
+
+            return {
+                id: emp._id,
+                employeeId: `EMP-${emp._id.toString().slice(-6).toUpperCase()}`,
+                name: emp.name,
+                email: emp.email,
+                department: emp.department,
+                position: emp.position,
+                salary: emp.salary || emp.currentSalary || 0,
+                currentCTC: ctc,
+                joiningDate: emp.joiningDate,
+                status: emp.status
+            };
+        }));
+
+        res.json(salaryList);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
