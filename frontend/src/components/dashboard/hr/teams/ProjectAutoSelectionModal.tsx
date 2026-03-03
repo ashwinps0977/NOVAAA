@@ -24,7 +24,7 @@ const ProjectAutoSelectionModal = ({ isOpen, onClose, onSuccess }: ProjectAutoSe
 
     useEffect(() => {
         if (isOpen) {
-            fetch('http://localhost:5000/api/skills/unique-names', {
+            fetch('http://localhost:5001/api/skills/unique-names', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             })
                 .then(res => res.json())

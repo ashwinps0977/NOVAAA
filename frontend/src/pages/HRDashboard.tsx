@@ -19,7 +19,7 @@ import SearchDropdown from '../components/common/SearchDropdown';
 import { jobRoles } from '../data/jobRoles';
 import { useRealTimeSync } from '../hooks/useRealTimeSync';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -698,7 +698,7 @@ const HRDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const appId = application.id || application._id;
-      const response = await fetch(`http://localhost:5000/api/applications/${appId}/status`, {
+      const response = await fetch(`http://localhost:5001/api/applications/${appId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1343,7 +1343,7 @@ const HRDashboard = () => {
                                 Reject
                               </button>
                               <a
-                                href={`http://localhost:5000${application.resumeUrl}`}
+                                href={`http://localhost:5001${application.resumeUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 text-center"

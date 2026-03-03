@@ -165,6 +165,14 @@ const Register = () => {
     }
   };
 
+  const handleSocialLogin = (provider: string) => {
+    const endpoint = provider.toLowerCase() === 'google' ? 'google' : 'github';
+    const backendOAuthUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/auth/${endpoint}`;
+
+    // Redirect the entire window to the backend OAuth endpoint
+    window.location.href = backendOAuthUrl;
+  };
+
   const passwordRequirements = [
     { id: 1, text: "At least 6 characters", met: formData.password.length >= 6 },
     { id: 2, text: "Contains uppercase letter", met: /[A-Z]/.test(formData.password) },
@@ -535,6 +543,7 @@ const Register = () => {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
+                  onClick={() => handleSocialLogin('Google')}
                   className="flex items-center justify-center space-x-2 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-gray-700"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -547,6 +556,7 @@ const Register = () => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleSocialLogin('GitHub')}
                   className="flex items-center justify-center space-x-2 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-gray-700"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -555,6 +565,7 @@ const Register = () => {
                   <span className="font-medium">GitHub</span>
                 </button>
               </div>
+
 
               <p className="text-center text-gray-600 pt-4">
                 Already have an account?{" "}

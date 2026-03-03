@@ -10,6 +10,8 @@ const jobRoutes = require('./routes/jobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const socketService = require('./services/socketService');
 const dbWatcherPlugin = require('./services/dbWatcherService');
+const passport = require('./config/passport');
+const session = require('express-session');
 
 const app = express();
 const http = require('http').createServer(app);
@@ -35,6 +37,13 @@ app.use(morgan('dev'));
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'nova-secret-123',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use('/uploads', express.static('uploads'));
 
 // Global Mongoose Configuration - DISABLE BUFFERING EARLY
@@ -67,6 +76,7 @@ const connectDB = async () => {
       return;
     } catch (err) {
       console.warn('⚠️ Atlas connection failed. Trying local...');
+      console.error(`Error: ${err.message}`);
     }
   }
 
@@ -85,7 +95,8 @@ const connectDB = async () => {
       console.log('💡 Tip: This looks like an SSL/TLS error. Check your network/proxy settings.');
     }
 
-    console.log('\n🧪 MODE: Test/Memory Mode Active (Database features will be mocked)');
+    console.log('\n🧪 MODE: Test/Memory Mode Active');
+    console.log('⚠️  Crucial: Starting in TEST MODE. Database features will be mocked.');
   }
 };
 
@@ -172,13 +183,14 @@ const trainingRoutes = require('./routes/trainingRoutes');
 app.use('/api/trainings', checkDB, trainingRoutes);
 
 // Skill routes
+
 const skillRoutes = require('./routes/skillRoutes');
 app.use('/api/skills', checkDB, skillRoutes);
 
 // Analytics routes
 const hrAnalyticsRoutes = require('./routes/hrAnalyticsRoutes');
-app.use('/api/analytics', checkDB, hrAnalyticsRoutes);
-app.use('/api/hr-analytics', checkDB, hrAnalyticsRoutes); // Alias for compatibility
+app.use('/api/hr-analytics', checkDB, hrAnalyticsRoutes);
+app.use('/api/analytics', checkDB, hrAnalyticsRoutes); // Alias for compatibility
 
 // Temporary test endpoints (only used when DB is not connected)
 const tempUsers = [
@@ -695,7 +707,7 @@ app.use((err, req, res, next) => {
 // Initialize WebSockets
 socketService.init(http);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 http.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

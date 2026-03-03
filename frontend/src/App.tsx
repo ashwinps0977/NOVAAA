@@ -13,6 +13,7 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import HRDashboard from "./pages/HRDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import DashboardRedirect from "./pages/DashboardRedirect";
+import AuthCallback from "./pages/auth/AuthCallback";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
@@ -63,6 +64,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/auth-callback" element={<AuthCallback />} />
 
         {/* Dashboard Redirect Route */}
         <Route path="/dashboard-redirect" element={<DashboardRedirect />} />
@@ -81,13 +83,13 @@ function App() {
         } />
 
         <Route path="/hr/dashboard" element={
-          <ProtectedRoute allowedRoles={['hr']}>
+          <ProtectedRoute allowedRoles={['hr', 'admin']}>
             <HRDashboard />
           </ProtectedRoute>
         } />
 
         <Route path="/hr/*" element={
-          <ProtectedRoute allowedRoles={['hr']}>
+          <ProtectedRoute allowedRoles={['hr', 'admin']}>
             <HRDashboard />
           </ProtectedRoute>
         } />

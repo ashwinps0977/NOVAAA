@@ -696,3 +696,18 @@ exports.socialLogin = async (req, res) => {
     });
   }
 };
+
+// Handle OAuth Callback
+exports.handleOAuthCallback = (req, res) => {
+  const token = generateToken(req.user);
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  // Redirect to frontend with token
+  res.redirect(`${frontendUrl}/auth-callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
+    id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+    isVerified: req.user.isVerified
+  }))}`);
+};

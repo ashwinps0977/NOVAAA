@@ -8,7 +8,9 @@ const admin = require('../middleware/admin'); // HR/Admin check
 router.get('/my-trainings', auth, trainingController.getMyTrainings);
 router.get('/my-assignments', auth, trainingController.getMyAssignments);
 router.put('/:id/progress', auth, trainingController.updateProgress);
+router.post('/enroll/:moduleId', auth, trainingController.enrollInModule);
 router.post('/seed', auth, trainingController.seedTrainings);
+router.post('/seed-modules', auth, trainingController.seedModules); // For initial setup
 
 // HR Management Routes (Modules)
 router.get('/modules', auth, trainingController.getModules);

@@ -231,7 +231,7 @@ const TeamOperations = ({ teams }: TeamOperationsProps) => {
                                         onClick={async () => {
                                             if (window.confirm(`Are you SURE you want to delete project "${selectedTeam.projectId?.projectName}" ? This will dissolve the team.`)) {
                                                 try {
-                                                    const res = await fetch(`http://localhost:5000/api/projects/${selectedTeam.projectId?._id}`, {
+                                                    const res = await fetch(`http://localhost:5001/api/projects/${selectedTeam.projectId?._id}`, {
                                                         method: 'DELETE',
                                                         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                                                     });
