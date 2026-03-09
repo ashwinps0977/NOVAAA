@@ -129,7 +129,7 @@ class DBIntrospectionService {
     async findEntityByName(name) {
         const results = [];
         const searchableModels = ['Employee', 'Job', 'Project', 'User', 'JobApplication'];
-        const cleanName = name.replace(/tell me about|who is|show me|details for/gi, '').trim();
+        const cleanName = name.replace(/explain salary of|payslip details for|payslip for|salary details for|projects assigned to|what projects is|working on|projects of|list projects of|show projects for|tasks for|salary of|how much does|earns?|pay of|position of|role of|what is the designation of|designation of|joining date of|when did|join|department of|which team is|in|deadline of|when is project|what is the deadline for|who is working on|team of|who is assigned to|status of|is|current status of|what is|description of|explain about|tell me more about|tell me about|details for/gi, '').replace(/ due| about| project/gi, '').replace(/["'?!]/g, '').trim();
 
         if (cleanName.length < 2) return [];
 
@@ -137,18 +137,29 @@ class DBIntrospectionService {
             const model = this.models[modelName];
             if (!model) continue;
 
-            const field = modelName === 'JobApplication' ? 'fullName' : (modelName === 'Job' || modelName === 'Project' ? 'title' : 'name');
+            let field = modelName === 'JobApplication' ? 'fullName' : (modelName === 'Job' || modelName === 'Project' ? 'title' : 'name');
+
             // Try exact match first
             let match = await model.findOne({ [field]: new RegExp(`^${cleanName}$`, 'i') }).lean();
+
+            // Special case for Project: also check projectName field
+            if (!match && modelName === 'Project') {
+                match = await model.findOne({ projectName: new RegExp(`^${cleanName}$`, 'i') }).lean();
+            }
+
             if (!match) {
                 // Try partial match
                 match = await model.findOne({ [field]: new RegExp(cleanName, 'i') }).lean();
+
+                if (!match && modelName === 'Project') {
+                    match = await model.findOne({ projectName: new RegExp(cleanName, 'i') }).lean();
+                }
             }
 
             if (match) {
                 // Populate common fields if it's a model with refs
                 if (modelName === 'Employee') {
-                    const populated = await model.findById(match._id).populate('salaryStructure').lean();
+                    const populated = await model.findById(match._id).populate('salaryStructure activeProjects').lean();
                     results.push({ type: modelName, data: populated });
                 } else if (modelName === 'Project') {
                     const populated = await model.findById(match._id).populate('assignedTo assignedBy').lean();

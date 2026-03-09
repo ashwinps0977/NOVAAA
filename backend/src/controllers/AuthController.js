@@ -407,7 +407,8 @@ exports.getCurrentUser = async (req, res) => {
           currentCTC: employee.currentCTC || 0,
           joiningDate: employee.joiningDate,
           project: employee.project,
-          status: employee.status
+          status: employee.status,
+          profilePhoto: employee.profilePhoto || user.profilePhoto
         };
       }
     }

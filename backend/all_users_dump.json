@@ -1,0 +1,1363 @@
+[
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695a795e47f035dd9eddc737",
+    "name": "Ashwin p s",
+    "email": "apapalackal@gmail.com",
+    "password": "$2b$10$bkvO73B0/WImMktVMrIXHuUyCsj2ml8CjLOmrUGnrbvbz7tJlxBqi",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T03:51:24.664Z",
+    "createdAt": "2026-01-04T14:29:50.715Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "dateFormat": "MMM DD, YYYY",
+      "language": "en",
+      "theme": "light",
+      "timezone": "UTC"
+    },
+    "security": {
+      "loginHistory": [],
+      "securityAlerts": true,
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email"
+    },
+    "notifications": {
+      "aiAlerts": true,
+      "email": true,
+      "hrAnnouncements": true,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "sms": false
+    },
+    "privacy": {
+      "dataSharingConsent": true,
+      "hideContactInfo": false,
+      "profileVisibility": "team"
+    },
+    "profilePhoto": null,
+    "_id": "695a7a245289e7e263b69361",
+    "name": "mark",
+    "email": "mark@gmail.com",
+    "password": "$2b$10$BZksQbT7.948VNRfAVu1ieBBY/5VQf2n8ZVhs08kLjTlEOufP2/Bu",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-02-22T04:31:32.033Z",
+    "createdAt": "2026-01-04T14:33:08.151Z",
+    "__v": 1
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695b1b03ca09671c07476fc0",
+    "name": "Aaron",
+    "email": "aaron@gmail.com",
+    "password": "$2b$10$qYrcFxDZ/2jZaY7J3KAlweBg5FNeRu4NI0vLGFE3.ObqkZeoSnNo.",
+    "role": "admin",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:03:25.723Z",
+    "createdAt": "2026-01-05T01:59:31.177Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695cda629e46e1abe9c960c9",
+    "name": "ashwin",
+    "email": "apspalackal@gmail.com",
+    "password": "$2a$10$/rF.KStwUg2kpIRZHBPZKeXsgkymjYpbDH3UGgBTTuRBk2mb/IwBy",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-06T09:48:18.231Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "dateFormat": "MMM DD, YYYY",
+      "language": "en",
+      "theme": "light",
+      "timezone": "UTC"
+    },
+    "security": {
+      "loginHistory": [],
+      "securityAlerts": true,
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email"
+    },
+    "notifications": {
+      "aiAlerts": true,
+      "email": true,
+      "hrAnnouncements": true,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "sms": false
+    },
+    "privacy": {
+      "dataSharingConsent": true,
+      "hideContactInfo": false,
+      "profileVisibility": "team"
+    },
+    "profilePhoto": null,
+    "_id": "695cdaaa9e46e1abe9c960d0",
+    "name": "Shinto",
+    "email": "shinto@gmail.com",
+    "password": "$2a$10$M7JGG8ifCpmIyS62wrZPPeQOKrnD8jWllFTeJRkOhXdaqUKwbrWfG",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-06T09:49:30.551Z",
+    "__v": 1,
+    "lastLogin": "2026-02-21T01:54:29.945Z"
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edbb8aeb4650405afdd8d",
+    "name": "HR Test",
+    "email": "hr_test_1@test.com",
+    "password": "$2a$10$8fPDMi89QWphw5oIewavNOpma0tTi/3QtAbqhMtf2Y3MBnelKvP8.",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:18:32.492Z",
+    "createdAt": "2026-01-07T22:18:32.496Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edbb9aeb4650405afdd92",
+    "name": "Cand Test",
+    "email": "cand_test_1@test.com",
+    "password": "$2a$10$tU8agRf9qukzcbL0yeMG9OKN9Jx5Q4HfRnI4OjWoOpqq06yeXxOoe",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:18:33.197Z",
+    "createdAt": "2026-01-07T22:18:33.197Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edbf951e3c01c615f9a3c",
+    "name": "HR Test Node",
+    "email": "hr_1767824377606@test.com",
+    "password": "$2a$10$9NKmtVuWWmIInk2ipMRk/Ofel36cQIz/wEZCa1nJ0P.n7HxY2RQA.",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:19:37.806Z",
+    "createdAt": "2026-01-07T22:19:37.811Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edbf951e3c01c615f9a41",
+    "name": "Candidate Test Node",
+    "email": "cand_1767824377861@test.com",
+    "password": "$2a$10$LliJ0oUNphzk0yDfuVyhnurOJRAc4aIagACqE5XEy4rELbls5ZqsW",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:19:37.965Z",
+    "createdAt": "2026-01-07T22:19:37.965Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc19255256d850e62bbb",
+    "name": "HR Test Node",
+    "email": "hr_1767824408981@test.com",
+    "password": "$2a$10$FqHELoW3D8IwyCdZIgmMPuRl6gOn03u7/JRo8C9535Ztk2X1TnHfm",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:20:09.207Z",
+    "createdAt": "2026-01-07T22:20:09.213Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc19255256d850e62bc0",
+    "name": "Candidate Test Node",
+    "email": "cand_1767824409264@test.com",
+    "password": "$2a$10$lG7X5y9NExS5DNRtJ3O1fe4s9j7orwpSGJDqPyuetEvczcDUWFdlC",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:20:09.378Z",
+    "createdAt": "2026-01-07T22:20:09.379Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc34a69839b1aac5bc15",
+    "name": "HR Test Node",
+    "email": "hr_1767824436247@test.com",
+    "password": "$2a$10$usC38ul.Xeg/GTacfDGpuusAwxUGNusfHptv.cU762pbm6ZYL8/nq",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:20:36.445Z",
+    "createdAt": "2026-01-07T22:20:36.449Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc34a69839b1aac5bc1a",
+    "name": "Candidate Test Node",
+    "email": "cand_1767824436499@test.com",
+    "password": "$2a$10$gAWjcj2aqrPBdFI75p9AfuEVtyJ./rluYjL8OMi3npGdGcKWZSCRW",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:20:36.614Z",
+    "createdAt": "2026-01-07T22:20:36.615Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc591a8738d93eecd443",
+    "name": "HR Test Node",
+    "email": "hr_1767824472848@test.com",
+    "password": "$2a$10$Ktccs1qwUgWz6KAWwbXpc.B4htRx9Q3sOT56Iubfw8vOUPlZPYfjy",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:21:13.065Z",
+    "createdAt": "2026-01-07T22:21:13.071Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc591a8738d93eecd448",
+    "name": "Candidate Test Node",
+    "email": "cand_1767824473123@test.com",
+    "password": "$2a$10$XLIWYL7RN6JpGyAuN6orBOSR8uelRW7VKRbae6yqab3k8XENQMY.6",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:21:13.234Z",
+    "createdAt": "2026-01-07T22:21:13.234Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc8ee80e5e69d440044f",
+    "name": "HR Test Node",
+    "email": "hr_1767824526243@test.com",
+    "password": "$2a$10$y.YW0RxneyWuFb5J0.raC.hqdlb5w3mOu2vvNOH6kVOXg/ZdAoxWS",
+    "role": "hr",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:22:06.459Z",
+    "createdAt": "2026-01-07T22:22:06.465Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695edc8ee80e5e69d4400454",
+    "name": "Candidate Test Node",
+    "email": "cand_1767824526519@test.com",
+    "password": "$2a$10$3OnORA76Gf.G3TnK6xsH9uu2eKhlaKOFiw0iG4RQ0UK9GYFvBzyNy",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:22:06.631Z",
+    "createdAt": "2026-01-07T22:22:06.632Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695ee07d3ed0aa77c8114d83",
+    "name": "Debug Candidate",
+    "email": "debug_cand_1767825533455@test.com",
+    "password": "$2a$10$rRs9eGCN2XgO7RKsUIKbzOFDtO5CV.ArqATHUhPkV7SRCT5EE3T0m",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:38:53.689Z",
+    "createdAt": "2026-01-07T22:38:53.695Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695ee08a3ed0aa77c8114d88",
+    "name": "Debug Candidate",
+    "email": "debug_cand_1767825546296@test.com",
+    "password": "$2a$10$088meRvJQE/VEnpiGDhWIOmDwmwq80yUpRDWPUkMZMDFUQX3r5wGC",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:39:06.472Z",
+    "createdAt": "2026-01-07T22:39:06.473Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695ee09a3ed0aa77c8114d8d",
+    "name": "Debug Candidate",
+    "email": "debug_cand_1767825562774@test.com",
+    "password": "$2a$10$.piOy7yMEmY2r1i.nqNX8.K2wwmzj6o20hwW8eev9WwyLwojxeq/y",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:39:22.959Z",
+    "createdAt": "2026-01-07T22:39:22.959Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695ee0e5004604d7549533f2",
+    "name": "Debug Candidate",
+    "email": "debug_cand_1767825637534@test.com",
+    "password": "$2a$10$1ZTS8eOKrsdCYwIpu/6Y7uj9tK2eVgEVnLKdLdd0a.fHVVoacjsyG",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-07T22:40:37.759Z",
+    "createdAt": "2026-01-07T22:40:37.764Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "695ef8a110d82f90eb0dd98d",
+    "name": "Abhijith",
+    "email": "abhijith@gmail.com",
+    "password": "$2a$10$K8tzcjirAmIlaL/mfE9/H./BHKlQpa3Pff.J1f.JVVNaW7jne8O3e",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-08T00:21:53.966Z",
+    "createdAt": "2026-01-08T00:21:53.970Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "dateFormat": "MMM DD, YYYY",
+      "language": "en",
+      "theme": "light",
+      "timezone": "UTC"
+    },
+    "security": {
+      "loginHistory": [],
+      "securityAlerts": true,
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email"
+    },
+    "notifications": {
+      "aiAlerts": true,
+      "email": true,
+      "hrAnnouncements": true,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "sms": false
+    },
+    "privacy": {
+      "dataSharingConsent": true,
+      "hideContactInfo": false,
+      "profileVisibility": "team"
+    },
+    "profilePhoto": null,
+    "_id": "695fc9f27b8a37ac04e08092",
+    "name": "Rishon",
+    "email": "rishon@gmail.com",
+    "password": "$2a$10$HgfmJG0ocNlHU6dOTfqLhu8gSdv27y2CaHQSPWDaoT46c6c/7WNPe",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-08T15:14:58.162Z",
+    "__v": 1,
+    "lastLogin": "2026-02-21T05:30:06.581Z"
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "696250648d06bf9f72d5fffe",
+    "name": "Sooraj",
+    "email": "sooraj@gmail.com",
+    "password": "$2a$10$4fwZEo5pU9gspIiXF6D7Ze9JC2sH5FTh3OLyV6vwUm0JMl5x5eDqm",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T14:25:26.979Z",
+    "createdAt": "2026-01-10T13:13:08.906Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "6965bfae3e2245db82bab6f0",
+    "name": "Test Attendance User",
+    "email": "test_attendance_1768275886587@example.com",
+    "password": "$2a$10$/XUwK2prfNx1SyKlkZGm4OpRWbyFCjRyDziq4bty74brM0rXg9sAu",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T03:44:46.966Z",
+    "createdAt": "2026-01-13T03:44:46.805Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "6965bfbe3e2245db82bab6fa",
+    "name": "Test Attendance User",
+    "email": "test_attendance_1768275902697@example.com",
+    "password": "$2a$10$M5/xXGIIfsVWht1cXspIwu/i7gqHyAK7GjZqMpbwlicTpqNZuO0jq",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T03:45:03.001Z",
+    "createdAt": "2026-01-13T03:45:02.872Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "6965bfd33e2245db82bab704",
+    "name": "Test Attendance User",
+    "email": "test_attendance_1768275923117@example.com",
+    "password": "$2a$10$Jz647fIwVnYrQQqoEWUXhurK4L8potCZNaZHqzPLO1koPAa2ZnCmy",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T03:45:23.407Z",
+    "createdAt": "2026-01-13T03:45:23.286Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "6965c2444ef90fbd139cfe6c",
+    "name": "Advait",
+    "email": "advait@gmail.com",
+    "password": "$2a$10$wti0tECLk9iEVGheUNBEiOFYocFMGzsNdtmIcsTT4Z0cHWYP9itZG",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T03:56:41.423Z",
+    "createdAt": "2026-01-13T03:55:48.393Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "6965c6f91c0b538383ec99e0",
+    "name": "Ashwin p s",
+    "email": "ashwinps2026@cs.sjcetpalai.ac.in",
+    "password": "$2a$10$OBld2GwLH427n.XOjVrH3eupLq1lGrGGdRpviD/Oz8lcRB8Dp4jrW",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-01-13T04:16:12.706Z",
+    "createdAt": "2026-01-13T04:15:53.311Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "69688da3b9545f484e8896ba",
+    "name": "HR Test",
+    "email": "hr_test_1768459683302@test.com",
+    "password": "pass",
+    "role": "hr",
+    "isVerified": true,
+    "createdAt": "2026-01-15T06:48:03.306Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "69688da3b9545f484e8896bc",
+    "name": "Emp Test",
+    "email": "emp_test_1768459683325@test.com",
+    "password": "pass",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-15T06:48:03.326Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "697235e4c29e64398c9a729c",
+    "name": "Elton",
+    "email": "elton@gmail.com",
+    "password": "$2a$10$9ENbpjLrEJLTK0gFh7aLD.8njuYadt3CsmQr1RP4lRjtHtxGiNPtq",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-22T14:36:20.664Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "6972369ec01b34b3b4b92feb",
+    "name": "Elton",
+    "email": "elton1@gmail.com",
+    "password": "$2a$10$8NlajwZQJxTy2qKXBnDkGOd6T2EmFF7Vbu4HVP2/NyEVR36WofxIO",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-22T14:39:26.347Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "697236f8d464678e00710810",
+    "name": "Elton",
+    "email": "elton11@gmail.com",
+    "password": "$2a$10$PCckclhlUtwiC/aSAFKIUOnJFUad3U5sz1dJRwW42F2ZrEo4/c0/O",
+    "role": "employee",
+    "isVerified": true,
+    "createdAt": "2026-01-22T14:40:56.335Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "69900d922d7081187ec91806",
+    "name": "Verification User",
+    "email": "verify_1771048338599@nova.com",
+    "password": "$2a$10$VFlWXFvVLbsIVArowqTdSeoQ82aCayFvuf95GynKxt1vmSzSInA1a",
+    "role": "employee",
+    "isVerified": false,
+    "lastLogin": "2026-02-14T05:52:18.760Z",
+    "createdAt": "2026-02-14T05:52:18.765Z",
+    "__v": 0
+  },
+  {
+    "preferences": {
+      "theme": "light",
+      "language": "en",
+      "timezone": "UTC",
+      "dateFormat": "MMM DD, YYYY"
+    },
+    "security": {
+      "twoFactorEnabled": false,
+      "twoFactorMethod": "email",
+      "securityAlerts": true,
+      "loginHistory": []
+    },
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "inApp": true,
+      "leaveUpdates": true,
+      "salaryUpdates": true,
+      "hrAnnouncements": true,
+      "aiAlerts": true
+    },
+    "privacy": {
+      "hideContactInfo": false,
+      "profileVisibility": "team",
+      "dataSharingConsent": true
+    },
+    "profilePhoto": null,
+    "_id": "699ad2c6b5e96f70c8717167",
+    "name": "Test Verifier",
+    "email": "test@nova.com",
+    "password": "$2a$10$uP1/U6cHiQWbSVLWuKIOhOuzAkeVwqSuCYkZwNXrB6W2jQJttwR72",
+    "role": "hr",
+    "isVerified": true,
+    "createdAt": "2026-02-22T09:56:22.379Z",
+    "__v": 0
+  }
+]

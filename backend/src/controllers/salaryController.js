@@ -237,6 +237,7 @@ exports.generatePayroll = async (req, res) => {
 
             // Section B: Earnings Calculation
             let hra = (base * (struct.components.hra / 100));
+            let da = (base * (struct.components.da / 100)) || 0;
             let specialAllowance = struct.components.specialAllowance || 0;
             let conveyanceAllowance = struct.components.conveyanceAllowance || 0;
             let medicalAllowance = struct.components.medicalAllowance || 1250; // Default if not in structure
@@ -259,7 +260,7 @@ exports.generatePayroll = async (req, res) => {
             let referralBonus = 0;
 
             // Aggregate all earnings
-            const totalEarnings = base + hra + specialAllowance + conveyanceAllowance +
+            const totalEarnings = base + hra + da + specialAllowance + conveyanceAllowance +
                 medicalAllowance + internetAllowance + transportAllowance +
                 mealAllowance + shiftAllowance + projectAllowance +
                 performancePay + totalBonus + performanceIncentive +
@@ -306,8 +307,10 @@ exports.generatePayroll = async (req, res) => {
                     employee: emp._id,
                     month,
                     year,
+                    payslipId: `PSL-${month.toUpperCase().slice(0, 3)}${year}-${emp._id.toString().slice(-4).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
                     basic: base,
                     hra,
+                    da,
                     specialAllowance,
                     conveyanceAllowance,
                     medicalAllowance,
@@ -344,6 +347,7 @@ exports.generatePayroll = async (req, res) => {
             } else if (salary.status === 'Pending') {
                 salary.basic = base;
                 salary.hra = hra;
+                salary.da = da;
                 salary.specialAllowance = specialAllowance;
                 salary.conveyanceAllowance = conveyanceAllowance;
                 salary.medicalAllowance = medicalAllowance;

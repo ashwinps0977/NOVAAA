@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
+  profilePhoto: {
+    type: String,
+    default: null
+  },
   preferences: {
     theme: { type: String, enum: ['light', 'dark'], default: 'light' },
     language: { type: String, default: 'en' },

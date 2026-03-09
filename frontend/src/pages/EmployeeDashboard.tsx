@@ -1978,7 +1978,6 @@ const EmployeeDashboard = () => {
     { id: 'workgrowth', label: 'Work & Growth', icon: TrendingUp },
     { id: 'attendance', label: 'Attendance & Leave', icon: CalendarDays },
     { id: 'ai-chat', label: 'AI Assistant', icon: MessageCircle, highlight: true },
-    { id: 'performance', label: 'Performance', icon: Target },
     { id: 'training', label: 'Training', icon: GraduationCap },
     { id: 'salary', label: 'Salary & Payslip', icon: DollarSign },
     { id: 'policies', label: 'Policies', icon: ShieldCheck },
@@ -1994,10 +1993,10 @@ const EmployeeDashboard = () => {
     >
       <div className="flex">
         {/* Sidebar Navigation */}
-        <div className="w-64 flex-shrink-0 bg-white border-r border-gray-200 min-h-screen p-4">
+        <div className="w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen p-4 transition-colors duration-300">
           <div className="mb-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Employee Portal</h2>
-            <p className="text-sm text-gray-500">Self-service HR management</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Employee Portal</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Self-service HR management</p>
           </div>
 
           <nav className="space-y-1">
@@ -2010,16 +2009,16 @@ const EmployeeDashboard = () => {
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${isActive
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'text-gray-700 hover:bg-gray-50'
-                    } ${item.highlight ? 'bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200' : ''}`}
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                    : 'text-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    } ${item.highlight ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/10 dark:to-green-900/10 border border-emerald-200 dark:border-emerald-800' : ''}`}
                   style={isAttendanceActive ? {
                     boxShadow: '0 0 0 1.5px #00cf7f, 0 0 12px 2px rgba(0,207,127,0.25)',
                     background: 'linear-gradient(135deg, rgba(0,207,127,0.08), rgba(13,148,136,0.06))'
                   } : {}}
                 >
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600' : 'text-gray-500'}`}
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`}
                       style={isAttendanceActive ? { filter: 'drop-shadow(0 0 4px rgba(0,207,127,0.8))' } : {}} />
                     <span className="font-medium">{item.label}</span>
                   </div>
@@ -2040,10 +2039,10 @@ const EmployeeDashboard = () => {
               );
             })}
 
-            <div className="pt-4 mt-4 border-t">
+            <div className="pt-4 mt-4 border-t dark:border-gray-700">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="w-full flex items-center space-x-3 p-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="font-medium">Logout</span>
@@ -2071,23 +2070,23 @@ const EmployeeDashboard = () => {
           <div className="space-y-6">
             {/* Header with Breadcrumb */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <span
-                  className="font-medium text-gray-700 cursor-pointer hover:text-emerald-600 transition-colors"
+                  className="font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                   onClick={() => setActiveSection('overview')}
                 >
                   Employee Dashboard
                 </span>
                 <ChevronRight className="w-4 h-4" />
-                <span className="capitalize">{activeSection.replace('-', ' ')}</span>
+                <span className="capitalize text-gray-900 dark:text-white font-semibold">{activeSection.replace('-', ' ')}</span>
               </div>
 
               <div className="flex items-center space-x-4">
-                <button className="p-2 hover:bg-gray-100 rounded-lg">
-                  <Bell className="w-5 h-5 text-gray-600" />
+                <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                  <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg">
-                  <HelpCircle className="w-5 h-5 text-gray-600" />
+                <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                  <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
             </div>

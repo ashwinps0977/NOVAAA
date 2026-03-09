@@ -1,7 +1,9 @@
 const { NlpManager } = require('node-nlp');
+const mongoose = require('mongoose');
 const Leave = require('../models/Leave');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const Salary = require('../models/Salary');
 const ragService = require('../services/ragService');
 const dbIntrospectionService = require('../services/dbIntrospectionService');
 
@@ -11,6 +13,53 @@ const manager = new NlpManager({ languages: ['en'], forceNER: true });
 // Train the model
 const trainModel = async () => {
     console.log('🤖 Training AI Model with Social Intelligence...');
+
+    manager.addDocument('en', 'deadline of %project%', 'project.deadline');
+    manager.addDocument('en', 'when is project %project% due', 'project.deadline');
+    manager.addDocument('en', 'what is the deadline for %project%', 'project.deadline');
+    manager.addDocument('en', 'who is working on %project%', 'project.team');
+    manager.addDocument('en', 'team of %project%', 'project.team');
+    manager.addDocument('en', 'who is assigned to %project%', 'project.team');
+    manager.addDocument('en', 'status of %project%', 'project.status');
+    manager.addDocument('en', 'is %project% active', 'project.status');
+    manager.addDocument('en', 'current status of %project%', 'project.status');
+    manager.addDocument('en', 'what is the description for %project%', 'project.description');
+    manager.addDocument('en', 'details about the work in %project%', 'project.description');
+    manager.addDocument('en', 'what are the required skills for %project%', 'project.skills');
+    manager.addDocument('en', 'skills needed for %project%', 'project.skills');
+    manager.addDocument('en', 'technologies used in %project%', 'project.skills');
+    manager.addDocument('en', 'what tech stack for %project%', 'project.skills');
+    manager.addDocument('en', 'skill set for %project%', 'project.skills');
+
+    manager.addDocument('en', 'salary of %employee%', 'employee.salary');
+    manager.addDocument('en', 'how much does %employee% earn', 'employee.salary');
+    manager.addDocument('en', 'pay of %employee%', 'employee.salary');
+    manager.addDocument('en', 'position of %employee%', 'employee.position');
+    manager.addDocument('en', 'role of %employee%', 'employee.position');
+    manager.addDocument('en', 'what is the designation of %employee%', 'employee.position');
+    manager.addDocument('en', 'joining date of %employee%', 'employee.joinDate');
+    manager.addDocument('en', 'when did %employee% join', 'employee.joinDate');
+    manager.addDocument('en', 'department of %employee%', 'employee.department');
+    manager.addDocument('en', 'which team is %employee% in', 'employee.department');
+    manager.addDocument('en', 'what projects is %employee% working on', 'employee.projects');
+    manager.addDocument('en', 'projects assigned to %employee%', 'employee.projects');
+    manager.addDocument('en', 'assigned projects of %employee%', 'employee.projects');
+    manager.addDocument('en', 'what are the projects of %employee%', 'employee.projects');
+    manager.addDocument('en', 'projects for engineer %employee%', 'employee.projects');
+    manager.addDocument('en', 'active projects for %employee%', 'employee.projects');
+
+    // Salary Explanation
+    manager.addDocument('en', 'explain salary of %employee%', 'salary.explain');
+    manager.addDocument('en', 'tell me about salary for %employee%', 'salary.explain');
+    manager.addDocument('en', 'payslip details for %employee%', 'salary.explain');
+    manager.addDocument('en', 'breakdown of salary for %employee%', 'salary.explain');
+    manager.addDocument('en', 'salary breakdown of %employee%', 'salary.explain');
+    manager.addDocument('en', 'explain last month salary of %employee%', 'salary.explain');
+
+    manager.addDocument('en', 'explain about %project%', 'project.explain');
+    manager.addDocument('en', 'tell me about %project%', 'project.explain');
+    manager.addDocument('en', 'details of %project%', 'project.explain');
+    manager.addDocument('en', 'project %project%', 'project.explain');
 
     // --- 1. HR & DATA INTENTS ---
     manager.addDocument('en', 'how many leaves do i have left', 'leave.balance');
@@ -431,6 +480,8 @@ exports.processChat = async (req, res) => {
                 role: req.user.role
             };
 
+
+            // --- PROJECT EXPLANATION LOGIC ---
             [employee, dbContext, hrStats, relevantPolicyChunks] = await Promise.all([
                 Employee.findOne({ email: currentUser.email }),
                 dbIntrospectionService.getUniversalContext(),
@@ -500,23 +551,110 @@ exports.processChat = async (req, res) => {
                 const entity = entities[0];
                 if (entity.type === 'Employee') {
                     const e = entity.data;
-                    reply = `### 👤 Employee Detail: ${e.name}\n\n` +
-                        `- **ID**: ${e.employeeId || 'N/A'}\n` +
-                        `- **Position**: ${e.position}\n` +
-                        `- **Department**: ${e.department}\n` +
-                        `- **Email**: ${e.email}\n` +
-                        `- **Salary Structure**: ${e.salaryStructure?.name || 'Standard'}\n` +
-                        `- **Status**: ${e.status || 'Active'}\n\n` +
-                        `*(You can view more details in the Employee Management section)*`;
+
+                    if (intent === 'employee.salary') {
+                        const salary = e.currentCTC || e.salary || e.currentSalary || (e.salaryStructure ? e.salaryStructure.baseSalary : 'Not specified');
+                        reply = `💰 **Salary Information for ${e.name}**: ${salary ? salary.toLocaleString() : 'Not specified'}.`;
+                    } else if (intent === 'employee.position') {
+                        reply = `📍 **Position for ${e.name}**: ${e.position || 'Not specified'} (${e.department || 'No department'}).`;
+                    } else if (intent === 'employee.joinDate') {
+                        reply = `📅 **Joining Date for ${e.name}**: ${e.joiningDate ? new Date(e.joiningDate).toLocaleDateString() : 'Not specified'}.`;
+                    } else if (intent === 'employee.department') {
+                        reply = `🏢 **Department for ${e.name}**: ${e.department || 'Not specified'}.`;
+                    } else if (intent === 'salary.explain') {
+                        const salary = await Salary.findOne({ employee: e._id })
+                            .populate('employee')
+                            .sort({ year: -1, month: -1 });
+
+                        if (!salary) {
+                            reply = `No salary records found for **${e.name}**.`;
+                        } else {
+                            const totalEarnings = (salary.basic || 0) + (salary.hra || 0) + (salary.da || 0) + (salary.specialAllowance || 0) + (salary.bonus || 0);
+                            const totalDeductions = (salary.pf || 0) + (salary.incomeTaxTDS || 0) + (salary.professionalTax || 0) + (salary.otherDeductions || 0);
+
+                            reply = `📑 **Salary Breakdown for ${e.name} (${salary.month} ${salary.year})**:\n\n`;
+                            reply += `💰 **Total Earnings**: ₹${totalEarnings.toLocaleString()}\n`;
+                            reply += `  - Basic: ₹${salary.basic.toLocaleString()}\n`;
+                            reply += `  - HRA: ₹${salary.hra.toLocaleString()}\n`;
+                            if (salary.da) reply += `  - DA: ₹${salary.da.toLocaleString()}\n`;
+                            if (salary.specialAllowance) reply += `  - Special Allowance: ₹${salary.specialAllowance.toLocaleString()}\n`;
+                            if (salary.bonus) reply += `  - Bonus: ₹${salary.bonus.toLocaleString()}\n\n`;
+
+                            reply += `📉 **Total Deductions**: ₹${totalDeductions.toLocaleString()}\n`;
+                            reply += `  - PF: ₹${salary.pf.toLocaleString()}\n`;
+                            reply += `  - TDS/Tax: ₹${salary.incomeTaxTDS.toLocaleString()}\n`;
+                            if (salary.professionalTax) reply += `  - Professional Tax: ₹${salary.professionalTax.toLocaleString()}\n`;
+                            if (salary.otherDeductions) reply += `  - Other: ₹${salary.otherDeductions.toLocaleString()}\n\n`;
+
+                            reply += `✅ **Net Payable**: **₹${salary.netSalary.toLocaleString()}**\n`;
+                            reply += `🏦 **Bank**: ${salary.bankName} (A/C: ${salary.accountNumber})\n`;
+                            reply += `🆔 **Payslip ID**: ${salary.payslipId || 'N/A'}`;
+                        }
+                    }
+                    else if (intent === 'employee.projects' || intent === 'employee.project') {
+                        if (e.activeProjects && e.activeProjects.length > 0) {
+                            reply = `📂 **Projects assigned to ${e.name}**:\n\n` +
+                                e.activeProjects.map(p => {
+                                    const pName = p.projectName || p.title || 'Unknown Project';
+                                    const deadline = p.deadline || p.endDate;
+                                    return `- **${pName}** (\`${p.status}\`) - Due: ${deadline ? new Date(deadline).toLocaleDateString() : 'TBD'}`;
+                                }).join('\n');
+                        } else {
+                            reply = `📂 **${e.name}** is not currently assigned to any active projects.`;
+                        }
+                    } else {
+                        // Default full summary
+                        reply = `### 👤 Employee Detail: ${e.name}\n\n` +
+                            `- **ID**: ${e.employeeId || 'N/A'}\n` +
+                            `- **Position**: ${e.position}\n` +
+                            `- **Department**: ${e.department}\n` +
+                            `- **Email**: ${e.email}\n` +
+                            `- **Salary Structure**: ${e.salaryStructure?.name || 'Standard'}\n` +
+                            `- **Status**: ${e.status || 'Active'}\n\n` +
+                            `*(You can view more details in the Employee Management section)*`;
+                    }
                 } else if (entity.type === 'Project') {
                     const p = entity.data;
-                    reply = `### 🚀 Project Status: ${p.title}\n\n` +
-                        `- **Role**: ${p.role}\n` +
-                        `- **Status**: **${p.status}**\n` +
-                        `- **Deadline**: ${new Date(p.deadline).toLocaleDateString()}\n` +
-                        `- **Assigned To**: ${p.assignedTo?.name || 'Multiple'}\n` +
-                        `- **Assigned By**: ${p.assignedBy?.name || 'System'}\n\n` +
-                        `**Description**: ${p.description}`;
+                    const name = p.projectName || p.title || 'Unknown Project';
+                    const deadline = p.deadline || p.endDate;
+                    const startDate = p.startDate;
+
+                    if (intent === 'project.deadline') {
+                        reply = `📅 **Deadline for ${name}**: ${deadline ? new Date(deadline).toLocaleDateString() : 'No deadline set'}.`;
+                    } else if (intent === 'project.team') {
+                        reply = `👥 **Team for ${name}**:\n` +
+                            `- **Assigned To**: ${p.assignedTo?.name || 'Multiple/Not assigned'}\n` +
+                            `- **Role**: ${p.role || 'Not specified'}\n` +
+                            `- **Assigned By**: ${p.assignedBy?.name || 'Management'}`;
+                    } else if (intent === 'project.status') {
+                        reply = `📊 **Current Status of ${name}**: \`${p.status}\` (Progress: \`${p.progressPercentage || 0}%\`)`;
+                    } else if (intent === 'project.description') {
+                        reply = `🚀 **About ${name}**:\n${p.description}`;
+                    } else if (intent === 'project.skills') {
+                        reply = `🛠️ **Required Skills for ${name}**:\n` +
+                            (p.requiredSkills && p.requiredSkills.length > 0
+                                ? p.requiredSkills.map(s => `- ${s.skill} (Level ${s.level}/5)`).join('\n')
+                                : 'No specific skills listed.');
+                    } else {
+                        // Default full summary (intent === 'project.explain' or fallback)
+                        reply = `### 🚀 Project Analysis: ${name}\n\n` +
+                            `**Description**: ${p.description}\n\n` +
+                            `**Current Status**: \`${p.status}\` | **Priority**: \`${p.priority || 'Medium'}\` | **Progress**: \`${p.progressPercentage || 0}%\`\n\n` +
+                            `#### 📅 Key Dates\n` +
+                            `- **Start Date**: ${startDate ? new Date(startDate).toLocaleDateString() : 'TBD'}\n` +
+                            `- **Deadline**: ${deadline ? new Date(deadline).toLocaleDateString() : 'No deadline set'}\n\n` +
+                            `#### 👥 Assignment Details\n` +
+                            `- **Role**: ${p.role || 'Not specified'}\n` +
+                            `- **Assigned To**: ${p.assignedTo?.name || 'Multiple/Not assigned'}\n` +
+                            `- **Assigned By**: ${p.assignedBy?.name || 'Management'}\n\n`;
+
+                        if (p.requiredSkills && p.requiredSkills.length > 0) {
+                            reply += `#### 🛠️ Required Skills\n` +
+                                p.requiredSkills.map(s => `- ${s.skill} (Level ${s.level}/5)`).join('\n') + '\n\n';
+                        }
+
+                        reply += `*(For more comprehensive tracking, visit the Projects section in your dashboard)*`;
+                    }
                 } else if (entity.type === 'JobApplication') {
                     const a = entity.data;
                     reply = `### 📄 Application for ${a.candidateName}\n\n` +
@@ -562,6 +700,7 @@ exports.processChat = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('AI Processing Error:', error);
         res.status(500).json({ success: false, message: 'Internal AI processing failed' });
     }
 };
