@@ -16,7 +16,8 @@ import {
     AlertCircle,
     ArrowLeft,
     BookOpen,
-    Layout
+    Layout,
+    RefreshCw
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
@@ -60,6 +61,13 @@ const TrainingSection = () => {
     const [skills, setSkills] = useState<Skill[]>([]);
     const [loading, setLoading] = useState(true);
     const [enrolling, setEnrolling] = useState<string | null>(null);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+    const getHeaders = (json = false) => {
+        const h: Record<string, string> = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+        if (json) h['Content-Type'] = 'application/json';
+        return h;
+    };
 
     useEffect(() => {
         fetchData();
@@ -126,6 +134,49 @@ const TrainingSection = () => {
             console.error('Error fetching training data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleProgressUpdate = async (id: string, progress: number) => {
+        setUpdatingId(id);
+        try {
+            const status = progress === 100 ? 'Completed' : progress > 0 ? 'In Progress' : 'Not Started';
+            const res = await fetch(`${API_BASE_URL}/trainings/${id}/progress`, {
+                method: 'PUT',
+                headers: getHeaders(true),
+                body: JSON.stringify({ progress, status }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                fetchData(); // Refresh all data to sync state
+            }
+        } catch (error) {
+            console.error('Progress update error:', error);
+        } finally {
+            setUpdatingId(null);
+        }
+    };
+
+    const handleDownloadCertificate = async (id: string, moduleTitle: string) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/trainings/${id}/certificate`, {
+                headers: getHeaders(),
+            });
+            const data = await res.json();
+            if (data.success) {
+                const { certificate } = data;
+                alert(`🎊 Training Certificate Validated!\n\nID: ${certificate.certificateId}\nCourse: ${certificate.courseTitle}\nAwarded To: ${certificate.candidateName}\nDate: ${new Date(certificate.completionDate).toLocaleDateString()}\n\nDownloading your official ${moduleTitle} certificate of completion...`);
+
+                const link = document.createElement('a');
+                link.href = '#';
+                link.setAttribute('download', `${moduleTitle.replace(/\s+/g, '_')}_Certificate.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (error) {
+            console.error('Certificate error:', error);
+            alert('Failed to generate certificate. Please try again.');
         }
     };
 
@@ -343,16 +394,53 @@ const TrainingSection = () => {
                                                         </div>
                                                     </div>
                                                     {renderProgressBar(t.progress)}
-                                                    {t.status !== 'Completed' && (
-                                                        <div className="mt-6 flex justify-end">
-                                                            <button
-                                                                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100"
-                                                                onClick={() => alert(`Redirecting to curriculum for "${t.title}"...`)}
-                                                            >
-                                                                Continue Learning
-                                                            </button>
-                                                        </div>
-                                                    )}
+
+                                                    <div className="mt-8">
+                                                        {t.status === 'Completed' ? (
+                                                            <div className="flex items-center justify-between bg-emerald-50 rounded-2xl p-4 border border-emerald-100/50">
+                                                                <div className="flex items-center space-x-3">
+                                                                    <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-200">
+                                                                        <Award size={20} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs font-black text-emerald-900 uppercase">Certified</p>
+                                                                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Official document ready</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleDownloadCertificate(t._id, t.title)}
+                                                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5"
+                                                                >
+                                                                    Get Certificate
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center space-x-4">
+                                                                <div className="flex-1">
+                                                                    <input
+                                                                        type="range"
+                                                                        min="0"
+                                                                        max="100"
+                                                                        step="5"
+                                                                        value={t.progress}
+                                                                        onChange={(e) => {
+                                                                            const val = parseInt(e.target.value);
+                                                                            setTrainings(prev => prev.map(item => item._id === t._id ? { ...item, progress: val } : item));
+                                                                        }}
+                                                                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                                    />
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleProgressUpdate(t._id, t.progress)}
+                                                                    disabled={updatingId === t._id}
+                                                                    className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-gray-200 disabled:opacity-50 flex items-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+                                                                >
+                                                                    {updatingId === t._id ? <RefreshCw size={12} className="animate-spin" /> : <PlayCircle size={12} />}
+                                                                    Save Progress
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))

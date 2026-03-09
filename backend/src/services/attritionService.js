@@ -29,6 +29,8 @@ const attritionService = {
                 '3-5 years': 0,
                 '5+ years': 0
             },
+            avgTenureYears: 0,
+            topChurnDept: { name: 'None', count: 0 },
             monthlyTrend: {}, // Last 6 months
             performanceCorrelation: [
                 { range: '0-60', rate: 0 },
@@ -53,6 +55,25 @@ const attritionService = {
                 else stats.tenureBreakdown['5+ years']++;
             }
         });
+
+        // Final calculations
+        const totalTenureDays = inactiveEmployees.reduce((sum, emp) => {
+            if (emp.joiningDate && emp.exitDate) {
+                return sum + (new Date(emp.exitDate) - new Date(emp.joiningDate)) / (1000 * 60 * 60 * 24);
+            }
+            return sum;
+        }, 0);
+        stats.avgTenureYears = Number((totalTenureDays / (inactiveCount || 1) / 365).toFixed(1));
+
+        let maxCount = 0;
+        let topDept = 'None';
+        Object.entries(stats.deptBreakdown).forEach(([dept, count]) => {
+            if (count > maxCount) {
+                maxCount = count;
+                topDept = dept;
+            }
+        });
+        stats.topChurnDept = { name: topDept, count: maxCount };
 
         return stats;
     },

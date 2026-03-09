@@ -59,4 +59,4 @@ const trainingAssignmentSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-module.exports = mongoose.model('TrainingAssignment', trainingAssignmentSchema);
+module.exports = mongoose.models.TrainingAssignment || mongoose.model('TrainingAssignment', trainingAssignmentSchema);

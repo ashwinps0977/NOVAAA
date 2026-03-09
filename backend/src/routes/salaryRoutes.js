@@ -76,5 +76,21 @@ router.put('/payroll-status', auth, salaryController.processPayrollStatus);
 // @desc    Get all employees salary list for HR
 // @access  Private (Admin/HR)
 router.get('/hr/salary-list', auth, salaryController.getHRSalaryList);
+router.get('/payroll/:month/:year', auth, salaryController.getPayrollByMonth);
+
+const componentController = require('../controllers/salaryComponentController');
+
+// --- Salary Component Routes (Bonuses, Deductions, Tax Rules) ---
+router.get('/bonuses', auth, componentController.getBonuses);
+router.post('/bonus', auth, componentController.addBonus);
+router.delete('/bonus/:id', auth, componentController.deleteBonus);
+
+router.get('/deductions', auth, componentController.getDeductions);
+router.post('/deduction', auth, componentController.addDeduction);
+router.delete('/deduction/:id', auth, componentController.deleteDeduction);
+
+router.get('/tax-rules', auth, componentController.getTaxRules);
+router.post('/tax-rule', auth, componentController.addTaxRule);
+router.delete('/tax-rule/:id', auth, componentController.deleteTaxRule);
 
 module.exports = router;

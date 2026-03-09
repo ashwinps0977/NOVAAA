@@ -93,7 +93,7 @@ const Login = () => {
             </h1>
             <div className="flex items-center justify-center space-x-2 mb-4">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-              <span className="text-lg font-medium text-emerald-600">Agentic AI</span>
+              <span className="text-lg font-medium text-emerald-600">NOVA AI</span>
               <span className="text-gray-400">•</span>
               <span className="text-lg text-gray-700">One Platform, Every Perspective</span>
             </div>

@@ -379,7 +379,18 @@ exports.generatePayroll = async (req, res) => {
         };
         await payroll.save();
 
-        res.json({ msg: 'Payroll generated successfully', payroll, salaries: salaryRecords });
+        // Populate employee data before sending back
+        const populatedSalaries = await Salary.find({ _id: { $in: salaryRecords.map(s => s._id) } }).populate('employee', 'name email employeeId');
+
+        const salariesWithIds = populatedSalaries.map(s => {
+            const obj = s.toObject();
+            if (obj.employee && typeof obj.employee === 'object') {
+                obj.employee.employeeId = `EMP-${obj.employee._id.toString().slice(-6).toUpperCase()}`;
+            }
+            return obj;
+        });
+
+        res.json({ msg: 'Payroll generated successfully', payroll, salaries: salariesWithIds });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -474,6 +485,30 @@ exports.getHRSalaryList = async (req, res) => {
         }));
 
         res.json(salaryList);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
+
+// 7. Get payroll by month/year
+exports.getPayrollByMonth = async (req, res) => {
+    const { month, year } = req.params;
+    try {
+        const payroll = await Payroll.findOne({ month, year });
+        if (!payroll) return res.json({ payroll: null, salaries: [] });
+
+        const salaries = await Salary.find({ payroll: payroll._id }).populate('employee', 'name email employeeId salaryStructure');
+
+        const salariesWithIds = salaries.map(s => {
+            const obj = s.toObject();
+            if (obj.employee && typeof obj.employee === 'object') {
+                obj.employee.employeeId = `EMP-${obj.employee._id.toString().slice(-6).toUpperCase()}`;
+            }
+            return obj;
+        });
+
+        res.json({ payroll, salaries: salariesWithIds });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

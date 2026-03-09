@@ -19,7 +19,10 @@ router.put('/modules/:id', auth, admin, trainingController.updateModule);
 router.delete('/modules/:id', auth, admin, trainingController.deleteModule);
 
 // HR Assignment & Stats
-router.post('/assign', auth, admin, trainingController.assignTraining);
 router.get('/stats', auth, admin, trainingController.getHRTrainingStats);
+router.post('/assign', auth, admin, trainingController.assignTraining);
+
+// Certificate Download
+router.get('/:id/certificate', auth, trainingController.downloadCertificate);
 
 module.exports = router;

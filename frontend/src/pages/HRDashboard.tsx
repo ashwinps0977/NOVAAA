@@ -847,7 +847,7 @@ const HRDashboard = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
@@ -868,18 +868,6 @@ const HRDashboard = () => {
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <Target className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Departments</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardStats?.totalDepartments ?? 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
               </div>
@@ -1387,8 +1375,8 @@ const HRDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {leaves.length > 0 ? (
-                      leaves.map((leave: any) => (
+                    {leaves.filter((l: any) => l.status === 'Pending').length > 0 ? (
+                      leaves.filter((l: any) => l.status === 'Pending').map((leave: any) => (
                         <tr key={leave._id} className="hover:bg-gray-50">
                           <td className="py-4 px-4">
                             <div className="font-medium text-gray-900">{leave.user?.name || 'Unknown'}</div>
@@ -1438,6 +1426,46 @@ const HRDashboard = () => {
                           No leave requests found.
                         </td>
                       </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800">Recent Leave History</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50 text-gray-600 text-sm">
+                    <tr>
+                      <th className="py-3 px-4 font-semibold">Employee</th>
+                      <th className="py-3 px-4 font-semibold">Type</th>
+                      <th className="py-3 px-4 font-semibold">Dates</th>
+                      <th className="py-3 px-4 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {leaves.filter((l: any) => l.status !== 'Pending').length > 0 ? (
+                      leaves.filter((l: any) => l.status !== 'Pending').slice(0, 10).map((leave: any) => (
+                        <tr key={leave._id} className="hover:bg-gray-50 text-sm">
+                          <td className="py-4 px-4">
+                            <div className="font-medium text-gray-900">{leave.user?.name || 'Unknown'}</div>
+                          </td>
+                          <td className="py-4 px-4">{leave.type}</td>
+                          <td className="py-4 px-4 text-xs font-mono">
+                            {leave.startDate} to {leave.endDate}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${leave.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {leave.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={4} className="py-6 text-center text-gray-400">No recent history</td></tr>
                     )}
                   </tbody>
                 </table>

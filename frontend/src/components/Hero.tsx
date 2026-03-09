@@ -16,7 +16,6 @@ const Hero = () => {
 
       {/* Background 3D Spline Asset - Full Interactivity Across Entire Section */}
       <div className="absolute inset-0 z-[1] pointer-events-auto overflow-hidden">
-        {/* @ts-ignore */}
         <spline-viewer
           url="https://prod.spline.design/S5hjYVl4OCTe6Tl9/scene.splinecode"
           className="h-full w-[180%] absolute top-0 -left-[35%] lg:-left-[20%]"
@@ -36,7 +35,7 @@ const Hero = () => {
 
           <div className="space-y-1 mb-6 w-full">
             <h1 className="text-7xl md:text-8xl lg:text-[6.5rem] font-black leading-[1.25] tracking-tight font-outfit pointer-events-auto cursor-default hover:scale-105 transition-transform duration-500 bg-clip-text text-transparent bg-gradient-to-r from-green-800 via-green-600 to-green-500 pb-4">
-              Agentic AI
+              NOVA HR
             </h1>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight font-outfit pointer-events-auto cursor-default hover:scale-105 transition-transform duration-500 bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500 whitespace-nowrap">
               One Platform, Every Perspective

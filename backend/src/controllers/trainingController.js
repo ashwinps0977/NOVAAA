@@ -329,6 +329,38 @@ exports.updateProgress = async (req, res) => {
     }
 };
 
+// Download Certificate
+exports.downloadCertificate = async (req, res) => {
+    try {
+        const assignment = await TrainingAssignment.findOne({ _id: req.params.id, employee: req.user.id })
+            .populate('module', 'title category description duration')
+            .populate('employee', 'name email');
+
+        if (!assignment) {
+            return res.status(404).json({ success: false, message: 'Training not found' });
+        }
+
+        if (assignment.status !== 'Completed') {
+            return res.status(400).json({ success: false, message: 'Training not completed yet' });
+        }
+
+        // In a real app, generate a PDF. Here we return structured data for a dynamic frontend certificate.
+        const certificateData = {
+            certificateId: `CERT-${assignment._id.toString().slice(-6).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+            candidateName: assignment.employee?.name || 'Employee',
+            courseTitle: assignment.module?.title || 'Training Module',
+            completionDate: assignment.completedDate || new Date(),
+            category: assignment.module?.category || 'General',
+            validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000 * 2) // 2 years validity
+        };
+
+        res.json({ success: true, certificate: certificateData });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 // Seed initial training data for an employee (Legacy)
 exports.seedTrainings = async (req, res) => {
     try {
