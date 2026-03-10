@@ -216,9 +216,9 @@ const HRAnalyticsSection = () => {
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {renderCard('Total Workforce', data?.totalEmployees || 0, '+12%', 'up', Users)}
-                {renderCard('Female Representation', '42%', '+2%', 'up', MapPin)}
-                {renderCard('Avg Tenure', '3.2 yrs', '-0.5', 'down', Clock)}
-                {renderCard('Active Vacancies', '18', '+5', 'up', Briefcase)}
+                {renderCard('Female Representation', `${data?.femalePercentage || 0}%`, '+2%', 'up', MapPin)}
+                {renderCard('Avg Tenure', `${data?.avgTenureYears || 0} yrs`, '-0.1', 'down', Clock)}
+                {renderCard('Active Vacancies', data?.activeVacancies || 0, '+5', 'up', Briefcase)}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -312,13 +312,13 @@ const HRAnalyticsSection = () => {
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <p className="text-gray-500 text-sm font-medium mb-1">Avg Tenure</p>
-                    <p className="text-3xl font-black text-indigo-600">3.4 yrs</p>
+                    <p className="text-3xl font-black text-indigo-600">{data?.avgTenureYears || 0} yrs</p>
                     <div className="mt-2 text-gray-400 text-[10px] font-bold">In-house historical avg</div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <p className="text-gray-500 text-sm font-medium mb-1">Top Churn Dept</p>
-                    <p className="text-3xl font-black text-gray-900">Sales</p>
-                    <div className="mt-2 text-rose-500 text-[10px] font-bold">22% Rate</div>
+                    <p className="text-3xl font-black text-gray-900">{data?.topChurnDept?.name || 'None'}</p>
+                    <div className="mt-2 text-rose-500 text-[10px] font-bold">{data?.overallRate > 0 ? `${Math.round(data?.overallRate)}% Rate` : '0% Rate'}</div>
                 </div>
             </div>
 

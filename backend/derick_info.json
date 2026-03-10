@@ -1,0 +1,38 @@
+{
+  "preferences": {
+    "theme": "light",
+    "language": "en",
+    "timezone": "UTC",
+    "dateFormat": "MMM DD, YYYY"
+  },
+  "security": {
+    "twoFactorEnabled": false,
+    "twoFactorMethod": "email",
+    "securityAlerts": true,
+    "loginHistory": []
+  },
+  "notifications": {
+    "email": true,
+    "sms": false,
+    "inApp": true,
+    "leaveUpdates": true,
+    "salaryUpdates": true,
+    "hrAnnouncements": true,
+    "aiAlerts": true
+  },
+  "privacy": {
+    "hideContactInfo": false,
+    "profileVisibility": "team",
+    "dataSharingConsent": true
+  },
+  "profilePhoto": null,
+  "_id": "6999750ad94f9b3528f91e4d",
+  "name": "Derick Denny",
+  "email": "derick@gmail.com",
+  "password": "$2a$10$wl1qqZ9PxLhXaMQNfDfVx.27.gnb40ZokLRfn5M6Fpu3l7N01yLFS",
+  "role": "hr",
+  "isVerified": false,
+  "lastLogin": "2026-03-09T17:01:00.900Z",
+  "createdAt": "2026-02-21T09:04:10.043Z",
+  "__v": 0
+}

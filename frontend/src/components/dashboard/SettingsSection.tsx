@@ -22,9 +22,31 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
         emergencyContact: user?.emergencyContact || { name: '', relation: '', phone: '' }
     });
 
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    const [payrollForm, setPayrollForm] = useState({
+        bankName: settings?.bankDetails?.bankName || '',
+        accountNumber: settings?.bankDetails?.accountNumber || ''
+    });
+
+    const [newSkill, setNewSkill] = useState('');
+
     useEffect(() => {
         fetchSettings();
     }, []);
+
+    useEffect(() => {
+        if (settings) {
+            setPayrollForm({
+                bankName: settings.bankDetails?.bankName || '',
+                accountNumber: settings.bankDetails?.accountNumber || ''
+            });
+        }
+    }, [settings]);
 
     const fetchSettings = async () => {
         try {
@@ -41,13 +63,13 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
         }
     };
 
-    const handleUpdate = async (category: string, data: any) => {
+    const handleUpdate = async (category: string, data: any, method: string = 'PUT') => {
         setLoading(true);
         setMessage('');
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_BASE_URL}/settings/${category}`, {
-                method: 'PUT',
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -58,6 +80,22 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                 setMessage('Settings updated successfully!');
                 fetchSettings();
                 onUpdate();
+                if (category === 'security/password') {
+                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                }
+
+                // Immediate theme application
+                if (category === 'preferences' && data.theme) {
+                    localStorage.setItem('theme', data.theme);
+                    if (data.theme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            } else {
+                const error = await res.json();
+                setMessage(error.message || 'Update failed. Please try again.');
             }
         } catch (err) {
             setMessage('Update failed. Please try again.');
@@ -88,7 +126,26 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                             <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center border-4 border-white shadow-sm overflow-hidden">
                                 {user?.profilePhoto ? <img src={user.profilePhoto} alt="Profile" /> : <User className="w-10 h-10 text-blue-500" />}
                             </div>
-                            <button className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+                            <input
+                                type="file"
+                                id="profile-upload"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                            handleUpdate('profile-photo', { photo: reader.result }, 'POST');
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                            />
+                            <button
+                                onClick={() => document.getElementById('profile-upload')?.click()}
+                                className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors"
+                            >
                                 Change Photo
                             </button>
                         </div>
@@ -173,11 +230,49 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                     <div className="space-y-6">
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Lock className="w-4 h-4" /> Change Password</h4>
-                            <div className="space-y-4 max-w-sm">
-                                <input type="password" placeholder="Current Password" className="w-full px-4 py-2 border rounded-lg" />
-                                <input type="password" placeholder="New Password" className="w-full px-4 py-2 border rounded-lg" />
-                                <button className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors">Update Password</button>
-                            </div>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                                    alert('Passwords do not match');
+                                    return;
+                                }
+                                handleUpdate('security/password', {
+                                    currentPassword: passwordForm.currentPassword,
+                                    newPassword: passwordForm.newPassword
+                                });
+                            }} className="space-y-4 max-w-sm">
+                                <input
+                                    type="password"
+                                    placeholder="Current Password"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={passwordForm.currentPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="New Password"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={passwordForm.newPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="Confirm New Password"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={passwordForm.confirmPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    className="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-50"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Updating...' : 'Update Password'}
+                                </button>
+                            </form>
                         </div>
                         <div className="pt-6 border-t">
                             <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Smartphone className="w-4 h-4" /> Two-Factor Authentication</h4>
@@ -186,7 +281,10 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                                     <p className="font-medium text-gray-900 text-sm">Enable Email OTP</p>
                                     <p className="text-xs text-gray-500">Adds an extra layer of security to your account.</p>
                                 </div>
-                                <button className={`w-12 h-6 rounded-full transition-colors relative ${settings?.security?.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                <button
+                                    onClick={() => handleUpdate('security/2fa', { enabled: !settings?.security?.twoFactorEnabled })}
+                                    className={`w-12 h-6 rounded-full transition-colors relative ${settings?.security?.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`}
+                                >
                                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings?.security?.twoFactorEnabled ? 'translate-x-7' : 'translate-x-1'}`}></div>
                                 </button>
                             </div>
@@ -220,17 +318,17 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={() => handleUpdate('preferences', { theme: 'light' })}
-                                        className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${settings?.preferences?.theme === 'light' ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'}`}
+                                        className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${settings?.preferences?.theme === 'light' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                     >
-                                        <div className="w-full h-8 bg-white border rounded"></div>
-                                        <span className="text-sm font-medium">Light</span>
+                                        <div className="w-full h-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded"></div>
+                                        <span className={`text-sm font-medium ${settings?.preferences?.theme === 'light' ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`}>Light</span>
                                     </button>
                                     <button
                                         onClick={() => handleUpdate('preferences', { theme: 'dark' })}
-                                        className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${settings?.preferences?.theme === 'dark' ? 'border-blue-500 bg-blue-900 text-white' : 'hover:bg-gray-50'}`}
+                                        className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${settings?.preferences?.theme === 'dark' ? 'border-blue-500 bg-blue-900 text-white shadow-lg shadow-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                     >
-                                        <div className="w-full h-8 bg-gray-800 rounded"></div>
-                                        <span className="text-sm font-medium">Dark</span>
+                                        <div className="w-full h-8 bg-gray-800 dark:bg-gray-700 border border-gray-600 rounded"></div>
+                                        <span className={`text-sm font-medium ${settings?.preferences?.theme === 'dark' ? 'text-white' : 'text-gray-400'}`}>Dark</span>
                                     </button>
                                 </div>
                             </div>
@@ -265,10 +363,23 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                         <div className="pt-6 border-t">
                             <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Bell className="w-4 h-4" /> Notification Preferences</h4>
                             <div className="space-y-3">
-                                {['Email Notifications', 'SMS Alerts', 'In-app Notifications', 'Salary Updates', 'AI Alerts'].map((label, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <span className="text-sm text-gray-700">{label}</span>
-                                        <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" defaultChecked />
+                                {settings?.notifications && Object.entries({
+                                    email: 'Email Notifications',
+                                    sms: 'SMS Alerts',
+                                    inApp: 'In-app Notifications',
+                                    salaryUpdates: 'Salary Updates',
+                                    leaveUpdates: 'Leave Updates',
+                                    hrAnnouncements: 'HR Announcements',
+                                    aiAlerts: 'AI Alerts'
+                                }).map(([key, label]) => (
+                                    <div key={key} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100/50 dark:border-gray-700/50">
+                                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{label}</span>
+                                        <button
+                                            onClick={() => handleUpdate('notifications', { [key]: !settings.notifications[key] })}
+                                            className={`w-10 h-5 rounded-full transition-all relative ${settings.notifications[key] ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                        >
+                                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${settings.notifications[key] ? 'translate-x-5.5' : 'translate-x-0.5'}`}></div>
+                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -297,10 +408,14 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Shift</label>
-                                <select className="w-full px-4 py-2 border rounded-lg">
-                                    <option>Day Shift (9 AM - 6 PM)</option>
-                                    <option>Night Shift (9 PM - 6 AM)</option>
-                                    <option>Flexible Hours</option>
+                                <select
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                    value={settings?.workPreferences?.preferredShift}
+                                    onChange={(e) => handleUpdate('work-preferences', { preferredShift: e.target.value })}
+                                >
+                                    <option value="Day Shift (9 AM - 6 PM)">Day Shift (9 AM - 6 PM)</option>
+                                    <option value="Night Shift (9 PM - 6 AM)">Night Shift (9 PM - 6 AM)</option>
+                                    <option value="Flexible Hours">Flexible Hours</option>
                                 </select>
                             </div>
                         </div>
@@ -310,22 +425,36 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
             case 'documents':
                 return (
                     <div className="space-y-6">
-                        <div className="p-8 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                        <input
+                            type="file"
+                            id="doc-upload"
+                            className="hidden"
+                            onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    handleUpdate('documents', { type: 'Other', name: file.name, url: '#' }, 'POST');
+                                }
+                            }}
+                        />
+                        <div
+                            onClick={() => document.getElementById('doc-upload')?.click()}
+                            className="p-8 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
                             <Upload className="w-10 h-10 text-gray-400 mb-3" />
                             <p className="font-medium text-gray-700">Click to upload new document</p>
                             <p className="text-xs text-gray-500 mt-1">PDF, PNG up to 10MB (Resume, Certificates, ID Proof)</p>
                         </div>
                         <div className="space-y-3">
                             <h4 className="font-semibold text-gray-800">Your Documents</h4>
-                            {['Offer Letter.pdf', 'Latest_Payslip.pdf', 'Experience_Certificate.pdf'].map((doc, i) => (
+                            {(settings?.documents?.length > 0 ? settings.documents : [{ name: 'Offer Letter.pdf', type: 'contract' }, { name: 'Latest_Payslip.pdf', type: 'payslip' }]).map((doc: any, i: number) => (
                                 <div key={i} className="flex items-center justify-between p-4 bg-white border rounded-xl hover:shadow-sm transition-shadow">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                                             <FileText className="w-5 h-5 text-red-500" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900 text-sm">{doc}</p>
-                                            <p className="text-xs text-gray-500">Uploaded on Jan 15, 2026</p>
+                                            <p className="font-medium text-gray-900 text-sm">{doc.name}</p>
+                                            <p className="text-xs text-gray-500">Uploaded on {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'Jan 15, 2026'}</p>
                                         </div>
                                     </div>
                                     <button className="p-2 text-gray-400 hover:text-blue-500 transition-colors">
@@ -388,11 +517,21 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-500 mb-1 font-bold uppercase text-[10px]">Bank Name</label>
-                                    <input placeholder="e.g. Chase Bank" className="w-full px-4 py-2 border rounded-lg" defaultValue={settings?.bankDetails?.bankName} />
+                                    <input
+                                        placeholder="e.g. Chase Bank"
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                        value={payrollForm.bankName || settings?.bankDetails?.bankName}
+                                        onChange={(e) => setPayrollForm({ ...payrollForm, bankName: e.target.value })}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm text-gray-500 mb-1 font-bold uppercase text-[10px]">Account Number</label>
-                                    <input placeholder="XXXX XXXX XXXX" className="w-full px-4 py-2 border rounded-lg" defaultValue={settings?.bankDetails?.accountNumber} />
+                                    <input
+                                        placeholder="XXXX XXXX XXXX"
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                        value={payrollForm.accountNumber || settings?.bankDetails?.accountNumber}
+                                        onChange={(e) => setPayrollForm({ ...payrollForm, accountNumber: e.target.value })}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -410,7 +549,13 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                                 ))}
                             </div>
                         </div>
-                        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Request Payroll Update</button>
+                        <button
+                            disabled={loading}
+                            onClick={() => handleUpdate('payroll', { bankDetails: payrollForm })}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                            {loading ? 'Saving...' : 'Save Payroll Details'}
+                        </button>
                     </div>
                 );
 
@@ -419,14 +564,46 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                     <div className="space-y-6">
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><GraduationCap className="w-4 h-4" /> Interested Skills</h4>
-                            <div className="flex flex-wrap gap-2 text-sm">
-                                {['React', 'Node.js', 'Machine Learning', 'Public Speaking', 'System Design'].map((skill) => (
-                                    <span key={skill} className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-2">
+                            <div className="flex flex-wrap gap-2 text-sm mb-4">
+                                {(settings?.learning || []).map((skill: string, i: number) => (
+                                    <span key={i} className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-2">
                                         {skill}
-                                        <button className="hover:text-amber-500">×</button>
+                                        <button
+                                            onClick={() => {
+                                                const updated = settings.learning.filter((_: any, idx: number) => idx !== i);
+                                                handleUpdate('learning', { learning: updated });
+                                            }}
+                                            className="hover:text-red-500"
+                                        >
+                                            ×
+                                        </button>
                                     </span>
                                 ))}
-                                <button className="px-3 py-1 border border-dashed rounded-full text-gray-400 hover:text-emerald-500 hover:border-emerald-500">+ Add Skill</button>
+                            </div>
+                            <div className="flex gap-2 max-w-sm">
+                                <input
+                                    placeholder="Add new skill..."
+                                    className="flex-1 px-4 py-1 border rounded-lg text-sm"
+                                    value={newSkill}
+                                    onChange={(e) => setNewSkill(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && newSkill.trim()) {
+                                            handleUpdate('learning', { learning: [...(settings?.learning || []), newSkill.trim()] });
+                                            setNewSkill('');
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (newSkill.trim()) {
+                                            handleUpdate('learning', { learning: [...(settings?.learning || []), newSkill.trim()] });
+                                            setNewSkill('');
+                                        }
+                                    }}
+                                    className="bg-emerald-600 text-white px-4 py-1 rounded-lg text-sm hover:bg-emerald-700 transition-colors"
+                                >
+                                    Add
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -438,9 +615,26 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                         <div className="p-4 bg-gray-50 rounded-xl border space-y-4">
                             <h4 className="font-semibold text-gray-800">Advanced Account Management</h4>
                             <div className="space-y-2">
-                                <button className="w-full text-left p-2 text-sm text-gray-600 hover:text-blue-600 flex items-center justify-between group">
+                                <button
+                                    onClick={async () => {
+                                        const token = localStorage.getItem('token');
+                                        const res = await fetch(`${API_BASE_URL}/settings/export-data`, {
+                                            headers: { 'Authorization': `Bearer ${token}` }
+                                        });
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = 'my-nova-data.json';
+                                            a.click();
+                                        }
+                                    }}
+                                    className="w-full text-left p-2 text-sm text-gray-600 hover:text-blue-600 flex items-center justify-between group"
+                                >
                                     <span>Download All My Data (.JSON)</span>
-                                    <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100" />
+                                    <Download className="w-4 h-4 opacity-0 group-hover:opacity-100" />
                                 </button>
                                 <button className="w-full text-left p-2 text-sm text-gray-600 hover:text-blue-600 flex items-center justify-between group">
                                     <span>Export Login History</span>
@@ -456,7 +650,25 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                             <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2"><Trash2 className="w-5 h-5" /> Danger Zone</h4>
                             <p className="text-sm text-red-700 mb-6">Once you deactivate or delete your account, there is no going back. Please be certain.</p>
                             <div className="flex flex-wrap gap-3">
-                                <button className="bg-white border border-red-200 text-red-700 px-4 py-2 rounded-lg font-semibold hover:bg-red-100 transition-colors">Deactivate Account</button>
+                                <button
+                                    onClick={async () => {
+                                        if (confirm('Are you sure you want to deactivate your account?')) {
+                                            const token = localStorage.getItem('token');
+                                            const res = await fetch(`${API_BASE_URL}/settings/account`, {
+                                                method: 'DELETE',
+                                                headers: { 'Authorization': `Bearer ${token}` }
+                                            });
+                                            if (res.ok) {
+                                                alert('Account deactivated. Logging out...');
+                                                localStorage.removeItem('token');
+                                                window.location.reload();
+                                            }
+                                        }
+                                    }}
+                                    className="bg-white border border-red-200 text-red-700 px-4 py-2 rounded-lg font-semibold hover:bg-red-100 transition-colors"
+                                >
+                                    Deactivate Account
+                                </button>
                                 <button className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg shadow-red-200">Delete Account</button>
                             </div>
                         </div>
@@ -469,12 +681,12 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
     };
 
     return (
-        <div className="flex bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 min-h-[700px]">
+        <div className="flex bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 min-h-[700px]">
             {/* Settings Sidebar */}
-            <div className="w-72 bg-gray-50/50 border-r border-gray-100 p-6">
+            <div className="w-72 bg-gray-50/50 dark:bg-gray-800/50 border-r border-gray-100 dark:border-gray-800 p-6">
                 <div className="mb-8">
                     <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">User Settings</h2>
-                    <p className="text-xs text-gray-500 mt-1">Manage your account & preferences</p>
+                    <p className="text-xs text-gray-400 mt-1">Manage your account & preferences</p>
                 </div>
                 <nav className="space-y-1">
                     {tabs.map((tab) => {
@@ -485,8 +697,8 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${isActive
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 translate-x-1'
-                                    : 'text-gray-600 hover:bg-white hover:text-blue-600'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 translate-x-1'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400'
                                     }`}
                             >
                                 <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
@@ -498,12 +710,12 @@ const SettingsSection = ({ user, onUpdate }: { user: any, onUpdate: () => void }
             </div>
 
             {/* Main Settings Panel */}
-            <div className="flex-1 p-10 bg-white">
+            <div className="flex-1 p-10 bg-white dark:bg-gray-900">
                 <div className="max-w-3xl">
                     <div className="mb-8 flex items-center justify-between">
                         <div>
-                            <h3 className="text-2xl font-bold text-gray-800">{tabs.find(t => t.id === activeTab)?.label}</h3>
-                            <p className="text-sm text-gray-500">Configure your {activeTab.replace('-', ' ')} settings</p>
+                            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{tabs.find(t => t.id === activeTab)?.label}</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Configure your {activeTab.replace('-', ' ')} settings</p>
                         </div>
                         {message && (
                             <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border border-emerald-100 text-sm flex items-center gap-2">

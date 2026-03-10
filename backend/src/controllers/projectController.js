@@ -3,6 +3,7 @@ const Employee = require('../models/Employee');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const Notification = require('../models/Notification');
+const socketService = require('../services/socketService');
 
 // Assign a project to an employee
 exports.assignProject = async (req, res) => {
@@ -88,6 +89,10 @@ exports.assignProject = async (req, res) => {
             project,
             task: newTask
         });
+
+        // Broadcast real-time update
+        socketService.broadcastUpdate('projects', 'create', { project });
+        socketService.broadcastUpdate('tasks', 'create', { task: newTask });
 
     } catch (error) {
         console.error('Assign project error:', error);
@@ -189,15 +194,33 @@ exports.updateProjectStatus = async (req, res) => {
         if (status) {
             project.status = status;
 
-            // Handle dynamic completion percentage
-            if (status === 'In Progress') {
-                project.progressPercentage = Math.floor(Math.random() * (35 - 25 + 1)) + 25; // 25-35%
-            } else if (status === 'For Review') {
-                project.progressPercentage = Math.floor(Math.random() * (80 - 70 + 1)) + 70; // 70-80%
-            } else if (status === 'Completed') {
-                project.progressPercentage = 100;
-            } else if (status === 'Planning' || status === 'Pending') {
-                project.progressPercentage = 0;
+            // Handle dynamic completion percentage based on status
+            switch (status) {
+                case 'In Progress':
+                    // If moving to In Progress, set to at least 25%
+                    if (project.progressPercentage < 25) {
+                        project.progressPercentage = 35;
+                    }
+                    break;
+                case 'For Review':
+                    project.progressPercentage = 85;
+                    break;
+                case 'Completed':
+                    project.progressPercentage = 100;
+                    break;
+                case 'Planning':
+                case 'Pending':
+                    project.progressPercentage = 0;
+                    break;
+                case 'On Hold':
+                    // Optionally keep the same percentage
+                    break;
+                case 'Delayed':
+                    // Optionally keep the same percentage 
+                    break;
+                default:
+                    // For other statuses, no change to progress
+                    break;
             }
         }
         if (feedback !== undefined) project.feedback = feedback;
@@ -209,6 +232,9 @@ exports.updateProjectStatus = async (req, res) => {
             message: `Project status updated to ${status} with ${project.progressPercentage}% completion`,
             project
         });
+
+        // Broadcast real-time update
+        socketService.broadcastUpdate('projects', 'update', { project });
 
     } catch (error) {
         console.error('Update project status error:', error);

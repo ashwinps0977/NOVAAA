@@ -12,7 +12,7 @@ const Contact = () => {
 
         <p className="text-gray-600 text-lg mb-10">
           NOVA is an academic project developed to explore the use of
-          Agentic AI in Human Resource Management systems.
+          NOVA AI in Human Resource Management systems.
         </p>
 
         <p className="text-gray-600 mb-6">
@@ -33,7 +33,7 @@ const Contact = () => {
             Developed as a Final Year B.Tech Project
           </p>
           <p className="text-sm text-gray-500">
-            Agentic AI-Powered HR Assistant – NOVA
+            NOVA AI-Powered HR Assistant – NOVA
           </p>
         </div>
       </div>

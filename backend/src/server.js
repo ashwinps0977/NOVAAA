@@ -10,6 +10,8 @@ const jobRoutes = require('./routes/jobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const socketService = require('./services/socketService');
 const dbWatcherPlugin = require('./services/dbWatcherService');
+const passport = require('./config/passport');
+const session = require('express-session');
 
 const app = express();
 const http = require('http').createServer(app);
@@ -35,6 +37,13 @@ app.use(morgan('dev'));
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'nova-secret-123',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use('/uploads', express.static('uploads'));
 
 // Global Mongoose Configuration - DISABLE BUFFERING EARLY
@@ -55,6 +64,15 @@ const connectDB = async () => {
         tlsAllowInvalidCertificates: true
       });
       console.log('✅ Connected to MongoDB Atlas');
+
+      const collections = await mongoose.connection.db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+
+      if (!collectionNames.includes('users')) {
+        console.log('📁 Creating users collection...');
+        await mongoose.connection.db.createCollection('users');
+        console.log('✅ Users collection created');
+      }
       return;
     } catch (err) {
       console.warn('⚠️ Atlas connection failed. Trying local...');
@@ -114,7 +132,6 @@ app.use('/api/hr', checkDB, hrRoutes);
 // Job routes
 app.use('/api/jobs', checkDB, jobRoutes);
 
-// Application routes
 // Application routes
 app.use('/api/applications', checkDB, applicationRoutes);
 
@@ -690,11 +707,11 @@ app.use((err, req, res, next) => {
 // Initialize WebSockets
 socketService.init(http);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 http.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`� Accessible on local network at: http://0.0.0.0:${PORT}`);
+  console.log(` Accessible on local network at: http://0.0.0.0:${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🗄️  DB Status: http://localhost:${PORT}/api/db-status`);
   console.log(`👥 Users: http://localhost:${PORT}/api/users`);

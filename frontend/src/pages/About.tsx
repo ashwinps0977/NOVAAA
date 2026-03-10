@@ -11,7 +11,7 @@ const About = () => {
         </h1>
 
         <p className="text-gray-600 text-lg mb-6">
-          NOVA is an Agentic AI-powered Human Resource Management system developed
+          NOVA is a NOVA AI-powered Human Resource Management system developed
           as a final year project to automate and improve core HR operations.
         </p>
 

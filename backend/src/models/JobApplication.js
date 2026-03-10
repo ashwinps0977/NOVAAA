@@ -107,4 +107,4 @@ const jobApplicationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('JobApplication', jobApplicationSchema);
+module.exports = mongoose.models.JobApplication || mongoose.model('JobApplication', jobApplicationSchema);

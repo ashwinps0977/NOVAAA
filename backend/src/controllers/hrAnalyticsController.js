@@ -8,6 +8,7 @@ const Leave = require('../models/Leave');
 const EmployeePerformance = require('../models/EmployeePerformance');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
+const Job = require('../models/Job');
 const attritionService = require('../services/attritionService');
 const exitInterviewService = require('../services/exitInterviewService');
 
@@ -104,6 +105,18 @@ exports.getWorkforceStats = async (req, res) => {
             // Employment Type
             stats.employmentType[emp.employmentType] = (stats.employmentType[emp.employmentType] || 0) + 1;
         });
+
+        // Calculate dynamic metrics for Strategic Analytics
+        const femaleCount = stats.genderRatio['Female'] || 0;
+        stats.femalePercentage = Math.round((femaleCount / (stats.totalEmployees || 1)) * 100);
+
+        const totalTenureDays = employees.reduce((sum, emp) => {
+            return sum + (Date.now() - new Date(emp.joiningDate).getTime()) / (1000 * 60 * 60 * 24);
+        }, 0);
+        stats.avgTenureDays = totalTenureDays / (stats.totalEmployees || 1);
+        stats.avgTenureYears = Number((stats.avgTenureDays / 365).toFixed(1));
+
+        stats.activeVacancies = await Job.countDocuments({ status: 'active' });
 
         res.json({ success: true, stats });
     } catch (err) {
@@ -324,11 +337,27 @@ exports.getAttendanceStats = async (req, res) => {
             absenteeism: await Leave.countDocuments({ status: 'Approved' }),
             lateLoginFrequency: attendances.filter(a => a.status === 'Late').length,
             leaveUtilization: (leaves.length / (totalEmployees * 24)) * 100, // Annual avg
-            burnoutRisk: [] // Mock AI
+            burnoutRisk: []
         };
 
-        // Mock Burnout Risk (Employees with > 40h overtime in a month)
-        stats.burnoutRisk = [{ name: 'System User', risk: 'High', reason: 'Excessive overtime detected' }];
+        // Real Burnout Risk (Employees with > 10 late logins)
+        const lateLoginThreshold = 10;
+        const riskyEmployees = await Attendance.aggregate([
+            { $match: { status: 'Late' } },
+            { $group: { _id: '$user', count: { $sum: 1 } } },
+            { $match: { count: { $gt: lateLoginThreshold } } }
+        ]);
+
+        if (riskyEmployees.length > 0) {
+            const empDetails = await Employee.find({ _id: { $in: riskyEmployees.map(re => re._id) } });
+            stats.burnoutRisk = empDetails.map(emp => ({
+                name: emp.name,
+                risk: 'High',
+                reason: 'Chronic late login pattern detected'
+            }));
+        } else {
+            stats.burnoutRisk = [{ name: 'No Alerts', risk: 'Low', reason: 'Normal attendance patterns' }];
+        }
 
         res.json({ success: true, stats });
     } catch (err) {
@@ -341,11 +370,14 @@ exports.getAttendanceStats = async (req, res) => {
 exports.getComplianceStats = async (req, res) => {
     try {
         const employees = await Employee.find();
+        const trainingAssignments = await TrainingAssignment.find();
+        const completedTrainings = trainingAssignments.filter(a => a.status === 'Completed').length;
+
         const stats = {
             policyViolations: 0,
-            pendingDocuments: employees.reduce((sum, e) => sum + (e.documents.length < 3 ? 1 : 0), 0),
-            trainingCompliance: 85, // Mock %
-            auditReadiness: 92 // Mock %
+            pendingDocuments: employees.reduce((sum, e) => sum + (e.documents?.length < 3 ? 1 : 0), 0),
+            trainingCompliance: Math.round((completedTrainings / (trainingAssignments.length || 1)) * 100),
+            auditReadiness: employees.length > 0 && employees.every(e => e.documents?.length >= 3) ? 95 : 85
         };
 
         res.json({ success: true, stats });

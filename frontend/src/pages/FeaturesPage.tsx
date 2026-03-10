@@ -136,53 +136,64 @@ const FeaturesPage = () => {
   ];
 
   // Filter features based on active category
-  const filteredFeatures = activeCategory === "all" 
-    ? featureGroups 
+  const filteredFeatures = activeCategory === "all"
+    ? featureGroups
     : featureGroups.filter(feature => {
-        if (activeCategory === "ai") return ["ai-assistant", "recruitment", "workforce-intel", "learning"].includes(feature.id);
-        if (activeCategory === "hr") return ["employee-mgmt", "recruitment"].includes(feature.id);
-        if (activeCategory === "analytics") return ["performance", "workforce-intel"].includes(feature.id);
-        if (activeCategory === "security") return ["compliance", "platform"].includes(feature.id);
-        return true;
-      });
+      if (activeCategory === "ai") return ["ai-assistant", "recruitment", "workforce-intel", "learning"].includes(feature.id);
+      if (activeCategory === "hr") return ["employee-mgmt", "recruitment"].includes(feature.id);
+      if (activeCategory === "analytics") return ["performance", "workforce-intel"].includes(feature.id);
+      if (activeCategory === "security") return ["compliance", "platform"].includes(feature.id);
+      return true;
+    });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-green-50 to-blue-50 py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative overflow-hidden bg-white pt-32 pb-20">
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-50/50 blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-50/50 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+        </div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-4xl mx-auto">
-            <span className="inline-block mb-4 px-4 py-2 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
-              Explore Our Features
-            </span>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Discover <span className="text-green-600">NOVA</span> AI
+            <div className="inline-flex items-center space-x-2 mb-6 px-4 py-1.5 bg-emerald-50 border border-emerald-100/50 text-emerald-700 text-sm font-medium rounded-full shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Explore Our Ecosystem</span>
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight">
+              Powerful <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">NOVA AI</span> Features
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Everything you need to transform HR operations into intelligent, automated workflows
+
+            <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-light">
+              Elevate your workforce management with intelligent tools designed for the modern enterprise.
             </p>
-            <p className="text-lg text-gray-500 max-w-3xl mx-auto">
-              From AI-powered recruitment to predictive analytics, our platform delivers comprehensive solutions for every aspect of human resource management.
-            </p>
+
+            <div className="h-1 w-24 bg-emerald-500 mx-auto rounded-full opacity-20"></div>
           </div>
         </div>
       </div>
 
       {/* Category Filter */}
-      <div className="sticky top-20 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 py-4">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+      <div className="sticky top-[72px] z-40 w-full">
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-xl border-b border-slate-200/50"></div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative py-6">
+          <div className="flex flex-wrap justify-center gap-3">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                  activeCategory === category.id
-                    ? "bg-green-600 text-white shadow-lg"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 border ${activeCategory === category.id
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md transform scale-105"
+                  : "bg-white/50 text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50/50"
+                  }`}
               >
                 {category.label}
               </button>
@@ -192,91 +203,107 @@ const FeaturesPage = () => {
       </div>
 
       {/* Features Grid */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {filteredFeatures.map((group, index) => (
-            <div 
+            <div
               key={group.id}
-              className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 transform hover:-translate-y-1"
+              className="group relative bg-white rounded-3xl p-8 transition-all duration-500 border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.08)] transform hover:-translate-y-2"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              {/* Header with Gradient */}
-              <div className={`bg-gradient-to-r ${group.color} p-6`}>
-                <div className="flex items-center space-x-4">
-                  <div className="text-4xl">{group.icon}</div>
-                  <h3 className="text-xl font-bold text-white">{group.title}</h3>
+              {/* Icon & Title Header */}
+              <div className="mb-8">
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${group.color.replace('from-', 'from-').replace('to-', 'to-').replace('500', '50').replace('500', '100')} mb-6 group-hover:scale-110 transition-transform duration-500`}>
+                  <span className="text-3xl">{group.icon}</span>
                 </div>
+                <h3 className="text-2xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors duration-300">
+                  {group.title.split(' ').slice(1).join(' ')}
+                </h3>
               </div>
 
               {/* Features List */}
-              <div className="p-6">
-                <ul className="space-y-4">
-                  {group.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <div className="flex-shrink-0 mt-1">
-                        <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              <ul className="space-y-5">
+                {group.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start group/item">
+                    <div className="flex-shrink-0 mt-1.5 transition-transform duration-300 group-hover/item:translate-x-1">
+                      <div className="bg-emerald-50 rounded-full p-1">
+                        <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
                         </svg>
                       </div>
-                      <span className="ml-3 text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                    </div>
+                    <span className="ml-4 text-slate-600 font-medium text-[15px] leading-relaxed group-hover/item:text-slate-900 transition-colors duration-300">
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
 
-                {/* Stats/Info (Optional) */}
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>🚀 Ready to Use</span>
-                    <span>⚡ Fully Automated</span>
-                  </div>
-                </div>
+              {/* Bottom Decoration */}
+              <div className="mt-10 pt-6 border-t border-slate-50 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400 group-hover:text-emerald-500 transition-colors">
+                  {group.id.replace('-', ' ')}
+                </span>
+                <div className="h-1.5 w-1.5 rounded-full bg-slate-200 group-hover:bg-emerald-400"></div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Feature Stats */}
-        <div className="mt-20 bg-gradient-to-r from-green-600 to-blue-600 rounded-3xl p-8 text-white">
-          <div className="text-center mb-10">
-            <h3 className="text-3xl font-bold mb-4">Why Companies Choose NOVA</h3>
-            <p className="text-lg opacity-90">See the impact our features deliver</p>
+        <div className="mt-32 relative overflow-hidden bg-slate-900 rounded-[3rem] p-12 md:p-20 text-white">
+          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-emerald-500/20 blur-[100px] rounded-full"></div>
+          <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/20 blur-[100px] rounded-full"></div>
+
+          <div className="relative text-center mb-16">
+            <h3 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">The Impact of <span className="text-emerald-400">NOVA</span></h3>
+            <p className="text-xl text-slate-400 font-light max-w-2xl mx-auto">Real results from industry-leading organizations using our AI-driven platform.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-5xl font-bold mb-2">85%</div>
-              <div className="text-lg opacity-90">HR Process Automation</div>
+
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+            <div className="space-y-2">
+              <div className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">85%</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-emerald-500">Automation</div>
             </div>
-            <div>
-              <div className="text-5xl font-bold mb-2">60%</div>
-              <div className="text-lg opacity-90">Faster Recruitment</div>
+            <div className="space-y-2">
+              <div className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">60%</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-emerald-500">Efficiency</div>
             </div>
-            <div>
-              <div className="text-5xl font-bold mb-2">95%</div>
-              <div className="text-lg opacity-90">Employee Satisfaction</div>
+            <div className="space-y-2">
+              <div className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">95%</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-emerald-500">Retention</div>
             </div>
-            <div>
-              <div className="text-5xl font-bold mb-2">50+</div>
-              <div className="text-lg opacity-90">Features Available</div>
+            <div className="space-y-2">
+              <div className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">50+</div>
+              <div className="text-sm font-bold uppercase tracking-widest text-emerald-500">AI Modules</div>
             </div>
           </div>
         </div>
 
         {/* CTA Section */}
-        <div className="mt-20 text-center">
-          <h3 className="text-3xl font-bold text-gray-900 mb-6">
-            Ready to Transform Your HR Operations?
+        <div className="mt-32 pb-20 text-center relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-50 blur-[100px] -z-10 rounded-full"></div>
+
+          <h3 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-8 tracking-tight">
+            Ready to <span className="text-emerald-600">Level Up</span> Your HR?
           </h3>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join hundreds of companies already using NOVA AI to streamline their HR processes.
+          <p className="text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            Join the forward-thinking companies already leveraging NOVA AI to automate and optimize their workforce.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold text-lg rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-              Start Free Trial
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <button className="group relative px-10 py-5 bg-slate-900 text-white font-bold text-lg rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+              <span className="relative z-10">Start Free Trial</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
-            <button className="px-8 py-4 border-2 border-green-600 text-green-600 hover:bg-green-50 font-bold text-lg rounded-full transition-all duration-300">
+            <button className="px-10 py-5 border-2 border-slate-200 text-slate-700 hover:border-emerald-600 hover:text-emerald-700 font-bold text-lg rounded-2xl transition-all duration-300 bg-white">
               Schedule a Demo
             </button>
           </div>
+
+          <p className="mt-10 text-slate-400 text-sm font-medium">
+            No credit card required • 14-day free trial • Cancel anytime
+          </p>
         </div>
       </div>
 

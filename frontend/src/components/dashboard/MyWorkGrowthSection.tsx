@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, BookOpen, Zap, CheckCircle, Clock, AlertCircle, RefreshCw, ChevronRight, Star } from 'lucide-react';
+import { Briefcase, BookOpen, Zap, CheckCircle, Clock, AlertCircle, RefreshCw, Star } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -106,19 +106,47 @@ const MyWorkGrowthSection = () => {
     const handleProgressUpdate = async (id: string, progress: number) => {
         setUpdatingId(id);
         try {
+            const status = progress === 100 ? 'Completed' : progress > 0 ? 'In Progress' : 'Not Started';
             const res = await fetch(`${API}/api/trainings/${id}/progress`, {
                 method: 'PUT',
                 headers: getHeaders(true),
-                body: JSON.stringify({ progress }),
+                body: JSON.stringify({ progress, status }),
             });
             const data = await res.json();
             if (data.success) {
-                setTrainings(prev => prev.map(t => t._id === id ? { ...t, progress } : t));
+                // Refresh all data to ensure stats are updated correctly
+                await fetchAll();
             }
-        } catch {
-            // silently fail — data was not changed
+        } catch (e) {
+            console.error('[MyWorkGrowth] progress update error', e);
         } finally {
             setUpdatingId(null);
+        }
+    };
+
+    const handleDownloadCertificate = async (id: string, moduleTitle: string) => {
+        try {
+            const res = await fetch(`${API}/api/trainings/${id}/certificate`, {
+                headers: getHeaders(),
+            });
+            const data = await res.json();
+            if (data.success) {
+                const { certificate } = data;
+                // In a real app, this would be a PDF download. 
+                // For now, we'll simulate a professional notification and "print" logic.
+                alert(`🎊 Certificate Generated!\n\nID: ${certificate.certificateId}\nCourse: ${certificate.courseTitle}\nCompleted By: ${certificate.candidateName}\nDate: ${new Date(certificate.completionDate).toLocaleDateString()}\n\nDownloading your official ${moduleTitle} certificate...`);
+
+                // Mock download
+                const link = document.createElement('a');
+                link.href = '#'; // In real life, this would be a blob URL or file path
+                link.setAttribute('download', `${moduleTitle.replace(/\s+/g, '_')}_Certificate.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (e) {
+            console.error('[MyWorkGrowth] certificate error', e);
+            alert('Failed to generate certificate. Please try again later.');
         }
     };
 
@@ -282,19 +310,40 @@ const MyWorkGrowthSection = () => {
                                             style={{ width: `${t.progress}%` }}
                                         />
                                     </div>
-                                    {t.status !== 'Completed' && (
+                                    {t.status === 'Completed' ? (
+                                        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                                                    <Star size={20} fill="white" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-emerald-900 leading-none">Course Accomplished!</p>
+                                                    <p className="text-xs text-emerald-600 font-medium mt-1">Your official certificate is ready for download.</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDownloadCertificate(t._id, t.module?.title || 'Course')}
+                                                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-200 transition-all hover:-translate-y-0.5"
+                                            >
+                                                <CheckCircle size={16} />
+                                                Download Certificate
+                                            </button>
+                                        </div>
+                                    ) : (
                                         <div className="flex items-center gap-3">
-                                            <input
-                                                type="range" min={0} max={100} step={5}
-                                                value={t.progress}
-                                                onChange={e => setTrainings(prev => prev.map(x => x._id === t._id ? { ...x, progress: +e.target.value } : x))}
-                                                className="flex-1 accent-blue-500"
-                                            />
+                                            <div className="flex-1 relative h-6 flex items-center">
+                                                <input
+                                                    type="range" min={0} max={100} step={5}
+                                                    value={t.progress}
+                                                    onChange={e => setTrainings(prev => prev.map(x => x._id === t._id ? { ...x, progress: +e.target.value } : x))}
+                                                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                />
+                                            </div>
                                             <button
                                                 onClick={() => handleProgressUpdate(t._id, t.progress)}
                                                 disabled={updatingId === t._id}
-                                                className="text-xs font-black text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0">
-                                                {updatingId === t._id ? <RefreshCw size={11} className="animate-spin" /> : <ChevronRight size={11} />}
+                                                className="text-xs font-black text-white bg-slate-900 hover:bg-black px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-slate-200 hover:-translate-y-0.5 active:translate-y-0">
+                                                {updatingId === t._id ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                                                 Save
                                             </button>
                                         </div>

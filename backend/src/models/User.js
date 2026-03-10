@@ -16,7 +16,17 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true
+    required: false
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  githubId: {
+    type: String,
+    unique: true,
+    sparse: true
   },
   role: {
     type: String,
@@ -33,6 +43,10 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  profilePhoto: {
+    type: String,
+    default: null
   },
   preferences: {
     theme: { type: String, enum: ['light', 'dark'], default: 'light' },

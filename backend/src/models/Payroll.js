@@ -38,4 +38,4 @@ const payrollSchema = new mongoose.Schema({
 // Prevent duplicate payrolls for same month/year
 payrollSchema.index({ month: 1, year: 1 }, { unique: true });
 
-module.exports = mongoose.model('Payroll', payrollSchema);
+module.exports = mongoose.models.Payroll || mongoose.model('Payroll', payrollSchema);

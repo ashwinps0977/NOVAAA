@@ -1,7 +1,9 @@
 const { NlpManager } = require('node-nlp');
+const mongoose = require('mongoose');
 const Leave = require('../models/Leave');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const Salary = require('../models/Salary');
 const ragService = require('../services/ragService');
 const dbIntrospectionService = require('../services/dbIntrospectionService');
 
@@ -11,6 +13,53 @@ const manager = new NlpManager({ languages: ['en'], forceNER: true });
 // Train the model
 const trainModel = async () => {
     console.log('🤖 Training AI Model with Social Intelligence...');
+
+    manager.addDocument('en', 'deadline of %project%', 'project.deadline');
+    manager.addDocument('en', 'when is project %project% due', 'project.deadline');
+    manager.addDocument('en', 'what is the deadline for %project%', 'project.deadline');
+    manager.addDocument('en', 'who is working on %project%', 'project.team');
+    manager.addDocument('en', 'team of %project%', 'project.team');
+    manager.addDocument('en', 'who is assigned to %project%', 'project.team');
+    manager.addDocument('en', 'status of %project%', 'project.status');
+    manager.addDocument('en', 'is %project% active', 'project.status');
+    manager.addDocument('en', 'current status of %project%', 'project.status');
+    manager.addDocument('en', 'what is the description for %project%', 'project.description');
+    manager.addDocument('en', 'details about the work in %project%', 'project.description');
+    manager.addDocument('en', 'what are the required skills for %project%', 'project.skills');
+    manager.addDocument('en', 'skills needed for %project%', 'project.skills');
+    manager.addDocument('en', 'technologies used in %project%', 'project.skills');
+    manager.addDocument('en', 'what tech stack for %project%', 'project.skills');
+    manager.addDocument('en', 'skill set for %project%', 'project.skills');
+
+    manager.addDocument('en', 'salary of %employee%', 'employee.salary');
+    manager.addDocument('en', 'how much does %employee% earn', 'employee.salary');
+    manager.addDocument('en', 'pay of %employee%', 'employee.salary');
+    manager.addDocument('en', 'position of %employee%', 'employee.position');
+    manager.addDocument('en', 'role of %employee%', 'employee.position');
+    manager.addDocument('en', 'what is the designation of %employee%', 'employee.position');
+    manager.addDocument('en', 'joining date of %employee%', 'employee.joinDate');
+    manager.addDocument('en', 'when did %employee% join', 'employee.joinDate');
+    manager.addDocument('en', 'department of %employee%', 'employee.department');
+    manager.addDocument('en', 'which team is %employee% in', 'employee.department');
+    manager.addDocument('en', 'what projects is %employee% working on', 'employee.projects');
+    manager.addDocument('en', 'projects assigned to %employee%', 'employee.projects');
+    manager.addDocument('en', 'assigned projects of %employee%', 'employee.projects');
+    manager.addDocument('en', 'what are the projects of %employee%', 'employee.projects');
+    manager.addDocument('en', 'projects for engineer %employee%', 'employee.projects');
+    manager.addDocument('en', 'active projects for %employee%', 'employee.projects');
+
+    // Salary Explanation
+    manager.addDocument('en', 'explain salary of %employee%', 'salary.explain');
+    manager.addDocument('en', 'tell me about salary for %employee%', 'salary.explain');
+    manager.addDocument('en', 'payslip details for %employee%', 'salary.explain');
+    manager.addDocument('en', 'breakdown of salary for %employee%', 'salary.explain');
+    manager.addDocument('en', 'salary breakdown of %employee%', 'salary.explain');
+    manager.addDocument('en', 'explain last month salary of %employee%', 'salary.explain');
+
+    manager.addDocument('en', 'explain about %project%', 'project.explain');
+    manager.addDocument('en', 'tell me about %project%', 'project.explain');
+    manager.addDocument('en', 'details of %project%', 'project.explain');
+    manager.addDocument('en', 'project %project%', 'project.explain');
 
     // --- 1. HR & DATA INTENTS ---
     manager.addDocument('en', 'how many leaves do i have left', 'leave.balance');
@@ -236,7 +285,122 @@ const trainModel = async () => {
         { q: "How is performance trend shown?", a: "Using charts and monthly analytics." },
         { q: "Can Admin deactivate employees?", a: "Yes, from Admin Dashboard → Employees." }
     ];
-
+    // --- 4. DASHBOARD FEATURES FAQ (Provided by User) ---
+    const dashboardFAQ = [
+        // Dashboard (Overview)
+        { q: "What does the Dashboard show?", a: "It provides a snapshot of productivity, leave balances, and pending approvals." },
+        { q: "Why is the Dashboard important?", a: "It gives a quick overview of an employee’s work status and alerts." },
+        { q: "Can I see my leave balance on the Dashboard?", a: "Yes, leave balances are displayed there." },
+        { q: "Does the Dashboard show approvals?", a: "Yes, pending approvals are visible." },
+        { q: "Does the Dashboard show productivity metrics?", a: "Yes, it summarizes productivity data." },
+        { q: "Is the Dashboard customizable?", a: "It can be configured based on system settings." },
+        { q: "Does it show task status?", a: "It shows task-related summaries." },
+        { q: "Is the Dashboard updated in real time?", a: "Yes, it reflects the latest data." },
+        // My Work Board
+        { q: "What is My Work Board used for?", a: "It is used for daily task management." },
+        { q: "Can I organize tasks in My Work Board?", a: "Yes, tasks can be organized and prioritized." },
+        { q: "Does it support task tracking?", a: "Yes, it tracks task progress." },
+        { q: "Can I mark tasks as completed?", a: "Yes, completed tasks can be marked." },
+        { q: "Is My Work Board personal?", a: "Yes, it is employee-specific." },
+        { q: "Does it show deadlines?", a: "Yes, task deadlines are displayed." },
+        { q: "Can I edit tasks?", a: "Yes, tasks can be updated." },
+        { q: "Can I delete tasks?", a: "Yes, tasks can be removed if allowed." },
+        // My Projects
+        { q: "What does My Projects section do?", a: "It tracks project status and deadlines." },
+        { q: "Can I see project progress?", a: "Yes, progress is shown." },
+        { q: "Are deadlines visible in My Projects?", a: "Yes, deadlines are clearly displayed." },
+        { q: "Can I update project status?", a: "Yes, status updates are allowed." },
+        { q: "Does it show assigned projects?", a: "Yes, only assigned projects are shown." },
+        { q: "Can I view project details?", a: "Yes, detailed project information is available." },
+        { q: "Does it support milestone tracking?", a: "Yes, milestones can be tracked." },
+        { q: "Is project history stored?", a: "Yes, past data can be viewed." },
+        // Work & Growth
+        { q: "What is Work & Growth?", a: "It visualizes career path and skill development." },
+        { q: "Can I track skills here?", a: "Yes, skills can be tracked." },
+        { q: "Does it show career progression?", a: "Yes, career paths are visualized." },
+        { q: "Can I add new skills?", a: "Yes, new skills can be added." },
+        { q: "Does it show skill gaps?", a: "Yes, gaps can be identified." },
+        { q: "Is growth history stored?", a: "Yes, progress is recorded." },
+        { q: "Can managers view this section?", a: "Yes, if access is permitted." },
+        { q: "Does it link with training?", a: "Yes, it integrates with training modules." },
+        // Attendance & Leave
+        { q: "What can I do in Attendance & Leave?", a: "You can check in/out and apply for leave." },
+        { q: "Does it show attendance calendar?", a: "Yes, it shows a visual calendar." },
+        { q: "Can I apply for leave online?", a: "Yes, leave can be applied digitally." },
+        { q: "Can I track leave status?", a: "Yes, approval status is visible." },
+        { q: "Does it record daily attendance?", a: "Yes, attendance is recorded daily." },
+        { q: "Can I edit attendance?", a: "Only if permissions allow." },
+        { q: "Does it calculate leave balance?", a: "Yes, leave balance is updated automatically." },
+        { q: "Can managers approve leave here?", a: "Yes, managers can approve or reject leave." },
+        // AI Assistant
+        { q: "What is the AI Assistant?", a: "It is an NLP-powered HR agent." },
+        { q: "Can it answer HR policy questions?", a: "Yes, it answers policy queries." },
+        { q: "Can it automate tasks?", a: "Yes, it automates HR tasks." },
+        { q: "Does it support natural language?", a: "Yes, it uses NLP." },
+        { q: "Can I ask about leave policy?", a: "Yes, the AI can explain leave rules." },
+        { q: "Can it help with forms?", a: "Yes, it assists with form-related tasks." },
+        { q: "Is it available 24/7?", a: "Yes, it works anytime." },
+        { q: "Does it learn from usage?", a: "It can improve responses over time." },
+        // Performance
+        { q: "What is in the Performance section?", a: "Appraisals, KPIs, and feedback." },
+        { q: "Can I view my appraisal?", a: "Yes, appraisal details are available." },
+        { q: "Does it track KPIs?", a: "Yes, KPIs are monitored." },
+        { q: "Is feedback AI-powered?", a: "Yes, feedback is AI-assisted." },
+        { q: "Can I submit self-review?", a: "Yes, self-assessment is possible." },
+        { q: "Does it show performance history?", a: "Yes, past records are stored." },
+        { q: "Can managers rate employees here?", a: "Yes, managers can rate performance." },
+        { q: "Does it support goal tracking?", a: "Yes, goals can be tracked." },
+        // Training
+        { q: "What is Training section for?", a: "It manages courses and learning progress." },
+        { q: "Can I enroll in courses?", a: "Yes, course enrollment is available." },
+        { q: "Does it track completion?", a: "Yes, progress is tracked." },
+        { q: "Are professional courses included?", a: "Yes, professional development courses are available." },
+        { q: "Can I view certificates?", a: "Yes, certificates can be viewed." },
+        { q: "Does training affect growth?", a: "Yes, it links to Work & Growth." },
+        { q: "Can HR add new courses?", a: "Yes, HR can manage courses." },
+        { q: "Does it suggest courses?", a: "Yes, based on skill gaps." },
+        // Salary & Payslip
+        { q: "What is Salary & Payslip section?", a: "It allows secure viewing of salary and payslips." },
+        { q: "Can I download payslips?", a: "Yes, payslips can be downloaded." },
+        { q: "Is salary data secure?", a: "Yes, it is securely stored." },
+        { q: "Can I view previous payslips?", a: "Yes, historical payslips are available." },
+        { q: "Does it show deductions?", a: "Yes, deductions are shown." },
+        { q: "Can I see bonuses?", a: "Yes, bonuses are included." },
+        { q: "Is tax information shown?", a: "Yes, tax details are displayed." },
+        { q: "Can HR update salary here?", a: "Yes, HR manages salary data." },
+        // Policies
+        { q: "What does Policies section contain?", a: "Company rules and guidelines." },
+        { q: "Can I access handbooks here?", a: "Yes, handbooks are available." },
+        { q: "Are policies centralized?", a: "Yes, all policies are in one place." },
+        { q: "Can policies be updated?", a: "Yes, admins can update them." },
+        { q: "Can I search policies?", a: "Yes, search is supported." },
+        { q: "Are policies versioned?", a: "Yes, versions can be maintained." },
+        { q: "Can I download policies?", a: "Yes, they can be downloaded." },
+        { q: "Are policies linked to AI Assistant?", a: "Yes, AI uses policy data." },
+        // Profile
+        { q: "What is the Profile section?", a: "It manages personal and professional info." },
+        { q: "Can I edit my profile?", a: "Yes, profile details can be updated." },
+        { q: "Can I change contact details?", a: "Yes, contact info can be modified." },
+        { q: "Does it store job role?", a: "Yes, job role is stored." },
+        { q: "Can I upload a profile photo?", a: "Yes, profile pictures are supported." },
+        { q: "Does it store qualifications?", a: "Yes, education and skills are stored." },
+        { q: "Can HR view my profile?", a: "Yes, HR has access." },
+        { q: "Is profile data secure?", a: "Yes, it is protected." },
+        // Settings
+        { q: "What is Settings used for?", a: "It manages preferences and security." },
+        { q: "Can I change my password?", a: "Yes, password can be updated." },
+        { q: "Can I set notification preferences?", a: "Yes, notifications can be customized." },
+        { q: "Does it support two-factor authentication?", a: "Yes, if enabled by the system." },
+        { q: "Can I change theme or layout?", a: "Yes, UI preferences can be changed." },
+        { q: "Can I manage privacy settings?", a: "Yes, privacy options are available." },
+        { q: "Can I log out from all devices?", a: "Yes, session management is possible." },
+        { q: "Does it show login history?", a: "Yes, login logs can be viewed." },
+        // Cross-Section Questions
+        { q: "Which section helps with daily productivity?", a: "My Work Board." },
+        { q: "Which section manages career growth?", a: "Work & Growth." },
+        { q: "Which section handles HR queries?", a: "AI Assistant." },
+        { q: "Which section controls user preferences?", a: "Settings." }
+    ];
     // --- Helper to register social/system documents ---
     const registerSocial = (list, categoryPrefix) => {
         list.forEach((item, index) => {
@@ -254,6 +418,7 @@ const trainModel = async () => {
     registerSocial(dailyLife, 'social.life');
     registerSocial(goodbye, 'social.bye');
     registerSocial(systemFAQ, 'system.faq');
+    registerSocial(dashboardFAQ, 'dashboard.faq');
 
     await manager.train();
     manager.save();
@@ -315,6 +480,8 @@ exports.processChat = async (req, res) => {
                 role: req.user.role
             };
 
+
+            // --- PROJECT EXPLANATION LOGIC ---
             [employee, dbContext, hrStats, relevantPolicyChunks] = await Promise.all([
                 Employee.findOne({ email: currentUser.email }),
                 dbIntrospectionService.getUniversalContext(),
@@ -384,23 +551,110 @@ exports.processChat = async (req, res) => {
                 const entity = entities[0];
                 if (entity.type === 'Employee') {
                     const e = entity.data;
-                    reply = `### 👤 Employee Detail: ${e.name}\n\n` +
-                        `- **ID**: ${e.employeeId || 'N/A'}\n` +
-                        `- **Position**: ${e.position}\n` +
-                        `- **Department**: ${e.department}\n` +
-                        `- **Email**: ${e.email}\n` +
-                        `- **Salary Structure**: ${e.salaryStructure?.name || 'Standard'}\n` +
-                        `- **Status**: ${e.status || 'Active'}\n\n` +
-                        `*(You can view more details in the Employee Management section)*`;
+
+                    if (intent === 'employee.salary') {
+                        const salary = e.currentCTC || e.salary || e.currentSalary || (e.salaryStructure ? e.salaryStructure.baseSalary : 'Not specified');
+                        reply = `💰 **Salary Information for ${e.name}**: ${salary ? salary.toLocaleString() : 'Not specified'}.`;
+                    } else if (intent === 'employee.position') {
+                        reply = `📍 **Position for ${e.name}**: ${e.position || 'Not specified'} (${e.department || 'No department'}).`;
+                    } else if (intent === 'employee.joinDate') {
+                        reply = `📅 **Joining Date for ${e.name}**: ${e.joiningDate ? new Date(e.joiningDate).toLocaleDateString() : 'Not specified'}.`;
+                    } else if (intent === 'employee.department') {
+                        reply = `🏢 **Department for ${e.name}**: ${e.department || 'Not specified'}.`;
+                    } else if (intent === 'salary.explain') {
+                        const salary = await Salary.findOne({ employee: e._id })
+                            .populate('employee')
+                            .sort({ year: -1, month: -1 });
+
+                        if (!salary) {
+                            reply = `No salary records found for **${e.name}**.`;
+                        } else {
+                            const totalEarnings = (salary.basic || 0) + (salary.hra || 0) + (salary.da || 0) + (salary.specialAllowance || 0) + (salary.bonus || 0);
+                            const totalDeductions = (salary.pf || 0) + (salary.incomeTaxTDS || 0) + (salary.professionalTax || 0) + (salary.otherDeductions || 0);
+
+                            reply = `📑 **Salary Breakdown for ${e.name} (${salary.month} ${salary.year})**:\n\n`;
+                            reply += `💰 **Total Earnings**: ₹${totalEarnings.toLocaleString()}\n`;
+                            reply += `  - Basic: ₹${salary.basic.toLocaleString()}\n`;
+                            reply += `  - HRA: ₹${salary.hra.toLocaleString()}\n`;
+                            if (salary.da) reply += `  - DA: ₹${salary.da.toLocaleString()}\n`;
+                            if (salary.specialAllowance) reply += `  - Special Allowance: ₹${salary.specialAllowance.toLocaleString()}\n`;
+                            if (salary.bonus) reply += `  - Bonus: ₹${salary.bonus.toLocaleString()}\n\n`;
+
+                            reply += `📉 **Total Deductions**: ₹${totalDeductions.toLocaleString()}\n`;
+                            reply += `  - PF: ₹${salary.pf.toLocaleString()}\n`;
+                            reply += `  - TDS/Tax: ₹${salary.incomeTaxTDS.toLocaleString()}\n`;
+                            if (salary.professionalTax) reply += `  - Professional Tax: ₹${salary.professionalTax.toLocaleString()}\n`;
+                            if (salary.otherDeductions) reply += `  - Other: ₹${salary.otherDeductions.toLocaleString()}\n\n`;
+
+                            reply += `✅ **Net Payable**: **₹${salary.netSalary.toLocaleString()}**\n`;
+                            reply += `🏦 **Bank**: ${salary.bankName} (A/C: ${salary.accountNumber})\n`;
+                            reply += `🆔 **Payslip ID**: ${salary.payslipId || 'N/A'}`;
+                        }
+                    }
+                    else if (intent === 'employee.projects' || intent === 'employee.project') {
+                        if (e.activeProjects && e.activeProjects.length > 0) {
+                            reply = `📂 **Projects assigned to ${e.name}**:\n\n` +
+                                e.activeProjects.map(p => {
+                                    const pName = p.projectName || p.title || 'Unknown Project';
+                                    const deadline = p.deadline || p.endDate;
+                                    return `- **${pName}** (\`${p.status}\`) - Due: ${deadline ? new Date(deadline).toLocaleDateString() : 'TBD'}`;
+                                }).join('\n');
+                        } else {
+                            reply = `📂 **${e.name}** is not currently assigned to any active projects.`;
+                        }
+                    } else {
+                        // Default full summary
+                        reply = `### 👤 Employee Detail: ${e.name}\n\n` +
+                            `- **ID**: ${e.employeeId || 'N/A'}\n` +
+                            `- **Position**: ${e.position}\n` +
+                            `- **Department**: ${e.department}\n` +
+                            `- **Email**: ${e.email}\n` +
+                            `- **Salary Structure**: ${e.salaryStructure?.name || 'Standard'}\n` +
+                            `- **Status**: ${e.status || 'Active'}\n\n` +
+                            `*(You can view more details in the Employee Management section)*`;
+                    }
                 } else if (entity.type === 'Project') {
                     const p = entity.data;
-                    reply = `### 🚀 Project Status: ${p.title}\n\n` +
-                        `- **Role**: ${p.role}\n` +
-                        `- **Status**: **${p.status}**\n` +
-                        `- **Deadline**: ${new Date(p.deadline).toLocaleDateString()}\n` +
-                        `- **Assigned To**: ${p.assignedTo?.name || 'Multiple'}\n` +
-                        `- **Assigned By**: ${p.assignedBy?.name || 'System'}\n\n` +
-                        `**Description**: ${p.description}`;
+                    const name = p.projectName || p.title || 'Unknown Project';
+                    const deadline = p.deadline || p.endDate;
+                    const startDate = p.startDate;
+
+                    if (intent === 'project.deadline') {
+                        reply = `📅 **Deadline for ${name}**: ${deadline ? new Date(deadline).toLocaleDateString() : 'No deadline set'}.`;
+                    } else if (intent === 'project.team') {
+                        reply = `👥 **Team for ${name}**:\n` +
+                            `- **Assigned To**: ${p.assignedTo?.name || 'Multiple/Not assigned'}\n` +
+                            `- **Role**: ${p.role || 'Not specified'}\n` +
+                            `- **Assigned By**: ${p.assignedBy?.name || 'Management'}`;
+                    } else if (intent === 'project.status') {
+                        reply = `📊 **Current Status of ${name}**: \`${p.status}\` (Progress: \`${p.progressPercentage || 0}%\`)`;
+                    } else if (intent === 'project.description') {
+                        reply = `🚀 **About ${name}**:\n${p.description}`;
+                    } else if (intent === 'project.skills') {
+                        reply = `🛠️ **Required Skills for ${name}**:\n` +
+                            (p.requiredSkills && p.requiredSkills.length > 0
+                                ? p.requiredSkills.map(s => `- ${s.skill} (Level ${s.level}/5)`).join('\n')
+                                : 'No specific skills listed.');
+                    } else {
+                        // Default full summary (intent === 'project.explain' or fallback)
+                        reply = `### 🚀 Project Analysis: ${name}\n\n` +
+                            `**Description**: ${p.description}\n\n` +
+                            `**Current Status**: \`${p.status}\` | **Priority**: \`${p.priority || 'Medium'}\` | **Progress**: \`${p.progressPercentage || 0}%\`\n\n` +
+                            `#### 📅 Key Dates\n` +
+                            `- **Start Date**: ${startDate ? new Date(startDate).toLocaleDateString() : 'TBD'}\n` +
+                            `- **Deadline**: ${deadline ? new Date(deadline).toLocaleDateString() : 'No deadline set'}\n\n` +
+                            `#### 👥 Assignment Details\n` +
+                            `- **Role**: ${p.role || 'Not specified'}\n` +
+                            `- **Assigned To**: ${p.assignedTo?.name || 'Multiple/Not assigned'}\n` +
+                            `- **Assigned By**: ${p.assignedBy?.name || 'Management'}\n\n`;
+
+                        if (p.requiredSkills && p.requiredSkills.length > 0) {
+                            reply += `#### 🛠️ Required Skills\n` +
+                                p.requiredSkills.map(s => `- ${s.skill} (Level ${s.level}/5)`).join('\n') + '\n\n';
+                        }
+
+                        reply += `*(For more comprehensive tracking, visit the Projects section in your dashboard)*`;
+                    }
                 } else if (entity.type === 'JobApplication') {
                     const a = entity.data;
                     reply = `### 📄 Application for ${a.candidateName}\n\n` +
@@ -446,6 +700,7 @@ exports.processChat = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('AI Processing Error:', error);
         res.status(500).json({ success: false, message: 'Internal AI processing failed' });
     }
 };

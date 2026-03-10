@@ -237,6 +237,7 @@ exports.generatePayroll = async (req, res) => {
 
             // Section B: Earnings Calculation
             let hra = (base * (struct.components.hra / 100));
+            let da = (base * (struct.components.da / 100)) || 0;
             let specialAllowance = struct.components.specialAllowance || 0;
             let conveyanceAllowance = struct.components.conveyanceAllowance || 0;
             let medicalAllowance = struct.components.medicalAllowance || 1250; // Default if not in structure
@@ -259,7 +260,7 @@ exports.generatePayroll = async (req, res) => {
             let referralBonus = 0;
 
             // Aggregate all earnings
-            const totalEarnings = base + hra + specialAllowance + conveyanceAllowance +
+            const totalEarnings = base + hra + da + specialAllowance + conveyanceAllowance +
                 medicalAllowance + internetAllowance + transportAllowance +
                 mealAllowance + shiftAllowance + projectAllowance +
                 performancePay + totalBonus + performanceIncentive +
@@ -306,8 +307,10 @@ exports.generatePayroll = async (req, res) => {
                     employee: emp._id,
                     month,
                     year,
+                    payslipId: `PSL-${month.toUpperCase().slice(0, 3)}${year}-${emp._id.toString().slice(-4).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
                     basic: base,
                     hra,
+                    da,
                     specialAllowance,
                     conveyanceAllowance,
                     medicalAllowance,
@@ -344,6 +347,7 @@ exports.generatePayroll = async (req, res) => {
             } else if (salary.status === 'Pending') {
                 salary.basic = base;
                 salary.hra = hra;
+                salary.da = da;
                 salary.specialAllowance = specialAllowance;
                 salary.conveyanceAllowance = conveyanceAllowance;
                 salary.medicalAllowance = medicalAllowance;
@@ -379,7 +383,18 @@ exports.generatePayroll = async (req, res) => {
         };
         await payroll.save();
 
-        res.json({ msg: 'Payroll generated successfully', payroll, salaries: salaryRecords });
+        // Populate employee data before sending back
+        const populatedSalaries = await Salary.find({ _id: { $in: salaryRecords.map(s => s._id) } }).populate('employee', 'name email employeeId');
+
+        const salariesWithIds = populatedSalaries.map(s => {
+            const obj = s.toObject();
+            if (obj.employee && typeof obj.employee === 'object') {
+                obj.employee.employeeId = `EMP-${obj.employee._id.toString().slice(-6).toUpperCase()}`;
+            }
+            return obj;
+        });
+
+        res.json({ msg: 'Payroll generated successfully', payroll, salaries: salariesWithIds });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -434,6 +449,70 @@ exports.processPayrollStatus = async (req, res) => {
 
         await payroll.save();
         res.json(payroll);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
+// 6. Get all employees salary list for HR
+const { calculateEmployeeCTC } = require('../utils/salaryUtils');
+
+exports.getHRSalaryList = async (req, res) => {
+    try {
+        const employees = await Employee.find({ role: 'employee' }).populate('salaryStructure');
+
+        const salaryList = await Promise.all(employees.map(async (emp) => {
+            // If currentCTC is 0, calculate it on the fly
+            let ctc = emp.currentCTC || 0;
+            if (ctc === 0 && (emp.salary || emp.currentSalary)) {
+                const base = emp.salary || emp.currentSalary;
+                const calculated = calculateEmployeeCTC(base, emp.salaryStructure);
+                ctc = calculated.annualCTC;
+
+                // Save it for future use
+                emp.currentCTC = ctc;
+                await emp.save();
+            }
+
+            return {
+                id: emp._id,
+                employeeId: `EMP-${emp._id.toString().slice(-6).toUpperCase()}`,
+                name: emp.name,
+                email: emp.email,
+                department: emp.department,
+                position: emp.position,
+                salary: emp.salary || emp.currentSalary || 0,
+                currentCTC: ctc,
+                joiningDate: emp.joiningDate,
+                status: emp.status
+            };
+        }));
+
+        res.json(salaryList);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
+
+// 7. Get payroll by month/year
+exports.getPayrollByMonth = async (req, res) => {
+    const { month, year } = req.params;
+    try {
+        const payroll = await Payroll.findOne({ month, year });
+        if (!payroll) return res.json({ payroll: null, salaries: [] });
+
+        const salaries = await Salary.find({ payroll: payroll._id }).populate('employee', 'name email employeeId salaryStructure');
+
+        const salariesWithIds = salaries.map(s => {
+            const obj = s.toObject();
+            if (obj.employee && typeof obj.employee === 'object') {
+                obj.employee.employeeId = `EMP-${obj.employee._id.toString().slice(-6).toUpperCase()}`;
+            }
+            return obj;
+        });
+
+        res.json({ payroll, salaries: salariesWithIds });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

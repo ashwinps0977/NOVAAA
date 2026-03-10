@@ -12,7 +12,24 @@ const trainingModuleSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ['Technical', 'Soft Skills', 'Compliance', 'Security', 'Onboarding'],
+        enum: [
+            'Software Development',
+            'Quality Assurance',
+            'IT Infrastructure',
+            'Data & Analytics',
+            'Security & Compliance',
+            'Project & Product Management',
+            'UX / Design',
+            'IT Sales / Marketing',
+            'Emerging Technologies',
+            'Executive & Leadership',
+            'Supporting Roles',
+            'Technical',
+            'Soft Skills',
+            'Compliance',
+            'Security',
+            'Onboarding'
+        ],
         required: true
     },
     skillTags: [{

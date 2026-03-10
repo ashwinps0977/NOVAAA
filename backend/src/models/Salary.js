@@ -15,9 +15,15 @@ const salarySchema = new mongoose.Schema({
     type: Number,
     required: true // e.g., 2024
   },
+  payslipId: {
+    type: String,
+    unique: true,
+    sparse: true // Allow null for old records, but unique if present
+  },
   // Earnings Breakup
   basic: { type: Number, required: true },
   hra: { type: Number, required: true },
+  da: { type: Number, default: 0 },
   specialAllowance: { type: Number, default: 0 },
   conveyanceAllowance: { type: Number, default: 0 },
   medicalAllowance: { type: Number, default: 0 },

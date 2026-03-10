@@ -394,8 +394,8 @@ exports.getCurrentUser = async (req, res) => {
     let profileData = { ...user.toObject() };
 
     // If user is an employee, fetch extended profile details
-    if (user.role === 'employee') {
-      const employee = await Employee.findOne({ email: user.email }).select('-password');
+    if (user.role === 'employee' || user.role === 'hr' || user.role === 'admin') {
+      const employee = await Employee.findOne({ email: user.email }).populate('salaryStructure').select('-password');
       if (employee) {
         profileData = {
           ...profileData,
@@ -403,10 +403,12 @@ exports.getCurrentUser = async (req, res) => {
           department: employee.department,
           position: employee.position,
           phone: employee.phone,
-          salary: employee.salary,
+          salary: employee.salary || employee.currentSalary || 0,
+          currentCTC: employee.currentCTC || 0,
           joiningDate: employee.joiningDate,
           project: employee.project,
-          status: employee.status
+          status: employee.status,
+          profilePhoto: employee.profilePhoto || user.profilePhoto
         };
       }
     }
@@ -695,4 +697,19 @@ exports.socialLogin = async (req, res) => {
       message: 'Error processing social login request'
     });
   }
+};
+
+// Handle OAuth Callback
+exports.handleOAuthCallback = (req, res) => {
+  const token = generateToken(req.user);
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  // Redirect to frontend with token
+  res.redirect(`${frontendUrl}/auth-callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
+    id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+    isVerified: req.user.isVerified
+  }))}`);
 };

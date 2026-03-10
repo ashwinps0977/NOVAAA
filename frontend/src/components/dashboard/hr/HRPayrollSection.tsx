@@ -3,7 +3,8 @@ import {
     Plus,
     Brain,
     Layers,
-    FileText
+    FileText,
+    DollarSign
 } from 'lucide-react';
 import PayrollAIInsights from './PayrollAIInsights';
 import SalaryComponentsManager from './SalaryComponentsManager';
@@ -11,12 +12,14 @@ import PayslipTemplate from './PayslipTemplate';
 import { API_BASE_URL } from '../../../config';
 
 const HRPayrollSection = () => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'run-payroll' | 'structures' | 'insights' | 'components'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'run-payroll' | 'structures' | 'insights' | 'components' | 'salary-list'>('overview');
     const [loading, setLoading] = useState(false);
     const [salaryStructures, setSalaryStructures] = useState<any[]>([]);
     const [payrollData, setPayrollData] = useState<any>(null);
+    const [employeeSalaries, setEmployeeSalaries] = useState<any[]>([]);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [totalPayroll, setTotalPayroll] = useState(0);
     // Payslip View State
     const [selectedPayslip, setSelectedPayslip] = useState<any>(null);
 
@@ -31,12 +34,23 @@ const HRPayrollSection = () => {
         tax: 0
     });
 
-    useEffect(() => {
-        fetchStructures();
-        if (activeTab === 'run-payroll') {
-            // defined but fetching only on action for payroll
+    const fetchEmployeeSalaries = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/salary/hr/salary-list`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setEmployeeSalaries(data);
+                // Calculate total monthly payroll cost
+                const total = data.reduce((sum: number, emp: any) => sum + (emp.salary || 0), 0);
+                setTotalPayroll(total);
+            }
+        } catch (err) {
+            console.error(err);
         }
-    }, [activeTab]);
+    };
 
     const fetchStructures = async () => {
         try {
@@ -93,6 +107,24 @@ const HRPayrollSection = () => {
         }
     };
 
+    const fetchCurrentPayroll = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/salary/payroll/${selectedMonth}/${selectedYear}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setPayrollData(data);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleGeneratePayroll = async () => {
         setLoading(true);
         try {
@@ -143,6 +175,17 @@ const HRPayrollSection = () => {
         }
     };
 
+    useEffect(() => {
+        fetchStructures();
+        fetchEmployeeSalaries();
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'run-payroll') {
+            fetchCurrentPayroll();
+        }
+    }, [selectedMonth, selectedYear, activeTab]);
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -168,7 +211,7 @@ const HRPayrollSection = () => {
                         onClick={() => setActiveTab('structures')}
                         className={`px-4 py-2 rounded-lg ${activeTab === 'structures' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600'}`}
                     >
-                        salary Structures
+                        Salary Structures
                     </button>
                     <button
                         onClick={() => setActiveTab('components')}
@@ -184,6 +227,13 @@ const HRPayrollSection = () => {
                         <Brain size={18} />
                         <span>AI Insights</span>
                     </button>
+                    <button
+                        onClick={() => setActiveTab('salary-list')}
+                        className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${activeTab === 'salary-list' ? 'bg-green-100 text-green-700' : 'bg-white text-gray-600'}`}
+                    >
+                        <DollarSign size={18} />
+                        <span>Employee Salaries</span>
+                    </button>
                 </div>
             </div>
 
@@ -191,8 +241,8 @@ const HRPayrollSection = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <h3 className="text-gray-500 text-sm">Total Payroll Cost (Est.)</h3>
-                        <p className="text-3xl font-bold text-gray-900 mt-2">$0</p>
-                        <p className="text-xs text-gray-400 mt-1">Based on active structures</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-2">₹{totalPayroll.toLocaleString()}</p>
+                        <p className="text-xs text-gray-400 mt-1">Monthly estimate based on active employee salaries</p>
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <h3 className="text-gray-500 text-sm">Active Structures</h3>
@@ -268,7 +318,7 @@ const HRPayrollSection = () => {
                         </div>
                     </div>
 
-                    {payrollData && (
+                    {payrollData && (payrollData.payroll || payrollData.salaries?.length > 0) ? (
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-lg">
@@ -279,7 +329,7 @@ const HRPayrollSection = () => {
                                     </span>
                                 </h3>
                                 <div className="space-x-3">
-                                    {payrollData.payroll.status !== 'Paid' && (
+                                    {payrollData.payroll?.status !== 'Paid' && (
                                         <>
                                             <button
                                                 onClick={() => handleProcessPayroll('Approved')}
@@ -313,19 +363,26 @@ const HRPayrollSection = () => {
                                     <tbody className="divide-y divide-gray-100">
                                         {(payrollData.salaries || []).map((rec: any) => (
                                             <tr key={rec._id}>
-                                                <td className="p-3 font-medium">Employee ID: {rec.employee}</td>
-                                                <td className="p-3">${rec.basic || 0}</td>
-                                                <td className="p-3 text-green-600">+${(rec.hra || 0) + (rec.da || 0) + (rec.bonus || 0)}</td>
-                                                <td className="p-3 text-red-600">-${(rec.deductions || 0) + (rec.pf || 0) + (rec.tax || 0)}</td>
-                                                <td className="p-3 font-bold">${rec.netSalary || 0}</td>
+                                                <td className="p-3 font-medium">
+                                                    <div>{rec.employee?.name || "Unknown"}</div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {typeof rec.employee === 'object'
+                                                            ? (rec.employee?.employeeId || rec.employee?._id?.toString())
+                                                            : rec.employee}
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 font-mono">₹{rec.basic?.toLocaleString() || 0}</td>
+                                                <td className="p-3 text-green-600 font-medium">+₹{((rec.hra || 0) + (rec.da || 0) + (rec.bonus || 0)).toLocaleString()}</td>
+                                                <td className="p-3 text-red-600 font-medium">-₹{((rec.deductions || 0) + (rec.pf || 0) + (rec.tax || 0)).toLocaleString()}</td>
+                                                <td className="p-3 font-bold text-gray-900">₹{rec.netSalary?.toLocaleString() || 0}</td>
                                                 <td className="p-3">
-                                                    <span className={`px-2 py-0.5 rounded text-xs ${rec.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${rec.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                                                         }`}>{rec.status || 'Pending'}</span>
                                                 </td>
                                                 <td className="p-3">
                                                     <button
                                                         onClick={() => setSelectedPayslip(rec)}
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
                                                         title="View Payslip"
                                                     >
                                                         <FileText size={18} />
@@ -337,6 +394,14 @@ const HRPayrollSection = () => {
                                 </table>
                             </div>
                         </div>
+                    ) : (
+                        payrollData && (
+                            <div className="p-20 text-center">
+                                <FileText size={48} className="mx-auto text-gray-300 mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900">No Payroll Data</h3>
+                                <p className="text-gray-500">No payroll has been generated for {selectedMonth} {selectedYear} yet.</p>
+                            </div>
+                        )
                     )}
                 </div>
             )}
@@ -427,12 +492,68 @@ const HRPayrollSection = () => {
             {activeTab === 'components' && <SalaryComponentsManager />}
             {activeTab === 'insights' && <PayrollAIInsights />}
 
+            {activeTab === 'salary-list' && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h3 className="font-bold text-lg">Employee Salary Directory</h3>
+                        <p className="text-sm text-gray-500">Overview of active employee compensation packages</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th className="p-4">Employee</th>
+                                    <th className="p-4">ID & Join Date</th>
+                                    <th className="p-4">Position & Dept</th>
+                                    <th className="p-4">Monthly Salary</th>
+                                    <th className="p-4">Annual CTC</th>
+                                    <th className="p-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {employeeSalaries.map((emp: any) => (
+                                    <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="p-4">
+                                            <div className="font-bold text-gray-900">{emp.name}</div>
+                                            <div className="text-xs text-gray-500">{emp.email}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm font-medium">{emp.employeeId}</div>
+                                            <div className="text-xs text-gray-400">{new Date(emp.joiningDate).toLocaleDateString()}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm">{emp.position}</div>
+                                            <div className="text-xs text-gray-500">{emp.department}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm font-bold text-gray-900">₹{emp.salary?.toLocaleString()}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="text-sm font-black text-indigo-600">₹{emp.currentCTC?.toLocaleString()}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                {emp.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {employeeSalaries.length === 0 && (
+                            <div className="p-10 text-center text-gray-500">No employee salary records found.</div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Payslip Modal */}
             {selectedPayslip && (
                 <PayslipTemplate
                     salary={selectedPayslip}
-                    employee={{ name: 'Employee Name Placeholder' }} // In real app, populate from salary.employee population
-                    structure={{ name: 'Grade Placeholder' }}
+                    employee={typeof selectedPayslip.employee === 'object' ? selectedPayslip.employee : (employeeSalaries.find(e => e.id === selectedPayslip.employee) || { name: 'Employee' })}
+                    structure={salaryStructures.find(s => s._id === (typeof selectedPayslip.employee === 'object' ? selectedPayslip.employee._id : selectedPayslip.employee)?.salaryStructure) || { name: 'Professional Services' }}
                     onClose={() => setSelectedPayslip(null)}
                 />
             )}

@@ -13,6 +13,7 @@ const salaryStructureSchema = new mongoose.Schema({
     },
     components: {
         hra: { type: Number, default: 0 },
+        da: { type: Number, default: 0 },
         specialAllowance: { type: Number, default: 0 },
         conveyanceAllowance: { type: Number, default: 0 },
         medicalAllowance: { type: Number, default: 0 },

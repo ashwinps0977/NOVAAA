@@ -54,8 +54,8 @@ const projectSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Planning', 'Active', 'Completed', 'Pending'],
-        default: 'Planning'
+        enum: ['Planning', 'Active', 'Completed', 'Pending', 'In Progress', 'For Review', 'On Hold', 'Delayed'],
+        default: 'Pending'
     },
     progressPercentage: {
         type: Number,

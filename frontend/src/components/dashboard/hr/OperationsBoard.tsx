@@ -436,6 +436,7 @@ const OperationsBoard = ({ currentUser, projects = [] }: { currentUser?: any, pr
                     }}
                 />
             )}
+
             <ProjectAutoSelectionModal
                 isOpen={showAutoSelectModal}
                 onClose={() => setShowAutoSelectModal(false)}

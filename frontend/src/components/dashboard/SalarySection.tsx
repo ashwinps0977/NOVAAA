@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Download, Calendar, Send, Briefcase, Landmark, ShieldCheck, FileText, TrendingUp, Wallet, Receipt, Percent, Scale, CreditCard } from 'lucide-react';
+import { DollarSign, Download, Calendar, Send, Briefcase, ShieldCheck, FileText, TrendingUp, Wallet, Receipt } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { API_BASE_URL } from '../../config';
 
-const SalarySection = () => {
+const SalarySection = ({ userData }: { userData?: any }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'payslips' | 'queries'>('overview');
     const [salaryData, setSalaryData] = useState<any>(null);
     const [salaryHistory, setSalaryHistory] = useState<any[]>([]);
@@ -22,6 +22,45 @@ const SalarySection = () => {
         fetchSalaryHistory();
         fetchQueries();
     }, []);
+
+    const baseMonthly = userData?.salary || 0;
+    const isMock = !salaryData;
+
+    const earnings = {
+        basic: salaryData?.basic || baseMonthly * 0.5,
+        hra: salaryData?.hra || baseMonthly * 0.2,
+        special: salaryData?.specialAllowance || baseMonthly * 0.15,
+        conveyance: salaryData?.conveyanceAllowance || (isMock ? 1600 : 0),
+        medical: salaryData?.medicalAllowance || (isMock ? 1250 : 0),
+        internet: salaryData?.internetAllowance || (isMock ? 500 : 0),
+        shiftProject: (salaryData?.shiftAllowance || 0) + (salaryData?.projectAllowance || 0),
+        bonus: salaryData?.bonus || 0
+    };
+
+    const totalGross = earnings.basic + earnings.hra + earnings.special + earnings.conveyance + earnings.medical + earnings.internet + earnings.shiftProject + earnings.bonus;
+
+    const pfVal = salaryData?.pf || earnings.basic * 0.12;
+    const profTaxVal = salaryData?.professionalTax || (baseMonthly > 0 ? 200 : 0);
+
+    // Simple Tax/TDS Calculation based on annual gross
+    const annualGross = totalGross * 12;
+    let tdsVal = salaryData?.incomeTaxTDS || 0;
+    if (isMock && annualGross > 500000) {
+        tdsVal = totalGross * 0.05; // 5% TDS for demo
+    }
+
+    const deductions = {
+        pf: pfVal,
+        profTax: profTaxVal,
+        tax: tdsVal,
+        insurance: salaryData?.insurancePremium || (isMock ? 500 : 0),
+        loan: (salaryData?.loanDeduction || 0) + (salaryData?.advanceSalaryDeduction || 0),
+        penalty: (salaryData?.latePenalty || 0) + (salaryData?.lop || 0),
+        other: salaryData?.otherDeductions || 0
+    };
+
+    const totalDeductions = deductions.pf + deductions.profTax + deductions.tax + deductions.insurance + deductions.loan + deductions.penalty + deductions.other;
+    const netSalaryDisplay = totalGross - totalDeductions;
 
     const fetchLatestSalary = async () => {
         try {
@@ -126,16 +165,6 @@ const SalarySection = () => {
         doc.save(`NOVA_Payslip_${salary.month}_${salary.year}.pdf`);
     };
 
-    const renderDataPoint = (label: string, value: any, icon?: React.ReactNode) => (
-        <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors px-1 rounded-lg">
-            <div className="flex items-center space-x-2.5">
-                {icon && <div className="text-gray-400">{icon}</div>}
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-tight">{label}</span>
-            </div>
-            <span className="text-sm font-bold text-gray-800">{value || '—'}</span>
-        </div>
-    );
-
     const renderMoneyLine = (label: string, value: number, isNegative = false) => (
         <div className="flex justify-between items-center py-2.5 hover:bg-white/40 transition-colors px-2 rounded-lg group">
             <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">{label}</span>
@@ -211,20 +240,20 @@ const SalarySection = () => {
                                             <ShieldCheck size={14} className="text-indigo-200" />
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-100">Verified Employee Profile</span>
                                         </div>
-                                        <h3 className="text-3xl font-black tracking-tight mt-4">{salaryData?.employee?.name || 'Loading...'}</h3>
+                                        <h3 className="text-3xl font-black tracking-tight mt-4">{salaryData?.employee?.name || userData?.name || 'Loading...'}</h3>
                                         <p className="text-indigo-100/80 font-medium text-sm flex items-center">
-                                            <Briefcase size={14} className="mr-2" /> {salaryData?.employee?.position} • {salaryData?.employee?.department}
+                                            <Briefcase size={14} className="mr-2" /> {salaryData?.employee?.position || userData?.position} • {salaryData?.employee?.department || userData?.department}
                                         </p>
                                     </div>
                                     <div className="text-right">
                                         <span className="text-[10px] uppercase font-black text-indigo-200 tracking-widest block mb-1">Current CTC (Annual)</span>
-                                        <p className="text-4xl font-black tracking-tighter">₹{salaryData?.employee?.currentCTC?.toLocaleString() || '0'}</p>
+                                        <p className="text-4xl font-black tracking-tighter">₹{(salaryData?.employee?.currentCTC || userData?.currentCTC || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10 pt-8 border-t border-white/10">
                                     <div>
                                         <span className="text-[10px] uppercase font-bold text-indigo-200">Employee ID</span>
-                                        <p className="font-bold text-sm truncate">{salaryData?.employee?._id || '—'}</p>
+                                        <p className="font-bold text-sm truncate">EMP-{(userData?.id || salaryData?.employee?._id || '').toString().slice(-6).toUpperCase() || '—'}</p>
                                     </div>
                                     <div>
                                         <span className="text-[10px] uppercase font-bold text-indigo-200">Employment</span>
@@ -236,7 +265,7 @@ const SalarySection = () => {
                                     </div>
                                     <div>
                                         <span className="text-[10px] uppercase font-bold text-indigo-200">Joining Date</span>
-                                        <p className="font-bold text-sm">{salaryData?.employee?.joiningDate ? new Date(salaryData.employee.joiningDate).toLocaleDateString() : '—'}</p>
+                                        <p className="font-bold text-sm">{(salaryData?.employee?.joiningDate || userData?.joiningDate) ? new Date(salaryData?.employee?.joiningDate || userData?.joiningDate).toLocaleDateString() : '—'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -255,8 +284,9 @@ const SalarySection = () => {
                             </div>
                             <div className="space-y-4">
                                 <div className="text-center py-6 bg-gray-50/50 rounded-2xl border border-gray-50">
-                                    <span className="text-sm text-gray-400 font-bold uppercase tracking-widest block mb-1">In Bank Account</span>
-                                    <p className="text-5xl font-black text-gray-900 tracking-tighter">₹{salaryData?.netSalary?.toLocaleString()}</p>
+                                    <span className="text-sm text-gray-400 font-bold uppercase tracking-widest block mb-1">In Bank Account (Net)</span>
+                                    <p className="text-5xl font-black text-gray-900 tracking-tighter">₹{netSalaryDisplay.toLocaleString()}</p>
+                                    {!salaryData?.netSalary && userData?.salary && <p className="text-[10px] text-gray-400 mt-1 italic">Calculated based on monthly package</p>}
                                 </div>
                                 <div className="flex justify-between items-center text-xs px-2">
                                     <span className="text-gray-500 font-medium flex items-center"><Calendar size={12} className="mr-1.5" /> Next Credit</span>
@@ -270,84 +300,51 @@ const SalarySection = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Section B: Salary Structure Card */}
-                        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group transition-all duration-300 hover:shadow-2xl">
+                        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-100 border border-gray-100 group transition-all duration-300 hover:shadow-2xl">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center space-x-3">
-                                    <div className="p-2.5 bg-indigo-50 rounded-xl group-hover:bg-indigo-600 transition-colors">
-                                        <DollarSign className="text-indigo-600 group-hover:text-white transition-colors" size={20} />
+                                    <div className="p-3 bg-indigo-50 rounded-xl group-hover:bg-indigo-600 transition-colors">
+                                        <DollarSign className="text-indigo-600 group-hover:text-white transition-colors" size={24} />
                                     </div>
-                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">A. Earnings Breakup</h4>
+                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-sm">A. Earnings Breakup</h4>
                                 </div>
-                                <TrendingUp size={16} className="text-emerald-500" />
+                                <TrendingUp size={18} className="text-emerald-500" />
                             </div>
-                            <div className="bg-indigo-50/30 p-4 rounded-2xl space-y-1 mb-4 border border-indigo-50/50">
-                                {renderMoneyLine('Basic Pay', salaryData?.basic)}
-                                {renderMoneyLine('HRA', salaryData?.hra)}
-                                {renderMoneyLine('Special Allowance', salaryData?.specialAllowance)}
-                                {renderMoneyLine('Conveyance Allowance', salaryData?.conveyanceAllowance)}
-                                {renderMoneyLine('Medical Allowance', salaryData?.medicalAllowance)}
-                                {renderMoneyLine('Internet Allowance', salaryData?.internetAllowance)}
-                                {renderMoneyLine('Shift/Project Allow.', (salaryData?.shiftAllowance || 0) + (salaryData?.projectAllowance || 0))}
-                                <div className="pt-2 mt-2 border-t border-indigo-100/50 flex justify-between items-center">
-                                    <span className="text-[10px] font-black uppercase text-indigo-400">Total Monthly Gross</span>
-                                    <span className="font-black text-indigo-600">₹{(salaryData?.basic + salaryData?.hra + (salaryData?.specialAllowance || 0) + (salaryData?.bonus || 0))?.toLocaleString()}</span>
+                            <div className="bg-indigo-50/30 p-6 rounded-2xl space-y-2 mb-4 border border-indigo-50/50">
+                                {renderMoneyLine('Basic Pay', earnings.basic)}
+                                {renderMoneyLine('HRA', earnings.hra)}
+                                {renderMoneyLine('Special Allowance', earnings.special)}
+                                {renderMoneyLine('Conveyance Allowance', earnings.conveyance)}
+                                {renderMoneyLine('Medical Allowance', earnings.medical)}
+                                {renderMoneyLine('Internet Allowance', earnings.internet)}
+                                {renderMoneyLine('Shift/Project Allow.', earnings.shiftProject)}
+                                <div className="pt-4 mt-4 border-t border-indigo-100/50 flex justify-between items-center">
+                                    <span className="text-xs font-black uppercase text-indigo-400">Total Monthly Gross</span>
+                                    <span className="text-lg font-black text-indigo-600">₹{totalGross.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Section C: Deductions Card */}
-                        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group transition-all duration-300 hover:shadow-2xl">
+                        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-gray-100 border border-gray-100 group transition-all duration-300 hover:shadow-2xl">
                             <div className="flex items-center space-x-3 mb-6">
-                                <div className="p-2.5 bg-red-50 rounded-xl group-hover:bg-red-500 transition-colors">
-                                    <Receipt className="text-red-500 group-hover:text-white transition-colors" size={20} />
+                                <div className="p-3 bg-red-50 rounded-xl group-hover:bg-red-500 transition-colors">
+                                    <Receipt className="text-red-500 group-hover:text-white transition-colors" size={24} />
                                 </div>
-                                <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">B. Deductions Section</h4>
+                                <h4 className="font-black text-gray-900 uppercase tracking-widest text-sm">B. Deductions Section</h4>
                             </div>
-                            <div className="bg-red-50/30 p-4 rounded-2xl space-y-1 border border-red-50/50 mb-6">
-                                {renderMoneyLine('Provident Fund (PF)', salaryData?.pf, true)}
-                                {renderMoneyLine('Professional Tax', salaryData?.professionalTax, true)}
-                                {renderMoneyLine('Income Tax (TDS)', salaryData?.incomeTaxTDS, true)}
-                                {renderMoneyLine('Insurance Premium', salaryData?.insurancePremium, true)}
-                                {renderMoneyLine('Loan / Advance', (salaryData?.loanDeduction || 0) + (salaryData?.advanceSalaryDeduction || 0), true)}
-                                {renderMoneyLine('Late / LOP Penalty', (salaryData?.latePenalty || 0) + (salaryData?.lop || 0), true)}
-                                <div className="pt-2 mt-2 border-t border-red-100/50 flex justify-between items-center">
-                                    <span className="text-[10px] font-black uppercase text-red-400">Total Deductions</span>
-                                    <span className="font-black text-red-600">-₹{(salaryData?.pf + (salaryData?.incomeTaxTDS || 0) + (salaryData?.professionalTax || 0) + (salaryData?.otherDeductions || 0))?.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section E & F: Tax & Bank info */}
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group">
-                                <div className="flex items-center space-x-3 mb-6">
-                                    <div className="p-2.5 bg-slate-50 rounded-xl group-hover:bg-slate-600 transition-colors">
-                                        <Scale className="text-slate-500 group-hover:text-white transition-colors" size={20} />
-                                    </div>
-                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">D. Tax & Compliance</h4>
-                                </div>
-                                <div className="space-y-1">
-                                    {renderDataPoint('PAN Number', salaryData?.pan, <FileText size={16} />)}
-                                    {renderDataPoint('Tax Regime', salaryData?.taxRegime, <Percent size={16} />)}
-                                    {renderDataPoint('Tax Slab', salaryData?.taxSlab || '—', <Scale size={16} />)}
-                                    {renderDataPoint('Section 80C Invest.', `₹${salaryData?.investmentDeclarations?.section80C?.toLocaleString()}`, <Scale size={16} />)}
-                                    {renderDataPoint('HRA Declared', `₹${salaryData?.hraDeclaration?.toLocaleString()}`, <Landmark size={16} />)}
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-100 border border-gray-100 group">
-                                <div className="flex items-center space-x-3 mb-6">
-                                    <div className="p-2.5 bg-blue-50 rounded-xl group-hover:bg-blue-600 transition-colors">
-                                        <CreditCard className="text-blue-500 group-hover:text-white transition-colors" size={20} />
-                                    </div>
-                                    <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs">E. Bank & Payment Info</h4>
-                                </div>
-                                <div className="space-y-1">
-                                    {renderDataPoint('Bank Name', salaryData?.bankName, <Landmark size={16} />)}
-                                    {renderDataPoint('Account No.', salaryData?.accountNumber?.slice(-4).padStart(12, '•'), <CreditCard size={16} />)}
-                                    {renderDataPoint('Payment Mode', salaryData?.paymentMode, <Wallet size={16} />)}
+                            <div className="bg-red-50/30 p-6 rounded-2xl space-y-2 border border-red-50/50 mb-6">
+                                {renderMoneyLine('Provident Fund (PF)', deductions.pf, true)}
+                                {renderMoneyLine('Professional Tax', deductions.profTax, true)}
+                                {renderMoneyLine('Income Tax (TDS)', deductions.tax, true)}
+                                {renderMoneyLine('Insurance Premium', deductions.insurance, true)}
+                                {renderMoneyLine('Loan / Advance', deductions.loan, true)}
+                                {renderMoneyLine('Late / LOP Penalty', deductions.penalty, true)}
+                                <div className="pt-4 mt-4 border-t border-red-100/50 flex justify-between items-center">
+                                    <span className="text-xs font-black uppercase text-red-400">Total Deductions</span>
+                                    <span className="text-lg font-black text-red-600">-₹{totalDeductions.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
