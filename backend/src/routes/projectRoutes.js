@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const projectController = require('../controllers/projectController');
 const protect = require('../middleware/auth');
+const upload = require('../middleware/uploadProjectUpdate');
 
 // Simple role authorization middleware
 const authorize = (...roles) => {
@@ -23,6 +24,6 @@ router.delete('/:id', protect, authorize('hr', 'admin'), projectController.delet
 
 // Employee Routes
 router.get('/my-projects', protect, projectController.getMyProjects);
-router.put('/:id/status', protect, projectController.updateProjectStatus);
+router.put('/:id/status', protect, upload.array('attachments', 5), projectController.updateProjectStatus);
 
 module.exports = router;

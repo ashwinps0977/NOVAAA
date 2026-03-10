@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
     Users, Star, TrendingUp, Award, X, Target, Shield, Zap,
     Clock, BarChart3, Trash2,
-    CheckCircle2, AlertCircle
+    CheckCircle2, AlertCircle, FileText, Code, Image, Download, ExternalLink, MessageSquare
 } from 'lucide-react';
 
 interface TeamOperationsProps {
@@ -366,6 +366,83 @@ const TeamOperations = ({ teams }: TeamOperationsProps) => {
                                     </div>
                                 </div >
                             </div >
+
+                            {/* Progression History Section */}
+                            <div className="mt-12 border-t border-slate-100 pt-10">
+                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                                    <MessageSquare size={18} className="text-indigo-600" /> Progression History & Artifacts
+                                </h4>
+
+                                {selectedTeam.projectId?.updates && selectedTeam.projectId.updates.length > 0 ? (
+                                    <div className="space-y-8">
+                                        {[...selectedTeam.projectId.updates].reverse().map((update: any, idx: number) => (
+                                            <div key={idx} className="relative pl-8 border-l-2 border-slate-100 pb-8 last:pb-0">
+                                                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-4 border-indigo-600 shadow-sm" />
+                                                <div className="bg-slate-50/50 rounded-[32px] p-6 border border-slate-100">
+                                                    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-black text-indigo-600">
+                                                                {update.user?.name?.charAt(0) || 'U'}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-black text-slate-800">{update.user?.name || 'Unknown User'}</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 capitalize">{new Date(update.createdAt).toLocaleString()}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[10px] font-black text-indigo-600 border border-indigo-100 uppercase tracking-widest">
+                                                                {update.status}
+                                                            </span>
+                                                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[10px] font-black text-emerald-600 border border-emerald-100 uppercase tracking-widest">
+                                                                {update.progressPercentage}% Progress
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <p className="text-sm text-slate-600 leading-relaxed mb-6 italic">
+                                                        "{update.feedback || 'No comments provided for this update.'}"
+                                                    </p>
+
+                                                    {update.attachments && update.attachments.length > 0 && (
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                            {update.attachments.map((file: any, fIdx: number) => {
+                                                                const isPhoto = file.fileType === 'photo';
+                                                                const isCode = file.fileType === 'code';
+                                                                return (
+                                                                    <a
+                                                                        key={fIdx}
+                                                                        href={`http://localhost:5001${file.fileUrl}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all group"
+                                                                    >
+                                                                        <div className={`p-2 rounded-xl ${isPhoto ? 'bg-rose-50 text-rose-500' : isCode ? 'bg-amber-50 text-amber-500' : 'bg-blue-50 text-blue-500'}`}>
+                                                                            {isPhoto ? <Image size={16} /> : isCode ? <Code size={16} /> : <FileText size={16} />}
+                                                                        </div>
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <p className="text-[10px] font-black text-slate-800 truncate uppercase tracking-tight">{file.fileName}</p>
+                                                                            <p className="text-[8px] font-bold text-slate-400 uppercase">{file.fileType}</p>
+                                                                        </div>
+                                                                        <ExternalLink size={12} className="text-slate-300 group-hover:text-indigo-500" />
+                                                                    </a>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-12 bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-100">
+                                        <Clock size={32} className="text-slate-200 mb-3" />
+                                        <p className="text-xs font-black text-slate-300 uppercase tracking-widest text-center">
+                                            No progression updates logged yet.<br />
+                                            <span className="text-[10px] opacity-70">Updates from employees will appear here in real-time.</span>
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                         </div >
                     </div >
                 </div >

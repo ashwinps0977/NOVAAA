@@ -61,6 +61,18 @@ const projectSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    updates: [{
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        status: String,
+        progressPercentage: Number,
+        feedback: String,
+        attachments: [{
+            fileName: String,
+            fileUrl: String,
+            fileType: String // photo, code, file
+        }],
+        createdAt: { type: Date, default: Date.now }
+    }],
     // Keep internal tracking
     assignedBy: {
         type: mongoose.Schema.Types.ObjectId,

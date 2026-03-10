@@ -175,7 +175,13 @@ exports.getTeamOverview = async (req, res) => {
         const teams = await Team.find()
             .populate('teamLead', 'name position performanceScore currentCapacity email')
             .populate('members', 'name position performanceScore currentCapacity email')
-            .populate('projectId');
+            .populate({
+                path: 'projectId',
+                populate: {
+                    path: 'updates.user',
+                    select: 'name email'
+                }
+            });
 
         // Enhance teams with skill data and tasks
         const enhancedTeams = await Promise.all(teams.map(async (team) => {

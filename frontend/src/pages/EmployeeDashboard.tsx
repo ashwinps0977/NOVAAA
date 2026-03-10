@@ -84,11 +84,12 @@ const EmployeeDashboard = () => {
   // Projects State
   const [myProjects, setMyProjects] = useState<any[]>([]);
   const [myTasks, setMyTasks] = useState<any[]>([]);
-  const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string }>({
+  const [projectUpdateModal, setProjectUpdateModal] = useState<{ show: boolean; project: any; status: string; feedback: string; attachments: File[] }>({
     show: false,
     project: null,
     status: '',
-    feedback: ''
+    feedback: '',
+    attachments: []
   });
 
   // Live Timer State
@@ -384,16 +385,21 @@ const EmployeeDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('status', projectUpdateModal.status);
+      formData.append('feedback', projectUpdateModal.feedback);
+
+      projectUpdateModal.attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
+
       const response = await fetch(`${API_BASE_URL}/projects/${projectUpdateModal.project._id}/status`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+          // Content-Type is set automatically for FormData
         },
-        body: JSON.stringify({
-          status: projectUpdateModal.status,
-          feedback: projectUpdateModal.feedback
-        })
+        body: formData
       });
 
       if (response.ok) {
@@ -1895,7 +1901,8 @@ const EmployeeDashboard = () => {
                           show: true,
                           project: project,
                           status: project.status,
-                          feedback: project.feedback || ''
+                          feedback: project.feedback || '',
+                          attachments: []
                         })}
                         className="w-full flex items-center justify-center space-x-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
                       >
@@ -1954,6 +1961,26 @@ const EmployeeDashboard = () => {
                           onChange={(e) => setProjectUpdateModal({ ...projectUpdateModal, feedback: e.target.value })}
                           placeholder="Share your progress, blockers, or completion notes..."
                         ></textarea>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Attachments (Files, Code, Photos)</label>
+                        <input
+                          type="file"
+                          multiple
+                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setProjectUpdateModal({ ...projectUpdateModal, attachments: Array.from(e.target.files) });
+                            }
+                          }}
+                        />
+                        {projectUpdateModal.attachments.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {projectUpdateModal.attachments.map((file, idx) => (
+                              <p key={idx} className="text-xs text-gray-500 truncate">📎 {file.name}</p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:-translate-y-0.5">
                         Save Updates

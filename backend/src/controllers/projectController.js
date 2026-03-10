@@ -3,6 +3,7 @@ const Employee = require('../models/Employee');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const Notification = require('../models/Notification');
+const Team = require('../models/Team');
 const socketService = require('../services/socketService');
 
 // Assign a project to an employee
@@ -141,7 +142,6 @@ exports.getMyProjects = async (req, res) => {
 
         if (employee) {
             // Include projects where the employee's team is assigned
-            const Team = require('../models/Team');
             const myTeams = await Team.find({
                 $or: [
                     { teamLead: employee._id },
@@ -179,9 +179,27 @@ exports.updateProjectStatus = async (req, res) => {
         const { status, feedback } = req.body;
         const projectId = req.params.id;
 
+        // 1. Find the employee record associated with this user
+        const user = await User.findById(req.user.id);
+        const employee = await Employee.findOne({ email: user.email });
+
+        let teamIds = [];
+        if (employee) {
+            const myTeams = await Team.find({
+                $or: [
+                    { teamLead: employee._id },
+                    { members: employee._id }
+                ]
+            });
+            teamIds = myTeams.map(t => t._id);
+        }
+
         const project = await Project.findOne({
             _id: projectId,
-            assignedToUser: req.user.id
+            $or: [
+                { assignedToUser: req.user.id },
+                { teamId: { $in: teamIds } }
+            ]
         });
 
         if (!project) {
@@ -225,6 +243,31 @@ exports.updateProjectStatus = async (req, res) => {
         }
         if (feedback !== undefined) project.feedback = feedback;
 
+        // Handle Attachments if any
+        const updateAttachments = [];
+        if (req.files && req.files.length > 0) {
+            req.files.forEach(file => {
+                let fileType = 'file';
+                if (file.mimetype.startsWith('image/')) fileType = 'photo';
+                else if (file.mimetype.startsWith('text/')) fileType = 'code';
+
+                updateAttachments.push({
+                    fileName: file.originalname,
+                    fileUrl: `/uploads/projects/${file.filename}`,
+                    fileType
+                });
+            });
+        }
+
+        // Add to updates history
+        project.updates.push({
+            user: req.user.id,
+            status: status || project.status,
+            progressPercentage: project.progressPercentage,
+            feedback: feedback || '',
+            attachments: updateAttachments
+        });
+
         await project.save();
 
         res.json({
@@ -260,7 +303,6 @@ exports.deleteProject = async (req, res) => {
 
         // Dissolve team if it exists
         if (project.teamId) {
-            const Team = require('../models/Team');
             const team = await Team.findById(project.teamId);
 
             if (team) {
