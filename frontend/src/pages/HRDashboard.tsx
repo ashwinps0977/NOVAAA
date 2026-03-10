@@ -4,7 +4,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import {
   LogOut, Bell, ChevronRight, Home, Users, UserPlus,
   Calendar, Target, Brain, AlertCircle,
-  GraduationCap, ShieldCheck, Settings, Zap,
+  ShieldCheck, Settings, Zap,
   Briefcase, FileText, CheckCircle, DollarSign,
   Send, Layers, FolderKanban, Sparkles, X
 } from 'lucide-react';

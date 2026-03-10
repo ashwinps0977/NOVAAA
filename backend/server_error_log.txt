@@ -1,12 +1,12 @@
-Error: Expected property name or '}' in JSON at position 1 (line 1 column 2)
-Stack: SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
-    at JSON.parse (<anonymous>)
-    at parse (D:\NOVA_FINAL\backend\node_modules\body-parser\lib\types\json.js:92:19)
-    at D:\NOVA_FINAL\backend\node_modules\body-parser\lib\read.js:128:18
-    at AsyncResource.runInAsyncScope (node:async_hooks:211:14)
-    at invokeCallback (D:\NOVA_FINAL\backend\node_modules\raw-body\index.js:238:16)
-    at done (D:\NOVA_FINAL\backend\node_modules\raw-body\index.js:227:7)
-    at IncomingMessage.onEnd (D:\NOVA_FINAL\backend\node_modules\raw-body\index.js:287:7)
-    at IncomingMessage.emit (node:events:518:28)
-    at endReadableNT (node:internal/streams/readable:1698:12)
-    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Error: request entity too large
+Stack: PayloadTooLargeError: request entity too large
+    at readStream (C:\Users\LENOVO\NOVAAA\backend\node_modules\raw-body\index.js:163:17)
+    at getRawBody (C:\Users\LENOVO\NOVAAA\backend\node_modules\raw-body\index.js:116:12)
+    at read (C:\Users\LENOVO\NOVAAA\backend\node_modules\body-parser\lib\read.js:79:3)
+    at jsonParser (C:\Users\LENOVO\NOVAAA\backend\node_modules\body-parser\lib\types\json.js:138:5)
+    at Layer.handle [as handle_request] (C:\Users\LENOVO\NOVAAA\backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\LENOVO\NOVAAA\backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\LENOVO\NOVAAA\backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\LENOVO\NOVAAA\backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\LENOVO\NOVAAA\backend\node_modules\express\lib\router\index.js:280:10)
+    at logger (C:\Users\LENOVO\NOVAAA\backend\node_modules\morgan\index.js:144:5)
