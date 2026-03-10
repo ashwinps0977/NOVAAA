@@ -75,17 +75,31 @@ const Attendance = require('../models/Attendance'); // Import Attendance
 
 exports.getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find().select('-password');
+    const { sortBy, department, role, status } = req.query;
+
+    // Build query object
+    const query = {};
+    if (department) query.department = department;
+    if (role) query.position = role; // In frontend 'Role' maps to 'position' in backend
+    if (status) query.status = status.toLowerCase();
+
+    // Build sort object
+    let sort = {};
+    if (sortBy === 'name') sort.name = 1;
+    else if (sortBy === 'department') sort.department = 1;
+    else if (sortBy === 'role') sort.position = 1;
+    else if (sortBy === 'joinedDate') sort.joiningDate = -1;
+    else sort.createdAt = -1; // Default sort
+
+    const employees = await Employee.find(query)
+      .sort(sort)
+      .select('-password')
+      .populate('activeProjects');
 
     // Get today's attendance for everyone
     const today = new Date().toISOString().split('T')[0];
-    // Find attendance where user ID matches employee's email (Need to link Employee to User/Attendance)
-    // Wait, Attendance links to User._id. Employee also links to User via email (implicit).
-    // Better: Fetch all users first to map Email -> User._id? 
-    // Actually, User and Employee share the same Email.
-    // Let's get all Users to map email -> _id
     const users = await User.find({ email: { $in: employees.map(e => e.email) } });
-    const userMap = {}; // email -> user_id
+    const userMap = {};
     users.forEach(u => userMap[u.email] = u._id);
 
     const attendanceRecords = await Attendance.find({
@@ -93,19 +107,18 @@ exports.getAllEmployees = async (req, res) => {
       user: { $in: users.map(u => u._id) }
     });
 
-    const attendanceMap = {}; // user_id -> record
+    const attendanceMap = {};
     attendanceRecords.forEach(a => attendanceMap[a.user.toString()] = a);
 
     const employeesWithAttendance = employees.map(emp => {
       const userId = userMap[emp.email];
       const record = userId ? attendanceMap[userId.toString()] : null;
 
-      let status = 'Absent';
+      let attendanceStatus = 'Absent';
       let lastActive = 'N/A';
 
       if (record) {
-        status = record.checkOut ? 'Checked Out' : 'Present';
-        // Format time 
+        attendanceStatus = record.checkOut ? 'Checked Out' : 'Present';
         if (record.checkOut) {
           lastActive = new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         } else if (record.checkIn) {
@@ -115,7 +128,7 @@ exports.getAllEmployees = async (req, res) => {
 
       return {
         ...emp.toObject(),
-        attendanceStatus: status,
+        attendanceStatus,
         lastActive
       };
     });

@@ -4,9 +4,9 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import {
   LogOut, Bell, ChevronRight, Home, Users, UserPlus,
   Calendar, Target, Brain, AlertCircle,
-  GraduationCap, ShieldCheck, Settings, Zap, Plus,
+  GraduationCap, ShieldCheck, Settings, Zap,
   Briefcase, FileText, CheckCircle, DollarSign,
-  Send, Layers, FolderKanban, Star, Award, TrendingUp, X, MapPin, Sparkles
+  Send, Layers, FolderKanban, Sparkles, X
 } from 'lucide-react';
 import HRPayrollSection from '../components/dashboard/hr/HRPayrollSection';
 import HRSettingsSection from '../components/dashboard/hr/HRSettingsSection';
@@ -14,9 +14,8 @@ import PoliciesSection from '../components/dashboard/PoliciesSection';
 import HRPerformanceSection from '../components/dashboard/hr/HRPerformanceSection';
 import HRAnalyticsSection from '../components/dashboard/hr/HRAnalyticsSection';
 import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
+import EmployeeManagement from '../components/dashboard/hr/EmployeeManagement';
 import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
-import SearchDropdown from '../components/common/SearchDropdown';
-import { jobRoles } from '../data/jobRoles';
 import { useRealTimeSync } from '../hooks/useRealTimeSync';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -25,18 +24,17 @@ const HRDashboard = () => {
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [postedJobs, setPostedJobs] = useState<any[]>([]);
   const [jobApplications, setJobApplications] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [showAIAnalysisModal, setShowAIAnalysisModal] = useState(false);
   const [selectedAIAnalysis, setSelectedAIAnalysis] = useState<any>(null);
   const [showScheduleInterviewModal, setShowScheduleInterviewModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
   // AI Chat State
   const [messages, setMessages] = useState<{ sender: 'user' | 'bot', text: string }[]>([
@@ -53,12 +51,6 @@ const HRDashboard = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
-
-  // Employee Management State
-  const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
-  const [showViewEmployeeModal, setShowViewEmployeeModal] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
   const [newJob, setNewJob] = useState({
     title: '',
@@ -84,32 +76,8 @@ const HRDashboard = () => {
 
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const [newEmployee, setNewEmployee] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'employee',
-    department: '',
-    position: '',
-    phone: '',
-    salary: '',
-    joiningDate: new Date().toISOString().split('T')[0],
-    project: ''
-  });
-
   // Project Assignment State
-  const [showAssignProjectModal, setShowAssignProjectModal] = useState(false);
-  const [selectedEmployeeForProject, setSelectedEmployeeForProject] = useState<any>(null);
-  const [projectData, setProjectData] = useState({
-    title: '',
-    description: '',
-    role: '',
-    deadline: ''
-  });
-
-  // Task Assignment State
   const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
-  const [selectedEmployeeForTask, setSelectedEmployeeForTask] = useState<any>(null);
   const [taskData, setTaskData] = useState({
     title: '',
     project: 'General',
@@ -117,31 +85,7 @@ const HRDashboard = () => {
     due: new Date().toISOString().split('T')[0]
   });
 
-  const [selectedEmployeeSkills, setSelectedEmployeeSkills] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (showViewEmployeeModal && selectedEmployee) {
-      const fetchSkills = async () => {
-        try {
-          const token = localStorage.getItem('token');
-          const empId = selectedEmployee._id || selectedEmployee.id;
-          const res = await fetch(`${API_BASE_URL}/skills/employee/${empId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (data.success) {
-            setSelectedEmployeeSkills(data.skills || []);
-          } else {
-            setSelectedEmployeeSkills([]);
-          }
-        } catch (error) {
-          console.error('Error fetching employee skills:', error);
-          setSelectedEmployeeSkills([]);
-        }
-      };
-      fetchSkills();
-    }
-  }, [showViewEmployeeModal, selectedEmployee]);
 
   // Manual Attendance State
   const [attendanceForm, setAttendanceForm] = useState({
@@ -303,6 +247,7 @@ const HRDashboard = () => {
     }
   };
 
+
   const handleUpdateLeaveStatus = async (id: string, status: string) => {
     try {
       const token = localStorage.getItem('token');
@@ -440,52 +385,15 @@ const HRDashboard = () => {
   };
 
   // Real-time Database Synchronization
-  useRealTimeSync(['employees'], fetchEmployees);
+
   useRealTimeSync(['jobs', 'jobapplications'], () => {
     loadPostedJobs();
     loadApplications();
   });
   useRealTimeSync(['leaves'], fetchLeaves);
 
-  const handleAddEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/hr/employees`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newEmployee)
-      });
 
-      if (response.ok) {
 
-        alert('Employee added successfully!');
-        setShowAddEmployee(false);
-        setNewEmployee({
-          name: '',
-          email: '',
-          password: '',
-          role: 'employee',
-          department: '',
-          position: '',
-          phone: '',
-          salary: '',
-          joiningDate: new Date().toISOString().split('T')[0],
-          project: ''
-        });
-        fetchEmployees();
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to add employee: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error('Error adding employee:', error);
-      alert('Failed to add employee. Please try again.');
-    }
-  };
 
   const handleOpenScheduleInterview = (application: any) => {
     setSelectedApplication(application);
@@ -619,44 +527,7 @@ const HRDashboard = () => {
     }
   }
 
-  async function handleAssignProject(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedEmployeeForProject) return;
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/projects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...projectData,
-          assignedToEmployeeId: selectedEmployeeForProject._id || selectedEmployeeForProject.id
-        })
-      });
-
-      if (response.ok) {
-        alert('Project assigned successfully!');
-        setShowAssignProjectModal(false);
-        setProjectData({
-          title: '',
-          description: '',
-          role: '',
-          deadline: ''
-        });
-        setSelectedEmployeeForProject(null);
-        fetchEmployees(); // Refresh list to show new project status if needed
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to assign project: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error('Error assigning project:', error);
-      alert('Failed to assign project. Please try again.');
-    }
-  }
 
   async function handleRejectApplication(e: React.FormEvent) {
     e.preventDefault();
@@ -723,66 +594,9 @@ const HRDashboard = () => {
     }
   }
 
-  async function handleUpdateEmployee(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedEmployee) return;
 
-    try {
-      const token = localStorage.getItem('token');
-      const empId = selectedEmployee._id || selectedEmployee.id;
-      const response = await fetch(`${API_BASE_URL}/hr/employees/${empId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(selectedEmployee)
-      });
 
-      if (response.ok) {
-        alert('Employee updated successfully');
-        setShowEditEmployeeModal(false);
-        fetchEmployees();
-      } else {
-        const error = await response.json();
-        alert(`Failed to update employee: ${error.message}`);
-      }
-    } catch (error) {
-      console.error('Update error:', error);
-      alert('Failed to update employee');
-    }
-  }
 
-  async function handleAssignTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedEmployeeForTask) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const empId = selectedEmployeeForTask._id || selectedEmployeeForTask.id;
-      const response = await fetch(`${API_BASE_URL}/tasks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...taskData,
-          assignedToEmployeeId: empId
-        })
-      });
-
-      if (response.ok) {
-        alert('Task assigned successfully');
-        setShowAssignTaskModal(false);
-        setTaskData({ title: '', project: 'General', priority: 'medium', due: 'Today' });
-      } else {
-        alert('Failed to assign task');
-      }
-    } catch (error) {
-      console.error('Task assignment error:', error);
-    }
-  }
   async function logout() {
     try {
       const token = localStorage.getItem('token');
@@ -894,7 +708,7 @@ const HRDashboard = () => {
                 </button>
 
                 <button
-                  onClick={() => setShowAddEmployee(true)}
+                  onClick={() => setActiveSection('employees')}
                   className="flex-1 flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200 hover:border-green-300 hover:bg-green-100 transition-colors"
                 >
                   <UserPlus className="w-8 h-8 text-green-600 mb-2" />
@@ -933,8 +747,8 @@ const HRDashboard = () => {
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(Array.isArray(projects) ? projects : []).filter(p => p && p.status !== 'Completed').length > 0 ? (
-                  (Array.isArray(projects) ? projects : []).filter(p => p && p.status !== 'Completed').slice(0, 6).map((project: any) => (
+                {(Array.isArray(projects) ? projects : []).filter((p: any) => p && p.status !== 'Completed').length > 0 ? (
+                  (Array.isArray(projects) ? projects : []).filter((p: any) => p && p.status !== 'Completed').slice(0, 6).map((project: any) => (
                     <div key={project._id || Math.random()} className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all group">
                       <div className="flex items-center justify-between mb-3">
                         <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
@@ -972,80 +786,7 @@ const HRDashboard = () => {
         );
 
       case 'employees':
-        return (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Employee Management</h2>
-                <p className="text-gray-600 mt-1">Manage employee directory and details</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-64">
-                  <SearchDropdown
-                    items={employees}
-                    onSelect={(emp) => {
-                      setSearchTerm(emp.name);
-                      setSelectedEmployee(emp);
-                      setShowViewEmployeeModal(true);
-                    }}
-                    placeholder="Search employees..."
-                    searchKey="name"
-                  />
-                </div>
-                <button
-                  onClick={() => setShowAddEmployee(true)}
-                  className="flex items-center space-x-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Employee</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col space-y-4">
-              {employees
-                .filter(emp =>
-                  emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (emp.email && emp.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                  (emp.department && emp.department.toLowerCase().includes(searchTerm.toLowerCase()))
-                )
-                .map((employee) => {
-                  const isActive = employee.attendanceStatus === 'Present';
-                  return (
-                    <div
-                      key={employee.id || employee._id}
-                      onClick={() => {
-                        setSelectedEmployee(employee);
-                        setShowViewEmployeeModal(true);
-                      }}
-                      className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-sm group-hover:scale-110 transition-transform">
-                          {(employee.name || '?').charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-lg">{employee.name}</h3>
-                          <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full inline-block mt-1">
-                            ID: {(employee.employeeId || employee._id || '').slice(-6).toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                          }`}>
-                          <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                          <span>{isActive ? 'Active' : 'Inactive'}</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        );
+        return <EmployeeManagement />;
 
 
 
@@ -1243,10 +984,10 @@ const HRDashboard = () => {
               </div>
 
               <div className="space-y-8">
-                {postedJobs.map(job => {
+                {postedJobs.map((job: any) => {
                   const jobApps = jobApplications
-                    .filter(app => (app.jobId || app.job?._id || app.job?.id) === (job._id || job.id))
-                    .sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
+                    .filter((app: any) => (app.jobId || app.job?._id || app.job?.id) === (job._id || job.id))
+                    .sort((a: any, b: any) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
 
                   if (jobApps.length === 0) return null;
 
@@ -1456,7 +1197,7 @@ const HRDashboard = () => {
                       onChange={(e) => setAttendanceForm({ ...attendanceForm, userId: e.target.value })}
                     >
                       <option value="">Select Employee</option>
-                      {employees.map(emp => (
+                      {employees.map((emp: any) => (
                         <option key={emp._id || emp.id} value={emp._id || emp.id}>{emp.name}</option>
                       ))}
                     </select>
@@ -1666,1062 +1407,240 @@ const HRDashboard = () => {
         </div>
       </div>
 
-      {/* Add Employee Modal */}
-      {showAddEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Add New Employee</h3>
-              <button
-                onClick={() => setShowAddEmployee(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
+      {/* Recruitment Modals */}
+      {showPostJobModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden relative">
+            <div className="p-6 border-b flex justify-between items-center">
+              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+                <Briefcase className="text-blue-600" size={24} />
+                Post New Job Opportunity
+              </h3>
+              <button onClick={() => setShowPostJobModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X size={20} />
               </button>
             </div>
-
-            <form onSubmit={handleAddEmployee}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <form onSubmit={handlePostJob} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Job Title</label>
                   <input
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.name}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    value={newJob.title}
+                    onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.email}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <input
-                    type="password"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.password}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.department}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newEmployee.position}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.phone}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Department</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.salary}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.project}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, project: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newEmployee.joiningDate}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, joiningDate: e.target.value })}
-                    max={new Date().toISOString().split('T')[0]}
+                    required
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    value={newJob.department}
+                    onChange={(e) => setNewJob({ ...newJob, department: e.target.value })}
                   />
                 </div>
               </div>
-
-              <div className="flex items-center space-x-3 mt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Add Employee
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddEmployee(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Location</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    value={newJob.location}
+                    onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Job Type</label>
+                  <select
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    value={newJob.type}
+                    onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}
+                  >
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="contract">Contract</option>
+                    <option value="remote">Remote</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Salary Range</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    placeholder="e.g. $80k - $120k"
+                    value={newJob.salary}
+                    onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
+                  />
+                </div>
               </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400">Job Description</label>
+                <textarea
+                  rows={3}
+                  required
+                  className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 resize-none"
+                  value={newJob.description}
+                  onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                />
+              </div>
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-blue-200 transition-all active:scale-95">
+                Post Job Opening
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* AI Analysis Modal */}
       {showAIAnalysisModal && selectedAIAnalysis && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <Brain className="w-8 h-8 text-white" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden relative">
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white relative">
+              <button onClick={() => setShowAIAnalysisModal(false)} className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full">
+                <X size={20} />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl font-black">
+                  {selectedAIAnalysis.candidateName.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">AI Recruitment Intelligence</h3>
-                  <p className="text-purple-100 flex items-center mt-1">
-                    <Target className="w-4 h-4 mr-1" />
-                    Analyzing fit for: <span className="font-semibold ml-1">{selectedAIAnalysis.jobTitle}</span>
-                  </p>
+                  <h3 className="text-2xl font-black tracking-tight">{selectedAIAnalysis.candidateName}</h3>
+                  <p className="text-purple-100 font-bold uppercase tracking-widest text-xs">AI Candidate Ranking Analysis</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowAIAnalysisModal(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Score Dashboard */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white border-2 border-purple-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center">
-                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Overall Fit</p>
-                  <div className={`text-5xl font-black ${selectedAIAnalysis.matchPercentage >= 70 ? 'text-green-600' :
-                    selectedAIAnalysis.matchPercentage >= 40 ? 'text-yellow-500' : 'text-red-500'
-                    }`}>
-                    {selectedAIAnalysis.matchPercentage}%
-                  </div>
-                  <div className="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden border">
-                    <div
-                      className={`h-full transition-all duration-1000 ${selectedAIAnalysis.matchPercentage >= 70 ? 'bg-green-500' :
-                        selectedAIAnalysis.matchPercentage >= 40 ? 'bg-yellow-400' : 'bg-red-500'
-                        }`}
-                      style={{ width: `${selectedAIAnalysis.matchPercentage}%` }}
-                    />
-                  </div>
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                  <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">Match Percentage</p>
+                  <p className="text-3xl font-black text-purple-700">{selectedAIAnalysis.matchPercentage}%</p>
                 </div>
-
-                <div className="md:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Skills', value: selectedAIAnalysis.scoreBreakdown?.skills || 0, max: 40, icon: <Zap className="w-5 h-5" />, color: 'blue' },
-                    { label: 'Experience', value: selectedAIAnalysis.scoreBreakdown?.experience || 0, max: 35, icon: <Briefcase className="w-5 h-5" />, color: 'emerald' },
-                    { label: 'Education', value: selectedAIAnalysis.scoreBreakdown?.education || 0, max: 25, icon: <GraduationCap className="w-5 h-5" />, color: 'indigo' },
-                    { label: 'Projects', value: selectedAIAnalysis.scoreBreakdown?.projects || 0, max: 10, icon: <Award className="w-5 h-5" />, color: 'purple' },
-                  ].map((stat, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                      <div className={`p-2 bg-${stat.color}-100 text-${stat.color}-600 rounded-lg inline-block mb-2`}>
-                        {stat.icon}
-                      </div>
-                      <p className="text-xs font-bold text-gray-400 uppercase">{stat.label}</p>
-                      <p className="text-xl font-bold text-gray-900">{stat.value}<span className="text-sm text-gray-400 font-medium">/{stat.max}</span></p>
-                    </div>
+                <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Experience Score</p>
+                  <p className="text-3xl font-black text-indigo-700">{selectedAIAnalysis.experience} Yrs</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">AI Insights & Strengths</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAIAnalysis.parsedSkills?.map((skill: string, i: number) => (
+                    <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold border border-gray-200">
+                      {skill}
+                    </span>
                   ))}
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Highlights & Details */}
-                <div className="lg:col-span-2 space-y-8">
-                  {/* Summary */}
-                  <section>
-                    <h4 className="flex items-center text-lg font-bold text-gray-900 mb-3">
-                      <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
-                      Executive Summary
-                    </h4>
-                    <div className="bg-purple-50 rounded-xl p-4 text-purple-900 leading-relaxed border border-purple-100">
-                      {selectedAIAnalysis.analysisSummary || "The AI is processing the details. Generally, this candidate shows promise in core areas."}
-                    </div>
-                  </section>
-
-                  {/* Extracts */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <section>
-                      <h4 className="flex items-center text-md font-bold text-gray-900 mb-3 uppercase tracking-tight">
-                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                        Candidate Snapshot
-                      </h4>
-                      <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <div className="p-3 border-b border-gray-50 flex justify-between">
-                          <span className="text-sm text-gray-500">Location</span>
-                          <span className="text-sm font-semibold">{selectedAIAnalysis.candidateDetails?.location || 'Not Specified'}</span>
-                        </div>
-                        <div className="p-3 border-b border-gray-50 flex justify-between items-center">
-                          <span className="text-sm text-gray-500">Education</span>
-                          <div className="text-right">
-                            {selectedAIAnalysis.candidateDetails?.education?.map((edu: any, i: number) => (
-                              <div key={i} className="mb-1 last:mb-0">
-                                <span className="text-sm font-semibold truncate block max-w-[150px]">
-                                  {edu.degree}
-                                </span>
-                                <span className="text-[10px] text-gray-400 block truncate max-w-[150px]">
-                                  {edu.institution}
-                                </span>
-                              </div>
-                            )) || <span className="text-sm font-semibold">Unknown</span>}
-                          </div>
-                        </div>
-                        <div className="p-3 flex justify-between">
-                          <span className="text-sm text-gray-500">Certifications</span>
-                          <span className="text-sm font-semibold">
-                            {selectedAIAnalysis.candidateDetails?.certifications?.length || 0} Listed
-                          </span>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section>
-                      <h4 className="flex items-center text-md font-bold text-gray-900 mb-3 uppercase tracking-tight">
-                        <Brain className="w-4 h-4 mr-2 text-gray-400" />
-                        Top Extracted Skills
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(selectedAIAnalysis.parsedSkills || []).slice(0, 10).map((skill: string, i: number) => (
-                          <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full border">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-
-                  {/* Recommendations */}
-                  <section>
-                    <h4 className="flex items-center text-lg font-bold text-gray-900 mb-3">
-                      <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
-                      AI Recommendations
-                    </h4>
-                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-amber-900 italic font-medium">
-                      "{selectedAIAnalysis.aiRecommendations}"
-                    </div>
-                  </section>
-
-                  {/* Detailed Experience & Projects */}
-                  <section className="space-y-6">
-                    <div>
-                      <h4 className="flex items-center text-lg font-bold text-gray-900 mb-4">
-                        <Briefcase className="w-5 h-5 mr-2 text-blue-600" />
-                        Professional Experience
-                      </h4>
-                      <div className="space-y-4">
-                        {selectedAIAnalysis.candidateDetails?.experience?.map((exp: any, i: number) => (
-                          <div key={i} className="bg-white border rounded-xl p-4 shadow-sm">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h5 className="font-bold text-gray-900">{exp.title}</h5>
-                                <p className="text-sm text-gray-600">{exp.company}</p>
-                              </div>
-                              <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
-                                {exp.duration}
-                              </span>
-                            </div>
-                            {exp.responsibilities && (
-                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{exp.responsibilities}</p>
-                            )}
-                          </div>
-                        )) || <p className="text-sm text-gray-500 italic">No detailed experience extracted</p>}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="flex items-center text-lg font-bold text-gray-900 mb-4">
-                        <Award className="w-5 h-5 mr-2 text-purple-600" />
-                        Key Projects
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {selectedAIAnalysis.candidateDetails?.projects?.map((proj: any, i: number) => (
-                          <div key={i} className="bg-white border rounded-xl p-4 shadow-sm border-l-4 border-l-purple-500">
-                            <h5 className="font-bold text-gray-900 text-sm mb-1">{proj.title}</h5>
-                            <p className="text-xs text-gray-500 mb-3">{proj.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {proj.technologies?.map((tech: string, j: number) => (
-                                <span key={j} className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">
-                                  {tech}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )) || <p className="text-sm text-gray-500 italic">No projects extracted</p>}
-                      </div>
-                    </div>
-                  </section>
-                </div>
-
-                {/* Pros/Cons Sidebar */}
-                <div className="space-y-6">
-                  <div className="bg-green-50 border border-green-100 rounded-2xl p-5">
-                    <h4 className="text-sm font-black text-green-700 uppercase tracking-widest mb-4 flex items-center">
-                      <ShieldCheck className="w-4 h-4 mr-2" />
-                      Strengths
-                    </h4>
-                    <ul className="space-y-3">
-                      {selectedAIAnalysis.strengths?.map((s: string, i: number) => (
-                        <li key={i} className="flex items-start text-sm text-green-800">
-                          <CheckCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0 text-green-500" />
-                          {s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5">
-                    <h4 className="text-sm font-black text-rose-700 uppercase tracking-widest mb-4 flex items-center">
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Identified Gaps
-                    </h4>
-                    <ul className="space-y-3">
-                      {selectedAIAnalysis.gaps?.map((g: string, i: number) => (
-                        <li key={i} className="flex items-start text-sm text-rose-800">
-                          <TrendingUp className="w-4 h-4 mr-2 mt-0.5 shrink-0 text-rose-300 rotate-180" />
-                          {g}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+              <div>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Analysis Summary</h4>
+                <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                  {selectedAIAnalysis.analysisSummary || "The AI has analyzed this candidate's resume against the job requirements. Based on the skill extraction and experience mapping, this candidate shows a strong technical alignment."}
+                </p>
               </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="bg-gray-50 p-6 border-t flex justify-end space-x-4">
-              <button
-                onClick={() => {
-                  handleOpenScheduleInterview(selectedAIAnalysis);
-                  setShowAIAnalysisModal(false);
-                }}
-                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-md active:scale-95"
-              >
-                Schedule Interview
-              </button>
-              <button
-                onClick={() => setShowAIAnalysisModal(false)}
-                className="px-6 py-2 bg-white text-gray-700 font-bold border rounded-lg hover:bg-gray-100 transition-all"
-              >
-                Close Insights
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {showPostJobModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Post New Job</h3>
-              <button
-                onClick={() => setShowPostJobModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-              <div className="flex items-center space-x-2 mb-3">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
-                <h4 className="font-bold text-indigo-900">AI Job Assistant</h4>
-              </div>
-              <p className="text-sm text-indigo-700 mb-4">Select a role to automatically generate a professional job posting.</p>
-              <select
-                className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                onChange={(e) => {
-                  const role = jobRoles[e.target.value];
-                  if (role) {
-                    setNewJob({
-                      ...newJob,
-                      title: role.title,
-                      department: role.department,
-                      experience: role.experienceLevel,
-                      description: role.description,
-                      requirements: role.requirements,
-                      salary: role.salaryRange,
-                      // Deadline is handled by state default (30 days)
-                    });
-                  }
-                }}
-              >
-                <option value="">✨ Choose a role to auto-fill...</option>
-                {Object.keys(jobRoles).map(roleKey => (
-                  <option key={roleKey} value={roleKey}>{roleKey}</option>
-                ))}
-              </select>
-            </div>
-
-            <form onSubmit={handlePostJob}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newJob.title}
-                    onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-                    placeholder="e.g., Senior Frontend Developer"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
-                    <select
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.department}
-                      onChange={(e) => setNewJob({ ...newJob, department: e.target.value })}
-                    >
-                      <option value="">Select Department</option>
-                      <option value="Engineering">Engineering</option>
-                      <option value="Design">Design</option>
-                      <option value="Product">Product</option>
-                      <option value="Sales">Sales</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Human Resources">Human Resources</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Operations">Operations</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.location}
-                      onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
-                      placeholder="e.g., San Francisco, CA"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.type}
-                      onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}
-                    >
-                      <option value="full-time">Full-time</option>
-                      <option value="part-time">Part-time</option>
-                      <option value="contract">Contract</option>
-                      <option value="internship">Internship</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={newJob.experience}
-                      onChange={(e) => setNewJob({ ...newJob, experience: e.target.value })}
-                    >
-                      <option value="entry">Entry-level</option>
-                      <option value="mid">Mid-level</option>
-                      <option value="senior">Senior</option>
-                      <option value="lead">Lead</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newJob.salary}
-                    onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
-                    placeholder="e.g., $120,000 - $150,000"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newJob.deadline}
-                    onChange={(e) => setNewJob({ ...newJob, deadline: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Description *</label>
-                  <textarea
-                    required
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newJob.description}
-                    onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-                    placeholder="Describe the role, responsibilities, and what you're looking for..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Requirements *</label>
-                  <textarea
-                    required
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={newJob.requirements}
-                    onChange={(e) => setNewJob({ ...newJob, requirements: e.target.value })}
-                    placeholder="List the required skills, qualifications, and experience..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 mt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Post Job
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPostJobModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Schedule Interview Modal */}
-      {showScheduleInterviewModal && selectedApplication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Schedule Interview</h3>
-              <button
-                onClick={() => {
-                  setShowScheduleInterviewModal(false);
-                  setSelectedApplication(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
-              <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
-            </div>
-
-            <form onSubmit={handleScheduleInterview}>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                    <input
-                      type="date"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.date}
-                      onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
-                    <input
-                      type="time"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.time}
-                      onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={interviewData.duration}
-                    onChange={(e) => setInterviewData({ ...interviewData, duration: e.target.value })}
-                    placeholder="60"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Interviewer Name *</label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={interviewData.interviewer}
-                    onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
-                    placeholder="e.g., Sarah Johnson"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Interview Mode</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={interviewData.mode}
-                    onChange={(e) => setInterviewData({ ...interviewData, mode: e.target.value })}
-                  >
-                    <option value="virtual">Virtual/Online</option>
-                    <option value="in-person">In-person</option>
-                    <option value="phone">Phone</option>
-                  </select>
-                </div>
-
-                {interviewData.mode === 'virtual' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
-                    <input
-                      type="url"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      value={interviewData.meetingLink}
-                      onChange={(e) => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
-                      placeholder="https://meet.google.com/abc-defg-hij"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                  <textarea
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={interviewData.notes}
-                    onChange={(e) => setInterviewData({ ...interviewData, notes: e.target.value })}
-                    placeholder="Any special instructions or topics to cover..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 mt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Schedule Interview
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowScheduleInterviewModal(false);
-                    setSelectedApplication(null);
-                  }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Application Modal */}
       {showRejectModal && selectedApplication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Reject Application</h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative">
+            <button onClick={() => setShowRejectModal(false)} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+              <X size={20} />
+            </button>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Reject Application</h3>
+            <p className="text-gray-500 font-bold text-sm mb-6">Are you sure you want to reject <span className="text-red-600">{selectedApplication.candidateName}</span>? This action is irreversible.</p>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400">Rejection Reason (Internal Only)</label>
+                <textarea
+                  className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-red-500 font-bold text-gray-700 resize-none"
+                  rows={3}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Insufficient technical experience..."
+                />
+              </div>
               <button
-                onClick={() => {
-                  setShowRejectModal(false);
-                  setSelectedApplication(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={handleRejectApplication}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-red-200 transition-all active:scale-95"
               >
-                ✕
+                Confirm Rejection
               </button>
             </div>
-
-            <div className="mb-4 p-3 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-900">{selectedApplication.candidateName}</p>
-              <p className="text-sm text-gray-600">Applied for: {selectedApplication.jobTitle}</p>
-            </div>
-
-            <form onSubmit={handleRejectApplication}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason *</label>
-                  <textarea
-                    required
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Please provide a reason for rejecting this application..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 mt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Reject Application
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowRejectModal(false);
-                    setSelectedApplication(null);
-                  }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
 
-      {/* Assign Project Modal */}
-      {showAssignProjectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Assign Project</h3>
-              <button onClick={() => setShowAssignProjectModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+      {showScheduleInterviewModal && selectedApplication && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden">
+            <div className="p-6 border-b flex justify-between items-center bg-blue-50">
+              <h3 className="text-xl font-black text-blue-900 uppercase tracking-tight flex items-center gap-2">
+                <Calendar className="text-blue-600" size={24} />
+                Schedule Interview
+              </h3>
+              <button onClick={() => setShowScheduleInterviewModal(false)} className="p-2 hover:bg-blue-100 rounded-full transition-colors text-blue-900">
+                <X size={20} />
+              </button>
             </div>
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium">Assigning to: {selectedEmployeeForProject?.name}</p>
-              <p className="text-xs text-blue-600">{selectedEmployeeForProject?.position}</p>
-            </div>
-            <form onSubmit={handleAssignProject}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={projectData.title}
-                    onChange={(e) => setProjectData({ ...projectData, title: e.target.value })}
-                    required
-                    placeholder="e.g. AI Module Development"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role in Project</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={projectData.role}
-                    onChange={(e) => setProjectData({ ...projectData, role: e.target.value })}
-                    required
-                    placeholder="e.g. Lead Developer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={3}
-                    value={projectData.description}
-                    onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
-                    required
-                    placeholder="Project details..."
-                  ></textarea>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+            <form onSubmit={handleScheduleInterview} className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Interview Date</label>
                   <input
                     type="date"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={projectData.deadline}
-                    onChange={(e) => setProjectData({ ...projectData, deadline: e.target.value })}
                     required
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    value={interviewData.date}
+                    onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
                   />
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                  Confirm Assignment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Employee Modal */}
-      {showEditEmployeeModal && selectedEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Employee</h3>
-            <form onSubmit={handleUpdateEmployee} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border rounded-lg"
-                  value={selectedEmployee.name}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Department</label>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-gray-400">Time</label>
                   <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={selectedEmployee.department}
-                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, department: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Position</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    value={selectedEmployee.position}
-                    onChange={(e) => setSelectedEmployee({ ...selectedEmployee, position: e.target.value })}
+                    type="time"
+                    required
+                    className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                    value={interviewData.time}
+                    onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone</label>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400">Interviewer</label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 border rounded-lg"
-                  value={selectedEmployee.phone || ''}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, phone: e.target.value })}
+                  required
+                  placeholder="e.g. Engineering Lead, HR Manager"
+                  className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                  value={interviewData.interviewer}
+                  onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Salary</label>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-gray-400">Meeting Link</label>
                 <input
-                  type="text"
-                  className="w-full px-4 py-2 border rounded-lg"
-                  value={selectedEmployee.salary || ''}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, salary: e.target.value })}
+                  type="url"
+                  required
+                  className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                  value={interviewData.meetingLink}
+                  onChange={(e) => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
                 />
               </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowEditEmployeeModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* View Employee Detail Modal */}
-      {showViewEmployeeModal && selectedEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative">
-            <button
-              onClick={() => setShowViewEmployeeModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold">
-                {selectedEmployee.name.charAt(0)}
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900">{selectedEmployee.name}</h3>
-                <p className="text-gray-500">{selectedEmployee.position} • {selectedEmployee.department}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 border-b pb-2">Contact Information</h4>
-                <div>
-                  <p className="text-xs text-gray-500">Email</p>
-                  <p className="text-gray-900">{selectedEmployee.email}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Phone</p>
-                  <p className="text-gray-900">{selectedEmployee.phone || 'N/A'}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 border-b pb-2">Employment Details</h4>
-                <div>
-                  <p className="text-xs text-gray-500">Joining Date</p>
-                  <p className="text-gray-900">{selectedEmployee.joiningDate}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Current Salary</p>
-                  <p className="text-gray-900">{selectedEmployee.salary || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Current Project</p>
-                  <p className="text-gray-900">{selectedEmployee.project || 'Unassigned'}</p>
-                </div>
-              </div>
-
-              <div className="col-span-2 space-y-4">
-                <h4 className="font-semibold text-gray-900 border-b pb-2">Attendance & Status</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500">Status</p>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {selectedEmployee.status}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Today's Attendance</p>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedEmployee.attendanceStatus === 'Present' ? 'bg-green-100 text-green-700' :
-                      selectedEmployee.attendanceStatus === 'Checked Out' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
-                      {selectedEmployee.attendanceStatus || 'Absent'}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Last Active</p>
-                    <p className="text-gray-900">{selectedEmployee.lastActive || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-span-2 space-y-4 mt-2">
-                <h4 className="font-semibold text-gray-900 border-b pb-2 flex justify-between items-center">
-                  Skills & Proficiency Ratings
-                  <Zap size={16} className="text-amber-500" />
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {selectedEmployeeSkills && selectedEmployeeSkills.length > 0 ? (
-                    selectedEmployeeSkills.map((skill: any) => (
-                      <div key={skill._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
-                        <div>
-                          <p className="text-sm font-bold text-gray-800">{skill.name}</p>
-                          <p className="text-[10px] text-gray-500 uppercase font-black">{skill.category}</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <div className="flex gap-0.5 text-amber-500">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={12}
-                                fill={i < skill.currentLevel ? "currentColor" : "none"}
-                                className={i < skill.currentLevel ? "" : "text-gray-300"}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-[10px] font-bold text-gray-400 mt-1">LVL {skill.currentLevel}/5</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-400 italic col-span-2">No skills data available for this employee.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 flex justify-between items-center border-t pt-6">
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => {
-                    setShowViewEmployeeModal(false); // Close view modal
-                    setShowEditEmployeeModal(true); // Open edit modal
-                  }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium flex items-center"
-                >
-                  Edit Profile
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedEmployeeForProject(selectedEmployee);
-                    setShowAssignProjectModal(true);
-                    // Keep view modal open or close? Usually keep open or close depending on preference. 
-                    // Let's close it to focus on the new task.
-                    setShowViewEmployeeModal(false);
-                  }}
-                  className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium flex items-center"
-                >
-                  Assign Project
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedEmployeeForTask(selectedEmployee);
-                    setShowAssignTaskModal(true);
-                    setShowViewEmployeeModal(false);
-                  }}
-                  className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium flex items-center"
-                >
-                  Assign Task
-                </button>
-              </div>
-              <button
-                onClick={() => setShowViewEmployeeModal(false)}
-                className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 text-sm font-medium"
-              >
-                Close
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-blue-200 transition-all active:scale-95">
+                Send Interview Invite
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
+
+      {/* Legacy Modals (keeping state for now but they should be removed if EmployeeManagement handles them) */}
       {showAssignTaskModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
@@ -2729,7 +1648,10 @@ const HRDashboard = () => {
               <h3 className="text-xl font-bold text-gray-900">Assign Task</h3>
               <button onClick={() => setShowAssignTaskModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
-            <form onSubmit={handleAssignTask}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              console.log('Task assignment should be handled in EmployeeManagement');
+            }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
