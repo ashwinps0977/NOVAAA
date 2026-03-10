@@ -1,0 +1,3 @@
+DEPT: Engineering
+
+The tech stack is getting outdated, wanted to work with more modern tools like Rust and Go.
