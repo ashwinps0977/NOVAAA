@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     UserPlus, Search, ChevronRight,
     LayoutGrid, List,
-    RefreshCw, X,
+    RefreshCw, X, User,
     Briefcase, Mail, Phone, Calendar, DollarSign, Target,
     Zap
 } from 'lucide-react';
@@ -11,7 +11,7 @@ import {
     PolarAngleAxis, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 const ROLES = ['Accountant', 'Data Analyst', 'Engineer', 'Head', 'Marketing Analyst', 'Project Manager', 'Senior Manager'];
 
@@ -491,6 +491,15 @@ const EmployeeManagement: React.FC = () => {
                                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">Contact Intel</h4>
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
+                                                <User size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-400 font-bold">Employee ID</p>
+                                                <p className="font-bold text-gray-800">{selectedEmployee.employeeId || selectedEmployee._id.slice(-6).toUpperCase()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-sm">
                                             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                                                 <Mail size={16} />
                                             </div>
@@ -535,7 +544,9 @@ const EmployeeManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <p className="text-xs text-gray-400 font-bold">Joining Date</p>
-                                                <p className="font-bold text-gray-800">{selectedEmployee.joiningDate}</p>
+                                                <p className="font-bold text-gray-800">
+                                                    {new Date(selectedEmployee.joiningDate).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm">
@@ -547,13 +558,24 @@ const EmployeeManagement: React.FC = () => {
                                                 <p className="font-bold text-gray-800">{selectedEmployee.salary || 'Commercial Secret'}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                                        <div className="flex items-start gap-3 text-sm">
+                                            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 mt-1">
                                                 <Zap size={16} />
                                             </div>
                                             <div>
-                                                <p className="text-xs text-gray-400 font-bold">Total Projects</p>
-                                                <p className="font-bold text-gray-800">{selectedEmployee.activeProjects?.length || 0}</p>
+                                                <p className="text-xs text-gray-400 font-bold mb-1">Active Projects</p>
+                                                {selectedEmployee.activeProjects && selectedEmployee.activeProjects.length > 0 ? (
+                                                    <div className="space-y-1.5 mt-1">
+                                                        {selectedEmployee.activeProjects.map((p: any, idx: number) => (
+                                                            <div key={idx} className="bg-white border border-gray-100 px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-700 shadow-sm flex items-center gap-2">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                                                <span className="truncate max-w-[150px]">{p.title || p.projectName || 'Unnamed Project'}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="font-bold text-gray-800">No active projects</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

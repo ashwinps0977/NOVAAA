@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Leave = require('../models/Leave');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const Project = require('../models/Project');
 const Salary = require('../models/Salary');
 const ragService = require('../services/ragService');
 const dbIntrospectionService = require('../services/dbIntrospectionService');
@@ -92,6 +93,10 @@ const trainModel = async () => {
     manager.addDocument('en', 'which team am i on', 'employee.project');
     manager.addDocument('en', 'joining date', 'employee.joinDate');
     manager.addDocument('en', 'when did i join', 'employee.joinDate');
+    manager.addDocument('en', 'show my projects', 'employee.my_projects');
+    manager.addDocument('en', 'view my projects', 'employee.my_projects');
+    manager.addDocument('en', 'list my projects', 'employee.my_projects');
+    manager.addDocument('en', 'what projects am i working on', 'employee.my_projects');
     manager.addDocument('en', 'how to apply for leave', 'leave.howto');
     manager.addDocument('en', 'process for leave application', 'leave.howto');
     manager.addDocument('en', 'guide me to apply for leave', 'leave.howto');
@@ -504,8 +509,54 @@ exports.processChat = async (req, res) => {
         const msgLower = message.toLowerCase();
 
         // 3. UI Action Handling
-        if ((intent === 'leave.open_modal' || intent === 'leave.apply') && userRole !== 'hr') {
+        if (intent === 'leave.open_modal' || intent === 'leave.apply' || msgLower.includes('apply leave')) {
             action = "OPEN_LEAVE_MODAL";
+            
+            // Allow optional quotes around the date
+            const dateRegexFromTo = /from\s+["']?(\d{1,2}[-./]\d{1,2}[-./]\d{2,4})["']?\s+to\s+["']?(\d{1,2}[-./]\d{1,2}[-./]\d{2,4})["']?/i;
+            const dateRegexOn = /on\s+["']?(\d{1,2}[-./]\d{1,2}[-./]\d{2,4})["']?/i;
+
+            let startDate = '';
+            let endDate = '';
+
+            const matchFromTo = msgLower.match(dateRegexFromTo);
+            if (matchFromTo) {
+                startDate = matchFromTo[1];
+                endDate = matchFromTo[2];
+            } else {
+                const matchOn = msgLower.match(dateRegexOn);
+                if (matchOn) {
+                    startDate = matchOn[1];
+                    endDate = matchOn[1];
+                }
+            }
+
+            const formatToYMD = (dateStr) => {
+                const parts = dateStr.split(/[-./]/);
+                if (parts.length === 3) {
+                    let day = parts[0].padStart(2, '0');
+                    let month = parts[1].padStart(2, '0');
+                    let year = parts[2];
+                    if (year.length === 2) year = '20' + year;
+                    return `${year}-${month}-${day}`;
+                }
+                return dateStr;
+            };
+
+            if (startDate) startDate = formatToYMD(startDate);
+            if (endDate) endDate = formatToYMD(endDate);
+
+            if (startDate && endDate) {
+                actionData = {
+                    startDate,
+                    endDate,
+                    type: 'Casual', // Changed from General Leave to match model
+                    isAutoProcessing: true
+                };
+                reply = "Please provide the reason for leave.";
+            } else {
+                reply = "I've opened the leave application form for you. If you want me to fill it out automatically, try saying 'apply leave from DD-MM-YYYY to DD-MM-YYYY'.";
+            }
         }
 
         // 4. MANUAL HIGH-FIDELITY RESPONSE GENERATION
@@ -542,6 +593,36 @@ exports.processChat = async (req, res) => {
         else if (intent === 'leave.balance' && userRole !== 'hr') {
             const balances = employee?.leaveBalances || { Sick: 12, Casual: 12, Earned: 10 };
             reply = `### 🏖️ Your Leave Balance\n\n| Type | Remaining |\n| :--- | :--- |\n| **Sick Leave** | ${balances.Sick} days |\n| **Casual Leave** | ${balances.Casual} days |\n| **Earned Leave** | ${balances.Earned} days |`;
+        }
+        else if ((intent === 'employee.my_projects' || msgLower.includes('show my projects') || msgLower.includes('view my projects') || msgLower.includes('list my projects')) && employee) {
+            const Team = require('../models/Team');
+            let queryOrExp = [
+                { assignedTo: employee._id },
+                { assignedToUser: userId }
+            ];
+
+            const myTeams = await Team.find({
+                $or: [
+                    { teamLead: employee._id },
+                    { members: employee._id }
+                ]
+            });
+            if (myTeams.length > 0) {
+                const teamIds = myTeams.map(t => t._id);
+                queryOrExp.push({ teamId: { $in: teamIds } });
+            }
+
+            const projects = await Project.find({ $or: queryOrExp });
+            if (projects.length > 0) {
+                reply = `### 🚀 Your Assigned Projects\n\nHere are the projects you are currently working on:\n\n` +
+                    projects.map(p => {
+                        const dl = p.deadline ? new Date(p.deadline).toLocaleDateString() : 'No Deadline';
+                        return `- **${p.title || p.projectName}** (${p.status}) - Due: ${dl}`;
+                    }).join('\n');
+                action = 'OPEN_PROJECTS_TAB';
+            } else {
+                reply = "You currently have no active projects assigned to you.";
+            }
         }
 
         // C. Entity Search (Context-Aware Deep Search)
@@ -687,7 +768,7 @@ exports.processChat = async (req, res) => {
         }
 
         // UI Enhancements
-        if (action === "OPEN_LEAVE_MODAL") {
+        if (action === "OPEN_LEAVE_MODAL" && !actionData.isAutoProcessing) {
             reply = `I've opened the leave application form for you. \n\n${reply}`;
         }
 

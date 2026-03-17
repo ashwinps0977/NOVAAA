@@ -17,6 +17,7 @@ import OperationsBoard from '../components/dashboard/hr/OperationsBoard';
 import EmployeeManagement from '../components/dashboard/hr/EmployeeManagement';
 import WorkforceDevelopmentHub from '../components/dashboard/hr/WorkforceDevelopmentHub';
 import { useRealTimeSync } from '../hooks/useRealTimeSync';
+import { JOB_TEMPLATES } from '../constants/jobTemplates';
 
 const API_BASE_URL = 'http://localhost:5001/api';
 
@@ -94,6 +95,14 @@ const HRDashboard = () => {
     status: 'present'
   });
 
+  const [leaveForm, setLeaveForm] = useState({
+    type: 'General Leave',
+    startDate: '',
+    endDate: '',
+    reason: ''
+  });
+  const [pendingLeaveContext, setPendingLeaveContext] = useState(false);
+
   const handleMarkAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!attendanceForm.userId) {
@@ -134,6 +143,39 @@ const HRDashboard = () => {
     setInputMessage('');
     setIsTyping(true);
 
+    if (pendingLeaveContext) {
+      setPendingLeaveContext(false);
+      const currentForm = { ...leaveForm, reason: userMsg };
+      setLeaveForm(currentForm);
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/leave/apply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(currentForm)
+        });
+
+        if (response.ok) {
+          setMessages(prev => [...prev, { sender: 'bot', text: 'Leave application submitted successfully!' }]);
+          setLeaveForm({ type: 'General Leave', startDate: '', endDate: '', reason: '' });
+          fetchLeaves();
+        } else {
+          const data = await response.json();
+          setMessages(prev => [...prev, { sender: 'bot', text: `Failed to submit leave application: ${data.message || 'Unknown error'}` }]);
+        }
+      } catch (error) {
+        console.error('Apply leave error from AI:', error);
+        setMessages(prev => [...prev, { sender: 'bot', text: 'Error submitting leave application.' }]);
+      } finally {
+        setIsTyping(false);
+      }
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/ai/chat`, {
@@ -149,6 +191,20 @@ const HRDashboard = () => {
 
       if (data.success) {
         setMessages(prev => [...prev, { sender: 'bot', text: data.reply }]);
+
+        // Handle Actions
+        if (data.action === 'OPEN_LEAVE_MODAL') {
+          if (data.data) {
+            setLeaveForm(prev => ({
+              ...prev,
+              ...data.data,
+              type: data.data.type || 'Casual'
+            }));
+            if (data.data.isAutoProcessing) {
+              setPendingLeaveContext(true);
+            }
+          }
+        }
       } else {
         setMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, I encountered an error processing your request.' }]);
       }
@@ -814,6 +870,22 @@ const HRDashboard = () => {
                       : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
                       }`}>
                       <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                      {msg.text.includes('Leave application submitted successfully') && (
+                        <button
+                          onClick={() => setActiveSection('attendance')}
+                          className="mt-3 text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 font-semibold transition-colors flex items-center gap-1"
+                        >
+                          View Leaves
+                        </button>
+                      )}
+                      {msg.text.includes('Your Assigned Projects') && (
+                        <button
+                          onClick={() => setActiveSection('workforce')}
+                          className="mt-3 text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100 font-semibold transition-colors flex items-center gap-1"
+                        >
+                          View Workforce Hub
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1453,6 +1525,36 @@ const HRDashboard = () => {
               </button>
             </div>
             <form onSubmit={handlePostJob} className="p-6 space-y-4">
+              <div className="space-y-1 mb-4">
+                <label className="text-[10px] font-black uppercase text-blue-500">Auto-Fill from Template (Optional)</label>
+                <select
+                  className="w-full px-4 py-2 bg-blue-50 border-none rounded-xl focus:ring-2 focus:ring-blue-600 font-bold text-blue-700"
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const parsed = JSON.parse(e.target.value);
+                    setNewJob(prev => ({
+                        ...prev,
+                        title: parsed.title,
+                        department: parsed.department,
+                        description: parsed.description,
+                        salary: parsed.salary
+                    }));
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>-- Select a Standard Job Role --</option>
+                  {Object.entries(JOB_TEMPLATES).map(([category, roles]) => (
+                    <optgroup key={category} label={category}>
+                        {roles.map((role, idx) => (
+                            <option key={idx} value={JSON.stringify(role)}>
+                                {role.title}
+                            </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase text-gray-400">Job Title</label>
@@ -1505,7 +1607,7 @@ const HRDashboard = () => {
                     type="text"
                     required
                     className="w-full px-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
-                    placeholder="e.g. $80k - $120k"
+                    placeholder="e.g. ₹80k - ₹120k"
                     value={newJob.salary}
                     onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
                   />
